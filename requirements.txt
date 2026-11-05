@@ -1,0 +1,9 @@
+# Dependências da aplicação
+Flask==3.0.3
+
+# Testes
+pytest==8.3.3
+pytest-cov==5.0.0
+
+# Estilo / PEP-8
+flake8==7.1.1
