@@ -8,35 +8,24 @@ guiado por especificações (**Spec-Driven Development**).
 
 ## Estrutura do projeto
 
-```
-projeto_engenharia_de_software/
-├── app/                    # Frameworks & Drivers: Flask
-│   ├── routes/             # Blueprints / rotas HTTP
-│   └── main.py             # App factory (create_app)
-├── domain/                 # Entidades e regras de negócio puras
-├── use_cases/              # Casos de uso (lógica da aplicação)
-├── infra/                  # Implementações concretas
-│   ├── repositories/       # Repositórios (ex.: SQLite)
-│   └── db/                 # Conexão / configuração do banco
-├── tests/                  # Testes unitários (pytest)
-│   ├── domain/
-│   └── use_cases/
-├── spec/                   # Spec-Driven Development (ver spec/README.md)
-│   ├── constitution.md     # Princípios do projeto
-│   ├── templates/          # Modelos de spec, plano e tarefas
-│   └── features/           # Uma pasta por história de usuário
-├── requirements.txt        # Dependências
-├── setup.cfg               # Configuração do flake8 e pytest
-└── README.md
-```
+A organização das camadas e o mapa de diretórios estão em
+[ESTRUTURA.md](ESTRUTURA.md).
 
 As dependências apontam para dentro: `app` e `infra` dependem de `use_cases`,
 que dependem de `domain`. O `domain` não depende de nada externo.
+
+## Modelagem do banco de dados
+
+O schema SQLite e a documentação das tabelas estão em
+[infra/db/README.md](infra/db/README.md). Sempre que dados persistidos forem
+adicionados, alterados ou removidos, mantenha o schema, a documentação, os
+testes e as migrações aplicáveis sincronizados.
 
 ## Pré-requisitos
 
 - Python 3.11 ou superior
 - Git
+- GNU Make para os comandos `make`
 
 ## Como inicializar o ambiente
 
@@ -79,7 +68,7 @@ source .venv/bin/activate
 ### 4. Instalar as dependências
 
 ```bash
-pip install -r requirements.txt
+make install
 ```
 
 ## Executar a aplicação
@@ -91,22 +80,26 @@ flask --app app.main:create_app run --debug
 A aplicação sobe em http://127.0.0.1:5000. Para conferir, acesse
 http://127.0.0.1:5000/health, que deve responder `{"status": "ok"}`.
 
-## Executar os testes
+Para executar os testes:
 
 ```bash
-pytest
+make test
 ```
 
-Com relatório de cobertura:
+## Qualidade do código
+
+Use o `Makefile` para executar o lint e/ou todas as verificações:
 
 ```bash
-pytest --cov=domain --cov=use_cases --cov-report=term-missing
+make lint
+make check
 ```
 
-## Verificar o estilo (PEP-8)
+`make check` é o alvo padrão e executa lint e testes. O Flake8 segue as regras
+em `setup.cfg`. Para gerar cobertura:
 
 ```bash
-flake8
+python -m pytest --cov=domain --cov=use_cases --cov-report=term-missing
 ```
 
 ## Desenvolvimento guiado por especificações
