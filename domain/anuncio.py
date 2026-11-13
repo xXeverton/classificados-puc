@@ -5,6 +5,10 @@ from decimal import Decimal
 
 CATEGORIAS = ("produto", "servico", "evento")
 ESTADOS_CONSERVACAO = ("novo", "usado_regular")
+TITULO_MIN_CARACTERES = 5
+TITULO_MAX_CARACTERES = 80
+DESCRICAO_MAX_CARACTERES = 500
+PRECO_MAXIMO = Decimal("9999999999.99")
 
 
 @dataclass(frozen=True)
@@ -21,7 +25,9 @@ class Anuncio:
     def __post_init__(self) -> None:
         if not isinstance(self.titulo, str):
             raise TypeError("titulo must be a string")
-        if not 5 <= len(self.titulo) <= 80:
+        if not TITULO_MIN_CARACTERES <= len(self.titulo) <= (
+            TITULO_MAX_CARACTERES
+        ):
             raise ValueError(
                 "titulo must contain between 5 and 80 characters"
             )
@@ -29,7 +35,10 @@ class Anuncio:
             raise ValueError("titulo must not have leading or trailing spaces")
         if not isinstance(self.descricao, str):
             raise TypeError("descricao must be a string")
-        if not self.descricao.strip(" ") or len(self.descricao) > 500:
+        if (
+            not self.descricao.strip(" ")
+            or len(self.descricao) > DESCRICAO_MAX_CARACTERES
+        ):
             raise ValueError(
                 "descricao must be non-empty and at most 500 characters"
             )
@@ -48,10 +57,25 @@ class Anuncio:
         if self.preco is not None and (
             not self.preco.is_finite()
             or self.preco < 0
-            or self.preco > Decimal("9999999999.99")
+            or self.preco > PRECO_MAXIMO
             or self.preco.as_tuple().exponent < -2
         ):
             raise ValueError(
                 "preco must be between 0 and 9999999999.99 "
                 "with at most two decimal places, or None"
             )
+
+
+@dataclass(frozen=True)
+class AnuncioPublicado:
+    """Persisted announcement with response metadata."""
+
+    id: int
+    id_anunciante: int
+    nome_anunciante: str
+    titulo: str
+    categoria: str
+    estado_conservacao: str | None
+    descricao: str
+    preco: Decimal | None
+    created_at: str

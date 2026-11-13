@@ -2,15 +2,19 @@
 
 import secrets
 from datetime import timedelta
+from pathlib import Path
 
-from flask import Flask
+from flask import Flask, current_app, jsonify, request
+from werkzeug.exceptions import HTTPException, InternalServerError
 
 from app.config import carregar_config
+from app.database import init_app as init_database
 from app.routes.autenticacao import (
     CHAVE_EXTENSAO,
     CasosDeUsoAutenticacao,
     autenticacao_bp,
 )
+from app.routes.api_anuncios import api_anuncios_bp
 from infra.email.enviador_email_console import EnviadorEmailConsole
 from infra.email.enviador_email_smtp import EnviadorEmailSmtp
 from infra.relogio_sistema import RelogioSistema
@@ -88,6 +92,10 @@ def _montar_autenticacao(
     )
 
 
+def _is_api_request() -> bool:
+    return request.path == "/api" or request.path.startswith("/api/")
+
+
 def create_app(
     config: dict | None = None,
     *,
@@ -101,6 +109,11 @@ def create_app(
     """
     app = Flask(__name__)
     app.config.update(carregar_config(config))
+    app.config.setdefault(
+        "DATABASE",
+        str(Path(app.instance_path) / "classificados.sqlite3"),
+    )
+    init_database(app)
 
     if not app.config["JWT_SECRET"]:
         # Sem segredo fixo, os tokens deixam de valer a cada reinício.
@@ -118,7 +131,26 @@ def create_app(
     def health():
         return {"status": "ok"}
 
+    @app.errorhandler(HTTPException)
+    def erro_http(error):
+        if not _is_api_request():
+            return error
+        response = error.get_response()
+        response.set_data(
+            current_app.json.dumps({"erro": error.description})
+        )
+        response.content_type = "application/json"
+        return response
+
+    @app.errorhandler(InternalServerError)
+    def erro_interno_api(error):
+        if not _is_api_request():
+            return error
+        current_app.logger.error("Erro interno ao processar a API.")
+        return jsonify({"erro": "Erro interno do servidor."}), 500
+
     app.register_blueprint(autenticacao_bp)
+    app.register_blueprint(api_anuncios_bp)
 
     return app
 

@@ -96,6 +96,32 @@ http://127.0.0.1:5000/health, que deve responder `{"status": "ok"}`.
 As rotas de autenticação (`/auth/...`) estão descritas em
 [spec/features/001-autenticacao/plan.md](spec/features/001-autenticacao/plan.md).
 
+### API de anúncios
+
+`POST /api/ads` cria um anúncio para o usuário autenticado. Envie o JWT no
+cabeçalho `Authorization: Bearer <token>` e um objeto JSON com `titulo`,
+`categoria`, `descricao`, `preco_a_combinar` e, para produto,
+`estado_conservacao`. Quando `preco_a_combinar` for `false`, `preco` é uma
+string decimal, por exemplo `"10.50"`; quando for `true`, omita `preco`.
+O endpoint valida o corpo sem converter valores monetários para `float`,
+limita o corpo a 64 KiB e responde com `201` e o anúncio persistido.
+Na resposta, `preco` é uma string com duas casas decimais ou `null` para
+“A combinar”; o corpo enviado nunca define o anunciante nem metadados gerados
+pelo servidor.
+
+Erros da API são JSON: `401` para ausência ou invalidade do token, `400` para
+JSON inválido, `413` para corpo acima do limite, `415` para mídia diferente de
+JSON, `422` para campos inválidos e os status HTTP apropriados para demais
+falhas. A autenticação usa token Bearer, não cookie de sessão, então a API não
+depende de CSRF por cookie. O bloqueio por perfil incompleto permanece
+pendente da regra US02, que ainda não existe no modelo.
+
+O SQLite usa `instance/classificados.sqlite3` por padrão. A conexão é obtida
+por requisição com `app.database.get_db`; `DATABASE` pode ser substituído na
+configuração da aplicação, especialmente nos testes. A autenticação existente
+usa repositório de usuários em memória; persistir/provisionar contas não faz
+parte desta API.
+
 Para executar os testes:
 
 ```bash
