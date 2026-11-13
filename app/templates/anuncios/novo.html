@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+
+{% block title %}Novo anúncio | Classificados PUC{% endblock %}
+
+{% block content %}
+<section class="page-shell" aria-labelledby="page-title">
+  <a class="back-link" href="{{ url_for('novo_anuncio') }}">
+    <span aria-hidden="true">←</span> Voltar
+  </a>
+
+  <div class="page-heading">
+    <div>
+      <p class="eyebrow">DIVULGUE PARA A COMUNIDADE</p>
+      <h1 id="page-title">Novo anúncio</h1>
+      <p class="page-intro">
+        Preencha as informações abaixo para apresentar seu anúncio à
+        comunidade PUC.
+      </p>
+    </div>
+    <div class="heading-art" aria-hidden="true">✦</div>
+  </div>
+
+  <div class="preview-notice" role="status">
+    <span class="notice-icon" aria-hidden="true">i</span>
+    <p>
+      Esta é uma prévia visual. O acesso e a publicação serão habilitados
+      quando a autenticação e a API estiverem disponíveis.
+    </p>
+  </div>
+
+  <form class="ad-form" novalidate>
+    <div class="form-section">
+      <div class="section-heading">
+        <span class="step-number" aria-hidden="true">1</span>
+        <div>
+          <h2>Informações do anúncio</h2>
+          <p>Conte o essencial para sua comunidade.</p>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="titulo">Título <span class="required">*</span></label>
+        <input
+          id="titulo"
+          name="titulo"
+          type="text"
+          placeholder="Ex.: Bicicleta em ótimo estado"
+          autocomplete="off"
+          aria-describedby="titulo-hint"
+          required
+        >
+        <div class="field-meta">
+          <span id="titulo-hint" class="field-hint">
+            Escolha um título claro e direto.
+          </span>
+          <span class="character-count">0/80</span>
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label for="categoria">
+            Categoria <span class="required">*</span>
+          </label>
+          <select id="categoria" name="categoria" required>
+            <option value="" selected disabled>Selecione a categoria</option>
+            <option value="produto">Produto</option>
+            <option value="servico">Serviço</option>
+            <option value="evento">Evento</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="estado_conservacao">
+            Estado de conservação <span class="required">*</span>
+          </label>
+          <select
+            id="estado_conservacao"
+            name="estado_conservacao"
+            aria-describedby="estado-hint"
+            required
+          >
+            <option value="" selected disabled>Selecione o estado</option>
+            <option value="novo">Novo</option>
+            <option value="usado_regular">Usado - regular</option>
+          </select>
+          <span id="estado-hint" class="field-hint">
+            Na versão completa, este campo será exibido para produtos.
+          </span>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="descricao">
+          Descrição <span class="required">*</span>
+        </label>
+        <textarea
+          id="descricao"
+          name="descricao"
+          rows="5"
+          placeholder="Descreva os detalhes que ajudam outras pessoas a conhecer seu anúncio."
+          aria-describedby="descricao-hint"
+          required
+        ></textarea>
+        <div class="field-meta">
+          <span id="descricao-hint" class="field-hint">
+            Inclua informações importantes, como características e condições.
+          </span>
+          <span class="character-count">0/500</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section price-section">
+      <div class="section-heading">
+        <span class="step-number" aria-hidden="true">2</span>
+        <div>
+          <h2>Preço</h2>
+          <p>Defina como prefere informar o valor.</p>
+        </div>
+      </div>
+
+      <fieldset class="price-options">
+        <legend class="visually-hidden">Tipo de preço</legend>
+        <label class="price-option selected">
+          <input type="radio" name="tipo_preco" value="informar" checked>
+          <span class="custom-radio" aria-hidden="true"></span>
+          <span>Informar preço</span>
+        </label>
+        <label class="price-option">
+          <input type="radio" name="tipo_preco" value="combinar">
+          <span class="custom-radio" aria-hidden="true"></span>
+          <span>A combinar</span>
+        </label>
+      </fieldset>
+
+      <div class="field price-field">
+        <label for="preco">Valor do anúncio <span class="required">*</span></label>
+        <div class="currency-input">
+          <span aria-hidden="true">R$</span>
+          <input
+            id="preco"
+            name="preco"
+            type="text"
+            inputmode="decimal"
+            placeholder="0,00"
+            aria-describedby="preco-hint"
+          >
+        </div>
+        <span id="preco-hint" class="field-hint">
+          Você também pode escolher “A combinar”.
+        </span>
+      </div>
+    </div>
+
+    <div class="form-footer">
+      <p><span class="required">*</span> Campos obrigatórios</p>
+      <button class="publish-button" type="button" disabled>
+        Publicar
+        <span aria-hidden="true">→</span>
+      </button>
+      <p class="publish-hint">
+        A publicação ficará disponível após a integração com a API.
+      </p>
+    </div>
+  </form>
+</section>
+{% endblock %}

@@ -2,6 +2,7 @@
 
 from flask import Flask
 
+from app.routes.anuncios import registrar_rota_novo_anuncio
 from app.routes.media import registrar_rota_local
 from infra.storage.storage import (
     ImageStorage,
@@ -20,6 +21,8 @@ def create_app(image_storage: ImageStorage | None = None) -> Flask:
 
     if isinstance(storage, LocalImageStorage):
         registrar_rota_local(app, storage)
+
+    registrar_rota_novo_anuncio(app)
 
     @app.get("/health")
     def health():

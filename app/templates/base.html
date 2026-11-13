@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Classificados PUC{% endblock %}</title>
+  <link
+    rel="stylesheet"
+    href="{{ url_for('static', filename='css/anuncios.css') }}"
+  >
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="{{ url_for('novo_anuncio') }}">
+      <span class="brand-mark" aria-hidden="true">C</span>
+      <span>Classificados <strong>PUC</strong></span>
+    </a>
+    <span class="preview-label">Prévia da tela</span>
+  </header>
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>
