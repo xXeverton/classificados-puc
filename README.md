@@ -27,8 +27,10 @@ A infraestrutura de imagens oferece os provedores `local` e `s3`, configurados
 por variáveis de ambiente. O provedor local é o padrão para desenvolvimento e
 testes; não existe outro provedor de armazenamento já adotado pelo projeto.
 Copie os valores pertinentes de [`.env.example`](.env.example) para o ambiente
-local. A aplicação lê as variáveis do ambiente; não há carregador automático
-de arquivo `.env`.
+local. `init_storage(app)` combina as variáveis do ambiente com as chaves
+`STORAGE_*` de `app.config`, cria o provedor e o registra em
+`app.extensions["image_storage"]`. Configuração inválida interrompe a criação
+do app. Não há carregador automático de arquivo `.env`.
 
 | Variável | Padrão | Descrição |
 |---|---|---|
@@ -52,7 +54,9 @@ necessária. A aplicação cria `media/` no projeto ao salvar a primeira imagem 
 serve arquivos pela rota `/media/<chave>`. JPEG, PNG e WebP são aceitos até
 5 MiB por padrão. O limite pode ser ajustado com `STORAGE_MAX_IMAGE_BYTES`.
 O disco local **não é adequado a ambientes com sistema de arquivos efêmero**,
-como contêineres recriados em cada deploy.
+como contêineres recriados em cada deploy. Servir mídia local pelo Flask não é
+recomendado em produção; use o provedor `s3` ou sirva a pasta de mídia pelo
+servidor web/proxy.
 
 Para executar localmente, configure `STORAGE_PROVIDER=local` no ambiente
 (opcional, pois é o padrão), instale as dependências com `make install` e inicie
@@ -102,6 +106,9 @@ leitura, permitindo trocar domínio, CDN ou provedor sem migrar dados. A camada
 de storage valida o conteúdo pela assinatura, aceita apenas JPEG, PNG e WebP,
 gera chaves próprias e trata arquivos como imutáveis. O endpoint de upload,
 vínculo de imagens com anúncios e exibição no front-end são tarefas separadas.
+O storage valida o tamanho do conteúdo, mas não define `MAX_CONTENT_LENGTH`
+global. O futuro endpoint de upload deve impor seu próprio limite de requisição,
+incluindo o overhead multipart além do máximo de 5 MiB por imagem.
 
 ## Pré-requisitos
 

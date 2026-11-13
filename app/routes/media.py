@@ -1,6 +1,6 @@
 """Local route for serving stored images."""
 
-from flask import Flask, abort, send_file
+from flask import Flask, abort, send_from_directory
 
 from infra.storage.storage import (
     ChaveInvalidaError,
@@ -19,7 +19,12 @@ def registrar_rota_local(app: Flask, storage: LocalImageStorage) -> None:
             path, content_type = storage.caminho_arquivo(chave)
             if not path.is_file():
                 abort(404)
-            response = send_file(path, mimetype=content_type, conditional=True)
+            response = send_from_directory(
+                storage.config.local_root,
+                chave,
+                mimetype=content_type,
+                conditional=True,
+            )
             response.headers["X-Content-Type-Options"] = "nosniff"
             response.headers["Cache-Control"] = _CACHE_CONTROL
             return response

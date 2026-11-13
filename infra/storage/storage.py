@@ -151,6 +151,10 @@ class ConfiguracaoStorage:
 class ImageStorage(Protocol):
     """Common operations exposed by every image storage provider."""
 
+    @property
+    def config(self) -> ConfiguracaoStorage:
+        """Return the validated configuration used by this provider."""
+
     def salvar_imagem(
         self, dados: bytes | BinaryIO, *, namespace: str = "anuncios"
     ) -> ImagemArmazenada:

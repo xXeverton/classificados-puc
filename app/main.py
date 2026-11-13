@@ -2,24 +2,19 @@
 
 from flask import Flask
 
-from app.routes.media import registrar_rota_local
-from infra.storage.storage import (
-    ImageStorage,
-    LocalImageStorage,
-    criar_storage,
-)
+from app.storage import init_storage
+from infra.storage.storage import ImageStorage
 
 
-def create_app(image_storage: ImageStorage | None = None) -> Flask:
+def create_app(
+    image_storage: ImageStorage | None = None,
+    *,
+    config: dict | None = None,
+) -> Flask:
     """Cria e configura a instância da aplicação Flask (app factory)."""
     app = Flask(__name__)
-    storage = (
-        criar_storage() if image_storage is None else image_storage
-    )
-    app.extensions["image_storage"] = storage
-
-    if isinstance(storage, LocalImageStorage):
-        registrar_rota_local(app, storage)
+    app.config.update(config or {})
+    init_storage(app, image_storage)
 
     @app.get("/health")
     def health():
