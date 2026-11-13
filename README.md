@@ -80,6 +80,22 @@ flask --app app.main:create_app run --debug
 A aplicação sobe em http://127.0.0.1:5000. Para conferir, acesse
 http://127.0.0.1:5000/health, que deve responder `{"status": "ok"}`.
 
+### Variáveis de ambiente
+
+| Variável | Padrão | Uso |
+|---|---|---|
+| `JWT_SECRET` | temporário (gerado a cada início) | Segredo que assina os tokens de sessão. Obrigatório fora do desenvolvimento |
+| `JWT_EXPIRA_MINUTOS` | `60` | Validade do token de sessão |
+| `URL_LINK_MAGICO` | `http://localhost:5000/entrar/link` | Endereço do front que recebe `?token=` do link enviado por e-mail |
+| `SMTP_HOST` | vazio | Servidor SMTP. Vazio: o e-mail é escrito no log em vez de enviado |
+| `SMTP_PORT` | `587` | Porta SMTP |
+| `SMTP_USUARIO` / `SMTP_SENHA` | vazio | Credenciais SMTP, se o servidor exigir |
+| `SMTP_REMETENTE` | `nao-responda@localhost` | Remetente dos e-mails |
+| `SMTP_STARTTLS` | `true` | Usa STARTTLS na conexão SMTP |
+
+As rotas de autenticação (`/auth/...`) estão descritas em
+[spec/features/001-autenticacao/plan.md](spec/features/001-autenticacao/plan.md).
+
 Para executar os testes:
 
 ```bash
