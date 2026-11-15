@@ -1,25 +1,25 @@
 # Projeto de Engenharia de Software
 
-Aplicação web em **Python + Flask** construída com **Clean Architecture**,
-princípios **SOLID**, testes unitários com **pytest** e desenvolvimento
-guiado por especificações (**Spec-Driven Development**).
+API web em **Python + Flask-OpenAPI3** construída com **Clean Architecture**,
+**SQLAlchemy + SQLite**, princípios **SOLID**, testes unitários com **pytest**
+e desenvolvimento guiado por especificações (**Spec-Driven Development**).
 
 > Trabalho 2 de Engenharia de Software: Arquitetura e Projeto de Software (PUC-Rio).
 
 ## Estrutura do projeto
 
 A organização das camadas e o mapa de diretórios estão em
-[ESTRUTURA.md](ESTRUTURA.md).
-
-As dependências apontam para dentro: `app` e `infra` dependem de `use_cases`,
-que dependem de `domain`. O `domain` não depende de nada externo.
+[ESTRUTURA.md](ESTRUTURA.md). O código da API fica em `server/`; as
+especificações, os testes e as ferramentas de desenvolvimento ficam na raiz.
+As dependências apontam para dentro: `server/api` e `server/infra` dependem de
+abstrações em `server/core`, e o core não depende de frameworks.
 
 ## Modelagem do banco de dados
 
-O schema SQLite e a documentação das tabelas estão em
-[infra/db/README.md](infra/db/README.md). Sempre que dados persistidos forem
-adicionados, alterados ou removidos, mantenha o schema, a documentação, os
-testes e as migrações aplicáveis sincronizados.
+Os modelos SQLAlchemy, o schema SQLite e a documentação das tabelas estão em
+[server/infra/db/README.md](server/infra/db/README.md). Sempre que dados
+persistidos forem adicionados, alterados ou removidos, mantenha os modelos,
+schema, documentação, testes e migrações aplicáveis sincronizados.
 
 ## Pré-requisitos
 
@@ -74,11 +74,15 @@ make install
 ## Executar a aplicação
 
 ```bash
-flask --app app.main:create_app run --debug
+flask --app server.app:create_app run --debug
 ```
 
 A aplicação sobe em http://127.0.0.1:5000. Para conferir, acesse
 http://127.0.0.1:5000/health, que deve responder `{"status": "ok"}`.
+O banco padrão fica em `server/database/db.sqlite3`; `DATABASE_URL` pode
+substituir essa localização. Configure as origens CORS permitidas com
+`CORS_ORIGINS`, separadas por vírgula; sem origens configuradas, CORS fica
+desabilitado.
 
 Para executar os testes:
 
@@ -99,7 +103,7 @@ make check
 em `setup.cfg`. Para gerar cobertura:
 
 ```bash
-python -m pytest --cov=domain --cov=use_cases --cov-report=term-missing
+python -m pytest --cov=server.core --cov-report=term-missing
 ```
 
 ## Desenvolvimento guiado por especificações

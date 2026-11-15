@@ -2,28 +2,29 @@
 
 Referência: `spec.md` desta pasta.
 
-## Domain (`domain/`)
+## Entities (`server/core/entities/`)
 
 | Entidade | Atributos | Regras/validações |
 |----------|-----------|-------------------|
 |          |           |                   |
 
-## Use cases (`use_cases/`)
+## Use cases (`server/core/usecases/`)
 
 | Use case | Entrada | Saída | Erros possíveis |
 |----------|---------|-------|-----------------|
 |          |         |       |                 |
 
-Interfaces de repositório necessárias:
+Interfaces de repositório necessárias (`server/core/interfaces/`):
 
 - `[Nome]Repository`: métodos ...
 
-## Infra (`infra/`)
+## Infra (`server/infra/`)
 
 - Tabelas/colunas no SQLite:
-- Implementação: `infra/repositories/[nome]_repository_sqlite.py`
+- Modelo SQLAlchemy: `server/infra/db/models.py`
+- Implementação: `server/infra/gateways/[nome]_repository_sqlalchemy.py`
 
-## Interface web (`app/routes/`)
+## Interface web (`server/api/controllers/`)
 
 | Método | Rota | Use case chamado | Resposta |
 |--------|------|------------------|----------|
@@ -35,5 +36,5 @@ Interfaces de repositório necessárias:
 
 ## Estratégia de testes
 
-- `tests/domain/`: ...
-- `tests/use_cases/`: ... (com repositório em memória)
+- `tests/core/entities/`: ...
+- `tests/core/usecases/`: ... (com repositório em memória)
