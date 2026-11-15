@@ -34,9 +34,10 @@ Antes de criar os arquivos, consulte:
    dúvidas em aberto. Inicie o status como `Rascunho`; só marque `Aprovada`
    quando o usuário confirmar explicitamente.
 5. Elabore o plano técnico a partir da spec e respeite a constituição. Mantenha
-   as regras de negócio em `domain/` e `use_cases/`, detalhes de HTTP em
-   `app/`, detalhes de persistência e integrações em `infra/`, e dependências
-   apontando para dentro.
+   as regras de negócio em `server/core/entities/` e
+   `server/core/usecases/`, contratos em `server/core/interfaces/`, detalhes
+   de HTTP em `server/api/`, persistência e integrações em `server/infra/`, e
+   dependências apontando para dentro.
 6. Divida o trabalho em tarefas pequenas e ordenadas, escrevendo testes antes
    da implementação. Inclua validação dos critérios de aceitação, `pytest` e
    `flake8` quando aplicáveis.
