@@ -1,5 +1,9 @@
 # Dependências da aplicação
 Flask==3.0.3
+Flask-Cors==6.0.5
+Flask-OpenAPI3==4.3.2
+SQLAlchemy==2.0.57
+pydantic==2.14.3
 
 # Testes
 pytest==8.3.3
