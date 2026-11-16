@@ -6,7 +6,7 @@ from decimal import Decimal, InvalidOperation
 from http import HTTPStatus
 from typing import Any, NoReturn
 
-from flask import Blueprint, abort, g, jsonify, request
+from flask import Blueprint, abort, current_app, g, jsonify, request
 
 from app.database import get_db
 from app.routes.autenticacao import requer_autenticacao
@@ -22,6 +22,9 @@ from domain.anuncio import (
 )
 from infra.repositories.anuncio_sqlite import RepositorioAnuncioSQLite
 from use_cases.publicar_anuncio import PublicarAnuncio
+from use_cases.verificar_perfil_completo import (
+    CHAVE_EXTENSAO_PERFIL_COMPLETO,
+)
 
 api_anuncios_bp = Blueprint("api_anuncios", __name__, url_prefix="/api")
 MAX_CORPO_BYTES = 64 * 1024
@@ -34,10 +37,42 @@ _CAMPOS_PERMITIDOS = {
     "preco_a_combinar",
     "preco",
 }
+_MENSAGEM_PRECO_INVALIDO = (
+    "Informe um preço válido (de 0 a 9999999999,99, com até duas "
+    "casas decimais)."
+)
 
 
 def _rejeitar_constante_json(valor: str) -> NoReturn:
     raise ValueError(f"Constante JSON não permitida: {valor}")
+
+
+def _preco_decimal(valor: Any) -> Decimal | None:
+    if isinstance(valor, bool):
+        return None
+    if isinstance(valor, Decimal):
+        preco = valor
+    elif isinstance(valor, int):
+        preco = Decimal(valor)
+    elif (
+        isinstance(valor, str)
+        and _PADRAO_PRECO.fullmatch(valor) is not None
+    ):
+        try:
+            preco = Decimal(valor.replace(",", "."))
+        except InvalidOperation:
+            return None
+    else:
+        return None
+
+    if (
+        not preco.is_finite()
+        or preco < 0
+        or preco > PRECO_MAXIMO
+        or preco.as_tuple().exponent < -2
+    ):
+        return None
+    return preco
 
 
 def _ler_corpo_json() -> dict[str, Any]:
@@ -85,11 +120,11 @@ def _validar_dados(
     dados: dict[str, Any], id_anunciante: int
 ) -> tuple[Anuncio | None, dict[str, str]]:
     erros: dict[str, str] = {}
-    if set(dados) - _CAMPOS_PERMITIDOS:
-        erros["geral"] = "A requisição contém campos não permitidos."
+    for campo in sorted(set(dados) - _CAMPOS_PERMITIDOS):
+        erros[campo] = "Este campo não é permitido."
 
     titulo_bruto = dados.get("titulo")
-    titulo = titulo_bruto.strip() if isinstance(titulo_bruto, str) else ""
+    titulo = titulo_bruto.strip(" ") if isinstance(titulo_bruto, str) else ""
     if not TITULO_MIN_CARACTERES <= len(titulo) <= TITULO_MAX_CARACTERES:
         erros["titulo"] = "O título deve ter entre 5 e 80 caracteres."
 
@@ -106,73 +141,52 @@ def _validar_dados(
         )
 
     estado_bruto = dados.get("estado_conservacao")
-    estado = (
-        estado_bruto
-        if isinstance(estado_bruto, str)
-        and estado_bruto in ESTADOS_CONSERVACAO
-        else None
-    )
+    estado = None
     if categoria == "produto":
-        if estado is None:
+        if estado_bruto is None:
             erros["estado_conservacao"] = (
                 "Informe o estado de conservação do produto."
             )
-    elif categoria and "estado_conservacao" in dados:
+        elif (
+            not isinstance(estado_bruto, str)
+            or estado_bruto not in ESTADOS_CONSERVACAO
+        ):
+            erros["estado_conservacao"] = "Estado de conservação inválido."
+        else:
+            estado = estado_bruto
+    elif categoria in {"servico", "evento"} and estado_bruto is not None:
         erros["estado_conservacao"] = (
-            "Estado de conservação só pode ser enviado para produto."
+            "Estado de conservação não se aplica a serviço ou evento."
         )
-    else:
-        estado = None
 
     descricao_bruta = dados.get("descricao")
-    descricao = (
-        descricao_bruta.strip()
-        if isinstance(descricao_bruta, str)
-        else ""
-    )
-    if not descricao or len(descricao) > DESCRICAO_MAX_CARACTERES:
+    descricao = descricao_bruta if isinstance(descricao_bruta, str) else ""
+    if (
+        not descricao.strip(" ")
+        or len(descricao) > DESCRICAO_MAX_CARACTERES
+    ):
         erros["descricao"] = (
             "Informe uma descrição não vazia de até 500 caracteres."
         )
 
-    preco_a_combinar = dados.get("preco_a_combinar")
+    preco_a_combinar = dados.get("preco_a_combinar", False)
     preco = None
     if not isinstance(preco_a_combinar, bool):
         erros["preco_a_combinar"] = (
             "Informe se o preço é a combinar."
         )
     elif preco_a_combinar:
-        if "preco" in dados:
+        if dados.get("preco") is not None:
             erros["preco"] = (
                 "Não envie um preço quando selecionar 'A combinar'."
             )
     else:
-        preco_bruto = dados.get("preco")
-        if (
-            not isinstance(preco_bruto, str)
-            or _PADRAO_PRECO.fullmatch(preco_bruto) is None
-        ):
-            erros["preco"] = (
-                "Informe um valor válido, de 0 a 9.999.999.999,99, "
-                "com até duas casas decimais."
-            )
+        if "preco" not in dados:
+            erros["preco"] = _MENSAGEM_PRECO_INVALIDO
         else:
-            try:
-                preco = Decimal(preco_bruto.replace(",", "."))
-            except InvalidOperation:
-                erros["preco"] = (
-                    "Informe um valor válido, de 0 a 9.999.999.999,99, "
-                    "com até duas casas decimais."
-                )
-            if preco is not None and (
-                not preco.is_finite()
-                or preco < 0
-                or preco > PRECO_MAXIMO
-            ):
-                erros["preco"] = (
-                    "Informe um valor válido, de 0 a 9.999.999.999,99, "
-                    "com até duas casas decimais."
-                )
+            preco = _preco_decimal(dados["preco"])
+            if preco is None:
+                erros["preco"] = _MENSAGEM_PRECO_INVALIDO
 
     if erros:
         return None, erros
@@ -212,6 +226,31 @@ def _anuncio_json(anuncio: AnuncioPublicado) -> dict[str, Any]:
 @api_anuncios_bp.route("/ads", methods=["POST"])
 @requer_autenticacao
 def criar_anuncio():
+    database = get_db()
+    usuario_existe = database.execute(
+        "SELECT 1 FROM usuarios WHERE id = ?",
+        (g.usuario.id,),
+    ).fetchone()
+    if usuario_existe is None:
+        return (
+            jsonify({"erro": "Autenticação necessária."}),
+            HTTPStatus.UNAUTHORIZED,
+        )
+
+    verificador_perfil = current_app.extensions[
+        CHAVE_EXTENSAO_PERFIL_COMPLETO
+    ]
+    if not verificador_perfil.esta_completo(g.usuario.id):
+        return (
+            jsonify(
+                {
+                    "codigo": "perfil_incompleto",
+                    "erro": "Complete seu perfil para publicar anúncios.",
+                }
+            ),
+            HTTPStatus.FORBIDDEN,
+        )
+
     dados = _ler_corpo_json()
     anuncio, erros = _validar_dados(dados, g.usuario.id)
     if erros:
@@ -221,6 +260,6 @@ def criar_anuncio():
         )
 
     publicado = PublicarAnuncio(
-        RepositorioAnuncioSQLite(get_db())
+        RepositorioAnuncioSQLite(database)
     ).executar(anuncio)
     return jsonify(_anuncio_json(publicado)), HTTPStatus.CREATED

@@ -100,27 +100,153 @@ As rotas de autenticação (`/auth/...`) estão descritas em
 
 `POST /api/ads` cria um anúncio para o usuário autenticado. Envie o JWT no
 cabeçalho `Authorization: Bearer <token>` e um objeto JSON com `titulo`,
-`categoria`, `descricao`, `preco_a_combinar` e, para produto,
-`estado_conservacao`. Quando `preco_a_combinar` for `false`, `preco` é uma
-string decimal, por exemplo `"10.50"`; quando for `true`, omita `preco`.
-O endpoint valida o corpo sem converter valores monetários para `float`,
-limita o corpo a 64 KiB e responde com `201` e o anúncio persistido.
-Na resposta, `preco` é uma string com duas casas decimais ou `null` para
-“A combinar”; o corpo enviado nunca define o anunciante nem metadados gerados
-pelo servidor.
+`categoria` e `descricao`. `estado_conservacao` é obrigatório para produtos e
+deve ser omitido ou `null` para serviços e eventos. `preco_a_combinar` é
+opcional e assume `false`; nesse caso, `preco` é obrigatório e aceita número
+JSON ou string numérica. Quando `preco_a_combinar` for `true`, `preco` deve ser
+omitido ou `null`. O corpo não pode definir `id`, `id_anunciante`,
+`nome_anunciante`, `created_at` nem campos desconhecidos.
 
-Erros da API são JSON: `401` para ausência ou invalidade do token, `400` para
-JSON inválido, `413` para corpo acima do limite, `415` para mídia diferente de
-JSON, `422` para campos inválidos e os status HTTP apropriados para demais
-falhas. A autenticação usa token Bearer, não cookie de sessão, então a API não
-depende de CSRF por cookie. O bloqueio por perfil incompleto permanece
-pendente da regra US02, que ainda não existe no modelo.
+O preço é validado com `Decimal`, sem `float`; o corpo é limitado a 64 KiB.
+Em sucesso, a resposta `201` contém o anúncio lido do banco após a inserção,
+com `created_at` e `nome_anunciante`. `preco` é uma string com duas casas
+decimais ou `null` para “a combinar”.
+
+Exemplo de produto:
+
+```json
+{
+  "titulo": "Bicicleta urbana",
+  "categoria": "produto",
+  "estado_conservacao": "usado_regular",
+  "descricao": "Revisada e pronta para uso.",
+  "preco": 850.00
+}
+```
+
+Resposta `201`:
+
+```json
+{
+  "id": 1,
+  "id_anunciante": 1,
+  "nome_anunciante": "Ana",
+  "titulo": "Bicicleta urbana",
+  "categoria": "produto",
+  "estado_conservacao": "usado_regular",
+  "descricao": "Revisada e pronta para uso.",
+  "preco": "850.00",
+  "preco_a_combinar": false,
+  "created_at": "2026-11-16T14:00:00.000Z"
+}
+```
+
+Exemplo de serviço “a combinar”:
+
+```json
+{
+  "titulo": "Aulas de matemática",
+  "categoria": "servico",
+  "estado_conservacao": null,
+  "descricao": "Aulas particulares.",
+  "preco_a_combinar": true,
+  "preco": null
+}
+```
+
+Resposta `201`:
+
+```json
+{
+  "id": 2,
+  "id_anunciante": 1,
+  "nome_anunciante": "Ana",
+  "titulo": "Aulas de matemática",
+  "categoria": "servico",
+  "estado_conservacao": null,
+  "descricao": "Aulas particulares.",
+  "preco": null,
+  "preco_a_combinar": true,
+  "created_at": "2026-11-16T14:01:00.000Z"
+}
+```
+
+Exemplo de evento gratuito:
+
+```json
+{
+  "titulo": "Feira comunitária",
+  "categoria": "evento",
+  "descricao": "Evento aberto à comunidade.",
+  "preco": 0
+}
+```
+
+Resposta `201`:
+
+```json
+{
+  "id": 3,
+  "id_anunciante": 1,
+  "nome_anunciante": "Ana",
+  "titulo": "Feira comunitária",
+  "categoria": "evento",
+  "estado_conservacao": null,
+  "descricao": "Evento aberto à comunidade.",
+  "preco": "0.00",
+  "preco_a_combinar": false,
+  "created_at": "2026-11-16T14:02:00.000Z"
+}
+```
+
+Os erros são JSON. `422` inclui um mapa `campos` com a mensagem de cada
+campo inválido. Os demais códigos são:
+
+| Status | Situação |
+|---|---|
+| `400` | JSON inválido ou corpo que não seja um objeto |
+| `401` | Token ausente, inválido ou usuário não encontrado em `usuarios` |
+| `403` | Perfil incompleto, com `codigo: "perfil_incompleto"` |
+| `413` | Corpo maior que 64 KiB |
+| `415` | Content-Type diferente de JSON |
+| `500` | Falha inesperada; detalhes internos não são retornados |
+
+O JWT é enviado como Bearer, não por cookie de sessão; por isso, a rota não
+usa CSRF por cookie. O usuário autenticado precisa existir também em `usuarios`
+para que a chave estrangeira do anúncio seja válida.
+
+#### Mock temporário do perfil US02
+
+**TEMPORÁRIO — não usar em produção.** A US02 ainda não persiste os dados do
+perfil. Até isso existir, `VerificadorPerfilCompletoMock` considera o perfil
+completo quando nome de exibição, foto, WhatsApp e e-mail têm valores não
+vazios. O mock guarda esses dados apenas em memória, não valida se a foto
+existe nem se o WhatsApp é válido. O `create_app` padrão não recebe perfis e,
+portanto, bloqueia a publicação com `403` (fail-closed). Testes e ambientes
+controlados podem injetar um perfil explicitamente:
+
+```python
+verificador = VerificadorPerfilCompletoMock(
+    {
+        1: PerfilAnuncianteMock(
+            nome_exibicao="Ana",
+            foto="mock://foto-temporaria",
+            whatsapp="+5521999999999",
+            email="ana@aluno.puc-rio.br",
+        )
+    }
+)
+app = create_app(verificador_perfil=verificador)
+```
+
+Quando a US02 for implementada, substitua esse adaptador por uma consulta aos
+dados persistidos do perfil, mantendo o contrato `esta_completo(id_usuario)`.
+A autenticação existente também usa repositório de usuários em memória; o
+provisionamento persistente de contas permanece fora desta API.
 
 O SQLite usa `instance/classificados.sqlite3` por padrão. A conexão é obtida
 por requisição com `app.database.get_db`; `DATABASE` pode ser substituído na
-configuração da aplicação, especialmente nos testes. A autenticação existente
-usa repositório de usuários em memória; persistir/provisionar contas não faz
-parte desta API.
+configuração da aplicação, especialmente nos testes.
 
 Para executar os testes:
 

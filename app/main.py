@@ -23,6 +23,9 @@ from infra.repositories.memoria import (
     TentativasLoginRepositoryMemoria,
     UsuarioRepositoryMemoria,
 )
+from infra.repositories.perfil_anunciante_mock import (
+    VerificadorPerfilCompletoMock,
+)
 from infra.seguranca.servico_token_jwt import ServicoTokenJwt
 from infra.seguranca.verificador_senha_werkzeug import (
     VerificadorSenhaWerkzeug,
@@ -37,6 +40,10 @@ from use_cases.autenticacao.portas import (
     EnviadorEmail,
     Relogio,
     UsuarioRepository,
+)
+from use_cases.verificar_perfil_completo import (
+    CHAVE_EXTENSAO_PERFIL_COMPLETO,
+    VerificadorPerfilCompleto,
 )
 
 
@@ -102,6 +109,7 @@ def create_app(
     usuarios: UsuarioRepository | None = None,
     enviador_email: EnviadorEmail | None = None,
     relogio: Relogio | None = None,
+    verificador_perfil: VerificadorPerfilCompleto | None = None,
 ) -> Flask:
     """Cria e configura a instância da aplicação Flask (app factory).
 
@@ -125,6 +133,11 @@ def create_app(
         usuarios=usuarios or UsuarioRepositoryMemoria(),
         enviador_email=enviador_email or _criar_enviador_email(app.config),
         relogio=relogio or RelogioSistema(),
+    )
+    app.extensions[CHAVE_EXTENSAO_PERFIL_COMPLETO] = (
+        verificador_perfil
+        if verificador_perfil is not None
+        else VerificadorPerfilCompletoMock()
     )
 
     @app.get("/health")
