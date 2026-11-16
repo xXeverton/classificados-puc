@@ -1,175 +1,466 @@
-# Roteiro para criar o projeto do zero
+# Roteiro para construir o projeto passo a passo
 
-Este roteiro organiza, em ordem, como iniciar e desenvolver a plataforma de
-classificados da comunidade PUC. Ele combina as decisões registradas no
-projeto, o fluxo Spec-Driven Development (SDD) e os prompts usados nas
-conversas para adaptar a arquitetura de referência ao nosso domínio.
+Este roteiro é um fluxo
+de criação para a plataforma de classificados da comunidade PUC.
 
-O documento é um guia para um início do zero; antes de executar qualquer
-passo, confira o estado atual do repositório para não recriar o que já existe.
+O fluxo é: **confirmar o domínio → adaptar a arquitetura → especificar →
+planejar → implementar em camadas → validar → entregar**.
 
-## 1. Entender o problema e confirmar as regras
+As fontes de verdade têm responsabilidades diferentes: Jira para regras e
+decisões de produto, specs aprovadas para critérios de aceitação,
+[`ARQUITETURA.md`](./ARQUITETURA.md) e
+[`spec/constitution.md`](./spec/constitution.md) para organização técnica, e
+o código/testes para o comportamento já implementado. Este roteiro orienta o
+processo; não substitui essas fontes.
 
-- Identificar os usuários, suas necessidades e o benefício de cada história.
-- Consultar no Jira a épica e as histórias relacionadas ao cadastro,
-  autenticação e perfil. As conversas anteriores usaram `PROJ-8`, `PROJ-1` e
-  `PROJ-4` como referência.
-- Separar regras confirmadas de decisões pendentes. Não transformar hipótese
-  em requisito.
-- Confirmar, antes de implementar autenticação:
-  - se o login será por matrícula ou e-mail institucional (a escolha depende
-    do resultado do EN01);
-  - quais vínculos podem criar conta;
-  - quais dados do perfil serão visíveis para compradores;
-  - quais formatos de imagem serão aceitos.
-- Registrar as regras confirmadas na especificação. Entre as regras já
-  discutidas estão a elegibilidade de alunos e funcionários, a proteção de
-  senhas, o perfil completo para publicar e o bloqueio temporário após
-  tentativas inválidas. Validar sempre esses detalhes com a fonte atual no
-  Jira antes de codificá-los.
+> Este roteiro descreve como começar do zero. O repositório já possui uma base
+> de API, endpoint de saúde, entidade e persistência de `Usuario`. Antes de
+> executar qualquer prompt, confira o estado atual para evitar recriar ou
+> sobrescrever arquivos. As partes de autenticação, perfil e anúncios devem
+> seguir specs aprovadas; não são presumidas como implementadas.
 
-**Saída desta etapa:** lista de histórias, critérios de aceitação e decisões
-em aberto, sem escolhas técnicas misturadas aos requisitos de produto.
+## 0. Confirmar domínio e escopo
 
-## 2. Definir a arquitetura para o domínio
+Comece pelas regras de produto e pelas histórias no Jira. As conversas
+anteriores consultaram a épica `PROJ-8` e as histórias `PROJ-1` e `PROJ-4`.
+Confirme que esses itens continuam sendo a fonte atual antes de usá-los.
 
-- Usar a arquitetura de referência fornecida como base de organização, não
-  como definição das entidades ou funcionalidades do produto.
-- Adaptar essa referência ao domínio de classificados e registrar o resultado
-  em [`ARQUITETURA.md`](./ARQUITETURA.md), respeitando as regras confirmadas
-  no Jira.
-- Manter as dependências apontando para dentro:
-  - `server/core/entities/`: entidades e regras de negócio puras;
-  - `server/core/usecases/`: ações de negócio;
-  - `server/core/interfaces/`: contratos usados pelo core;
-  - `server/infra/`: persistência e integrações;
-  - `server/api/controllers/`: entrada HTTP;
-  - `server/api/presenters/`: representação das respostas;
-  - `server/app.py`: composição da aplicação e injeção de dependências.
-- Diferenciar claramente o que é arquitetura-alvo e o que já está
-  implementado. Não documentar módulos futuros como se já existissem.
+1. Identifique atores, objetivos, regras e critérios de aceitação.
+2. Separe requisitos confirmados, decisões pendentes e itens fora de escopo.
+3. Resolva as decisões necessárias antes de fixá-las no modelo ou no código.
+   Entre os pontos já apontados como pendentes estão:
+   - matrícula ou e-mail institucional como identificador de login, conforme
+     o resultado do EN01;
+   - visibilidade dos dados do perfil para compradores;
+   - formatos de imagem aceitos.
+4. Confirme com a fonte de produto as regras de elegibilidade, bloqueio de
+   tentativas, perfil completo e publicação antes de implementá-las.
 
-**Saída desta etapa:** mapa de camadas e responsabilidades revisado para o
-domínio, antes de planejar a implementação.
+A validação de domínio do e-mail é diferente da escolha do identificador de
+login. A regra atualmente registrada para a entidade aceita
+`@aluno.puc-rio.br` e `@puc-rio.br`; isso não resolve, por si só, se a pessoa
+entrará com matrícula ou e-mail.
 
-## 3. Especificar cada funcionalidade com SDD
+**Prompt**
+
+```text
+Revise no Jira a épica e as histórias relacionadas a autenticação, perfil e
+anúncios da plataforma de classificados PUC. Para cada história, resuma:
+atores, objetivo, regras confirmadas, critérios de aceitação, itens fora de
+escopo e decisões pendentes.
+
+Não invente regras nem escolha entre alternativas em aberto. Destaque o que
+precisa de confirmação antes de criar entidades, campos persistidos ou
+endpoints. Não altere issues nem código.
+```
+
+**Resultado esperado:** uma visão de produto verificável, sem hipóteses
+disfarçadas de decisão.
+
+## 1. Adaptar a arquitetura ao projeto
+
+Use a arquitetura de referência como organização das responsabilidades, não
+como definição automática do domínio. Registre a arquitetura específica do
+projeto em [`ARQUITETURA.md`](./ARQUITETURA.md), respeitando as regras
+confirmadas no Jira e
+[`spec/constitution.md`](./spec/constitution.md).
+
+| Responsabilidade | Local |
+|---|---|
+| Entidades e regras puras | `server/core/entities/` |
+| Casos de uso | `server/core/usecases/` |
+| Contratos do core | `server/core/interfaces/` |
+| Persistência e integrações | `server/infra/` |
+| Controllers HTTP | `server/api/controllers/` |
+| Presenters e schemas de saída | `server/api/presenters/` |
+| Composição e injeção de dependências | `server/app.py` |
+
+As dependências de negócio apontam para dentro. O core não importa Flask,
+SQLAlchemy ou modelos de persistência. A composição concreta das dependências
+acontece em `server/app.py`.
+
+**Prompt**
+
+```text
+Leia a arquitetura de referência fornecida, as regras de domínio confirmadas
+no Jira e spec/constitution.md. Adapte a arquitetura ao projeto de
+classificados PUC e documente responsabilidades, dependências e estrutura de
+pastas em ARQUITETURA.md.
+
+Diferencie claramente a estrutura existente da estrutura-alvo. Não copie
+entidades ou endpoints do exemplo de produtos. Não marque decisões pendentes
+como resolvidas e não altere código.
+```
+
+**Resultado esperado:** uma arquitetura coerente com o domínio e com o código
+que será construído, sem descrever funcionalidades futuras como existentes.
+
+## 2. Especificar cada feature com SDD
+
+Cada feature deve passar pelo fluxo definido em
+[`spec/README.md`](./spec/README.md). Use a skill `criar-feature-sdd` quando
+for necessário produzir os artefatos SDD.
 
 Para cada história:
 
-1. Criar uma pasta numerada em `spec/features/`, seguindo
-   [`spec/README.md`](./spec/README.md).
-2. Escrever `spec.md` a partir de uma história de usuário, regras de negócio,
-   critérios de aceitação e itens fora de escopo.
-3. Marcar decisões não resolvidas como pendentes e perguntar ao responsável;
-   não inventar respostas.
-4. Manter a spec em rascunho até a aprovação explícita.
-5. Escrever `plan.md` com entidades, casos de uso, interfaces, persistência,
-   endpoints e estratégia de testes, em conformidade com
-   [`spec/constitution.md`](./spec/constitution.md).
-6. Escrever `tasks.md` em passos pequenos, ordenados e verificáveis; planejar
-   os testes antes da implementação.
-7. Conferir se spec, plano e tarefas concordam entre si e se cada critério de
-   aceitação tem uma tarefa e uma forma de validação.
+1. Crie `spec/features/NNN-nome/` usando o próximo identificador disponível.
+2. Escreva `spec.md` em linguagem de produto, com história, critérios de
+   aceitação, regras, exclusões e perguntas em aberto.
+3. Mantenha a spec como `Rascunho` até a aprovação explícita.
+4. Escreva `plan.md` com entidades, casos de uso, interfaces, persistência,
+   API e testes.
+5. Escreva `tasks.md` em passos pequenos, ordenados e verificáveis; planeje
+   testes antes da implementação.
+6. Confira que os critérios de aceitação estão mapeados a testes e tarefas.
 
-O trabalho acadêmico registra como metas pelo menos quatro histórias de
-usuário e duas entidades. Planejar como metas do produto, sem criar histórias
-artificiais apenas para atingir a contagem.
+O projeto acadêmico tem metas de pelo menos quatro histórias de usuário e
+duas entidades. Planeje essas metas a partir das necessidades reais; não crie
+funcionalidades artificiais apenas para atingir a contagem.
 
-## 4. Criar a base técnica do repositório
+**Prompt**
 
-- Preparar Python 3.11 ou superior, Git e GNU Make.
-- Criar o ambiente virtual e instalar as dependências pelo `Makefile`.
-- Separar as dependências da aplicação e as ferramentas de teste/lint em
-  `server/requirements.txt`.
-- Configurar Flask-OpenAPI3 para HTTP, SQLAlchemy sobre SQLite para
-  persistência, pytest para testes e Flake8 para estilo.
-- Criar a estrutura inicial em `server/`, `tests/` e `spec/`.
-- Configurar `make install`, `make lint`, `make test` e `make check`.
-- Criar a aplicação mínima e preservar `GET /health` como verificação de
-  inicialização.
-- Manter configurações variáveis por ambiente, como `DATABASE_URL` e
-  `CORS_ORIGINS`, fora das regras de negócio.
+```text
+Crie os artefatos SDD para esta história usando spec/README.md,
+spec/constitution.md e os templates existentes.
 
-**Saída desta etapa:** projeto inicializável, dependências instaláveis e
-validações automatizadas executáveis.
+Separe requisitos confirmados de dúvidas. Não inclua decisões técnicas nos
+critérios de aceitação. Gere spec.md, plan.md e tasks.md consistentes entre
+si, com testes planejados antes da implementação. Deixe a spec como
+"Rascunho" até eu aprová-la explicitamente.
 
-## 5. Modelar persistência com cuidado
+História e contexto:
+[cole a história aprovada e as informações confirmadas do Jira]
+```
 
-- Definir primeiro as entidades e regras no core; não usar o modelo ORM como
-  entidade de domínio.
-- Para cada dado persistido, atualizar em conjunto:
-  1. modelo SQLAlchemy e schema SQLite;
-  2. inicialização do banco ou migração necessária;
-  3. documentação em `server/infra/db/README.md`;
-  4. testes de constraints e comportamento.
-- Preservar dados existentes. `create_all` cria tabelas ausentes, mas não
-  modifica tabelas já existentes; alterações incompatíveis exigem migração
-  explícita.
-- Não acrescentar campos de autenticação ou perfil ao banco até as regras e
-  necessidades de migração estarem definidas.
+**Resultado esperado:** três artefatos consistentes; nenhuma implementação de
+código nesta etapa.
 
-**Saída desta etapa:** modelo persistido documentado, com testes e plano de
-evolução de dados.
+## 3. Criar a estrutura inicial e o ambiente
 
-## 6. Implementar cada história de dentro para fora
+Antes de criar pastas, confira o repositório e preserve os arquivos existentes.
+Para um repositório vazio, a estrutura segue a arquitetura aprovada, incluindo
+pacotes Python, testes e especificações.
 
-Para cada feature aprovada, seguir a ordem abaixo e os limites da
-[`constituição`](./spec/constitution.md):
+**Prompt**
 
-1. **Entidades:** implementar regras puras no core e testar sucesso e falha.
-2. **Interfaces:** definir contratos pequenos, específicos e consumidos pelos
-   casos de uso.
-3. **Casos de uso:** implementar uma ação de negócio por vez, injetando
-   interfaces em vez de criar infraestrutura concreta.
-4. **Testes unitários:** usar repositórios falsos em memória para manter os
-   casos de uso independentes do banco.
-5. **Gateways:** implementar interfaces na infraestrutura; testar persistência
-   e tradução entre modelos ORM e entidades.
-6. **Controllers:** validar a estrutura HTTP, chamar o caso de uso e não
-   concentrar regras de negócio na rota.
-7. **Presenters:** converter resultados e erros em respostas HTTP; manter
-   detalhes de HTTP fora do core.
-8. **Composição:** conectar dependências em `server/app.py`.
-9. **Integração:** validar o comportamento ponta a ponta e os critérios de
-   aceitação da spec.
+```text
+Inspecione o repositório e ARQUITETURA.md. Se a estrutura ainda não existir,
+crie somente os diretórios e arquivos vazios necessários para:
 
-Trabalhar em fatias verticais pequenas. Por exemplo, completar uma história
-com seus testes e endpoint antes de começar várias funcionalidades sem
-integração.
+- server/core/entities/, interfaces/ e usecases/
+- server/infra/db/ e gateways/
+- server/api/controllers/ e presenters/
+- tests/core/entities/, tests/core/usecases/, tests/infra/db/,
+  tests/infra/gateways/ e tests/api/
+- spec/features/ e os templates previstos no fluxo SDD
 
-## 7. Validar e revisar continuamente
+Inclua __init__.py onde necessário para os pacotes Python, sem sobrescrever
+arquivos existentes. Não crie funcionalidades nem estruturas de front-end
+que não estejam no escopo confirmado. Informe o que já existia e o que foi
+criado.
+```
 
-- Executar primeiro os testes focados na funcionalidade e, em seguida,
-  `make check`.
-- Conferir que cada critério de aceitação foi exercitado por testes.
-- Revisar erros, segurança e exposição de dados pessoais, especialmente em
-  autenticação e respostas de perfil.
-- Conferir documentação, schema, modelos e código juntos quando uma mudança
-  tocar persistência ou arquitetura.
-- Não considerar testes passando como prova de requisitos que ainda não foram
-  definidos.
-- Registrar decisões pendentes e evidências da validação.
+Prepare Python 3.11 ou superior, o ambiente virtual, Git e GNU Make. Use
+`server/requirements.txt` para dependências da aplicação e ferramentas do
+projeto. Os comandos `make install`, `make lint`, `make test` e `make check`
+devem continuar coerentes com a estrutura.
 
-## 8. Preparar entregas e commits
+**Prompt**
 
-- Revisar o diff e o estado do Git antes de stagear.
-- Agrupar mudanças relacionadas em commits pequenos e coerentes, mantendo
-  implementação, testes e documentação necessária juntos.
-- Antes de criar commits, explicar o conteúdo e a sequência de cada commit,
-  passo a passo.
-- Não incluir arquivos de referência ou rascunhos só por estarem no
-  repositório; confirmar se fazem parte da entrega.
-- Após os commits, verificar o histórico, o status do working tree e os
-  resultados das validações.
+```text
+Confira README.md, Makefile, server/requirements.txt e setup.cfg. Configure
+apenas o necessário para criar o ambiente virtual, instalar dependências,
+executar Flake8 e pytest e rodar make check. Preserve as versões e os padrões
+já adotados, a menos que haja uma incompatibilidade comprovada. Não adicione
+dependências sem necessidade.
+```
 
-## Prompts que orientaram este roteiro
+**Resultado esperado:** ambiente reproduzível e comandos de validação
+funcionais.
 
-As conversas anteriores usaram estes pedidos para definir a sequência de
-trabalho:
+## 4. Implementar entidades no core
 
-1. “Vamos ajustar para o nosso domínio. Utilize como base o
-   `ARQUITETURA.md` para ajustar o `ESTRUTURA.md` conforme nossas regras de
-   domínio do Jira.”
+Entidades representam conceitos de negócio e não devem depender de Flask,
+SQLAlchemy, Pydantic ou da API.
+
+A entidade `Usuario` existente tem `nome`, `email`, `matricula`, `vinculo` e
+`id` opcional. Esses campos descrevem a base atual de persistência; não
+presuma que sejam suficientes para autenticação ou para o perfil de
+anunciante. Novas entidades e campos devem vir de uma spec aprovada.
+
+**Prompt**
+
+```text
+Leia a spec aprovada e os arquivos atuais de server/core/entities/.
+Implemente somente as entidades e regras puras exigidas pela spec, mantendo
+compatibilidade com os usos existentes.
+
+Não importe Flask, SQLAlchemy, Pydantic ou módulos de infra/api. Não acrescente
+campos ou validações não especificados. Escreva ou atualize testes unitários
+para os critérios de aceitação relevantes.
+```
+
+**Resultado esperado:** entidades puras e testáveis sem banco ou aplicação
+web.
+
+## 5. Definir interfaces do core
+
+Uma interface de repositório descreve as operações que os casos de uso
+necessitam; ela não revela como os dados são armazenados. A
+[`UsuarioRepositoryInterface`](./server/core/interfaces/usuario_repository_interface.py)
+é o contrato atual: `buscar_por_id` e `salvar`.
+
+Adicione métodos somente quando um caso de uso aprovado realmente precisar
+deles. Por exemplo, não adicione busca por e-mail, autenticação ou listagem
+somente por parecerem úteis.
+
+**Prompt**
+
+```text
+Leia a spec aprovada, as entidades e
+server/core/interfaces/usuario_repository_interface.py.
+Defina ou altere o contrato mínimo necessário para os casos de uso descritos.
+
+A interface deve importar entidades do core e não deve importar SQLAlchemy,
+Flask, modelos ORM ou gateways. Preserve os métodos existentes quando forem
+compatíveis. Explique qualquer método novo pela necessidade do caso de uso.
+```
+
+**Resultado esperado:** contratos internos pequenos, sem dependência da
+infraestrutura.
+
+## 6. Implementar casos de uso e seus testes
+
+Crie um caso de uso por ação de negócio da spec. Cada um recebe as interfaces
+necessárias por injeção de dependência. Os testes unitários usam repositórios
+falsos em memória, não SQLite.
+
+Erros de negócio não devem conhecer status HTTP. O controller ou presenter
+traduz esses erros na fronteira da API.
+
+**Prompt**
+
+```text
+Implemente o caso de uso [nome] conforme a spec aprovada e o plano técnico.
+Antes do código de produção, escreva testes unitários para sucesso, erros de
+negócio e limites relevantes, usando um repositório falso em memória.
+
+O caso de uso só pode depender de entidades e interfaces do core. Não importe
+Flask, SQLAlchemy, controllers ou gateways. Não escolha comportamento para
+decisões que a spec deixou em aberto.
+```
+
+**Resultado esperado:** regra de negócio testada isoladamente da API e do
+banco.
+
+## 7. Modelar o banco e documentar os dados
+
+O modelo SQLAlchemy, `server/infra/db/schema.sql`, a inicialização do banco, a
+documentação e os testes devem descrever o mesmo modelo. Use a skill
+`manter-modelagem-dados` sempre que dados persistidos forem adicionados,
+alterados ou removidos.
+
+O schema atual persiste `Usuario` com `id`, `nome`, `email`, `matricula` e
+`vinculo`, incluindo constraints de obrigatoriedade, conteúdo não vazio e
+unicidade para e-mail e matrícula. Não altere esse contrato sem requisito
+aprovado e plano para bancos já existentes.
+
+**Prompt**
+
+```text
+Implemente a alteração de persistência descrita na spec aprovada. Antes,
+leia server/infra/db/README.md, schema.sql, models.py, database.py e os testes.
+
+Mantenha SQLAlchemy, schema SQL, constraints, documentação e testes
+sincronizados. Verifique se a alteração afeta bancos existentes. Preserve os
+dados e proponha/implemente uma migração explícita quando necessária; não
+remova nem transforme dados sem regra aprovada. Não misture modelos ORM às
+entidades do core.
+```
+
+**Resultado esperado:** evolução persistente explícita, documentada e coberta
+por testes.
+
+## 8. Implementar gateways
+
+O gateway implementa o contrato do core e converte entre entidades e modelos
+SQLAlchemy. O código de domínio recebe e devolve entidades, nunca modelos ORM.
+
+O gateway atual, `UsuarioRepositorySQLAlchemy`, recebe uma fábrica de sessões
+e implementa as operações da interface atual.
+
+**Prompt**
+
+```text
+Implemente ou altere o gateway necessário para cumprir a interface aprovada.
+Leia a interface, as entidades, os modelos SQLAlchemy e os testes existentes.
+Injete a fábrica de sessões; não crie uma conexão global dentro do caso de uso.
+
+Converta entre entidades do core e modelos ORM dentro do gateway. Adicione
+testes de persistência e consulta para os métodos afetados, incluindo ausência
+do registro e constraints pertinentes. Não implemente regras de negócio no
+gateway.
+```
+
+**Resultado esperado:** persistência substituível atrás do contrato e testes
+executados com SQLite de teste.
+
+## 9. Criar presenters e schemas HTTP
+
+Presenters transformam entidades e resultados em respostas públicas. Schemas
+Pydantic de entrada e saída pertencem à API, não ao core. Não exponha campos
+pessoais sem regra de visibilidade aprovada.
+
+**Prompt**
+
+```text
+Leia a spec e o contrato da API. Crie ou altere os presenters e schemas
+necessários em server/api/presenters/.
+
+Os presenters podem depender das entidades do core e de Pydantic, mas não
+podem importar infra/. Exponha somente os campos autorizados pela spec.
+Mantenha a forma de sucesso e erro documentada e teste a conversão relevante.
+Não invente campos, mensagens ou regras de visibilidade.
+```
+
+**Resultado esperado:** representações de resposta previsíveis sem vazamento
+de detalhes de persistência.
+
+## 10. Criar controllers e endpoints
+
+O endpoint atual é `GET /health`. Endpoints de autenticação, perfil e
+anúncios só devem ser criados quando houver spec aprovada e plano.
+
+Controllers recebem e validam a entrada HTTP, chamam casos de uso e convertem
+erros conhecidos em respostas documentadas. Não instanciam repositórios nem
+implementam regras de negócio.
+
+**Prompt**
+
+```text
+Implemente somente os endpoints da spec aprovada em
+server/api/controllers/. Receba os casos de uso por injeção, valide o
+contrato de entrada, chame o caso de uso e use os presenters para as respostas.
+
+Mapeie apenas erros conhecidos para os status HTTP definidos no contrato.
+Não importe server/infra/, não crie repositórios e não coloque regras de
+negócio no controller. Documente os schemas e status de resposta e teste
+sucesso, validação e erros previstos.
+```
+
+**Resultado esperado:** camada HTTP fina e coberta por testes de controller.
+
+## 11. Montar a aplicação
+
+`server/app.py` é o composition root: cria a aplicação, configura opções de
+ambiente, inicializa persistência e conecta gateways, casos de uso e
+controllers. O core não cria suas dependências concretas.
+
+**Prompt**
+
+```text
+Revise server/app.py e conecte os componentes necessários para a spec
+aprovada. Mantenha a criação de dependências concretas concentrada no
+composition root e injete abstrações nos casos de uso/controllers.
+
+Preserve GET /health, a configuração documentada de DATABASE_URL e CORS_ORIGINS
+e os testes existentes. Não adicione configuração ou serviço externo sem
+requisito.
+```
+
+**Resultado esperado:** aplicação montada de forma explícita, iniciável e
+testável.
+
+## 12. Integrar o front-end, se fizer parte do escopo
+
+O roteiro de referência inclui `client/scripts.js`, mas o front-end do
+classificados está fora deste repositório. Não crie `client/` nem altere
+arquivos de interface sem pedido e sem confirmar o contrato e o escopo.
+
+Quando o front-end for incluído:
+
+1. confirme a localização e os arquivos existentes;
+2. valide o contrato dos endpoints;
+3. defina tratamento de erros e estados da interface;
+4. teste integração API/UI sem expor dados não autorizados.
+
+**Prompt condicional**
+
+```text
+Inspecione o front-end fornecido e o contrato aprovado da API. Integre somente
+os fluxos solicitados, preservando a estrutura e os estilos existentes.
+Use o contrato HTTP confirmado, trate erros de forma visível e não use
+innerHTML para inserir dados de usuário. Não crie ou altere telas fora do
+escopo. Apresente os arquivos que serão alterados antes de implementar caso
+o escopo não esteja claro.
+```
+
+## 13. Validar o comportamento
+
+- Rode primeiro os testes focados e depois `make check`.
+- Relacione cada critério de aceitação a pelo menos um teste.
+- Faça testes unitários do core sem banco; teste gateways com SQLite de teste;
+  teste controllers pela API.
+- Para cada endpoint novo, teste sucesso, validação, erros de negócio,
+  persistência e resposta HTTP, conforme o contrato.
+- O smoke test atual é `GET /health`; não use fluxos de Produto do exemplo
+  como se existissem no classificados.
+- Revise documentação e schema quando a alteração afetar arquitetura ou dados.
+
+**Prompt**
+
+```text
+Valide a implementação contra cada critério de aceitação da spec. Execute os
+testes focados e make check. Informe comandos, resultados, critérios sem teste
+e qualquer comportamento divergente. Não declare cobertura de uma regra que
+não foi testada e não altere código fora do escopo para corrigir problemas
+preexistentes.
+```
+
+## 14. Preparar commits
+
+- Revise `git status` e o diff antes de stagear.
+- Separe mudanças por entregas coesas; mantenha código, testes e documentação
+  diretamente relacionada juntos.
+- Não inclua arquivos de referência ou rascunhos só porque estão no
+  repositório.
+- Explique cada commit, seus arquivos e a ordem proposta antes de criá-los.
+- Depois, confira o histórico e o working tree.
+
+**Prompt**
+
+```text
+Revise apenas os arquivos que estão staged. Proponha commits pequenos e
+coerentes, listando para cada um os arquivos, o objetivo e os passos na ordem.
+Explique a proposta antes de criar qualquer commit. Não stageie arquivos
+adicionais sem autorização.
+```
+
+## Faz sentido criar uma skill para manter o padrão?
+
+Sim. A skill
+[`implementar-feature-classificados`](./.github/skills/implementar-feature-classificados/SKILL.md)
+foi criada para implementar features aprovadas seguindo este roteiro. Ela lê
+spec/plan/tasks, conduz uma tarefa por vez e valida cada entrega. O roteiro
+continua como fonte de verdade; a skill não copia todo o conteúdo:
+
+- `criar-feature-sdd` continua responsável por `spec.md`, `plan.md` e
+  `tasks.md`;
+- `manter-modelagem-dados` continua responsável por alterações persistentes;
+- skills Jira continuam responsáveis pelas operações Jira;
+- a skill delega a criação de specs e alterações de dados às skills
+  existentes, em vez de duplicar seus procedimentos.
+
+**Manutenção:** atualize este roteiro quando o fluxo estável mudar. Mantenha a
+skill curta e alinhada a ele; não duplique aqui ou nela os procedimentos das
+skills especializadas.
+
+## Prompts que orientaram a adaptação
+
+As conversas anteriores estabeleceram estes pedidos como base:
+
+1. “Vamos ajustar para o nosso domínio. Utilize como base o `ARQUITETURA.md`
+   para ajustar o `ESTRUTURA.md` conforme nossas regras de domínio do Jira.”
 2. “Agora o MCP do Jira está conectado. Revise novamente.”
 3. “Siga a arquitetura de `ARQUITETURA.md` para adaptar a arquitetura de
    `ESTRUTURA.md`. Vá perguntando passo a passo caso tenha dúvida.”
@@ -177,8 +468,42 @@ trabalho:
    `ARQUITETURA.md`.”
 5. “Siga à risca o `ARQUITETURA.md`.”
 
-Em conjunto, esses prompts estabelecem a ordem central do projeto:
-**entender e confirmar o domínio → adaptar a arquitetura → especificar →
-planejar → implementar em camadas → validar**. O conteúdo de referência deve
-ser adaptado ao projeto, não copiado como se descrevesse automaticamente
-nosso domínio.
+O exemplo de 440 linhas acrescenta o formato operacional adotado aqui:
+**um prompt por camada, limites explícitos, arquivos esperados, testes e
+validação**, adaptado ao nosso domínio e ao estado real do repositório.
+
+Os nomes `ESTRUTURA.md` citados nos prompts históricos são mantidos como
+registro do que foi pedido na época; o documento de arquitetura atual se chama
+`ARQUITETURA.md`.
+
+## Como manter este roteiro estável
+
+- Mude o roteiro quando o fluxo do projeto ou as fontes de verdade mudarem;
+  não o use para registrar cada detalhe de uma feature.
+- Mantenha regras de negócio nas specs aprovadas e detalhes técnicos nos
+  planos e documentos de arquitetura.
+- Em cada prompt, deixe claros o contexto a consultar, o escopo, as proibições,
+  os arquivos esperados e a validação.
+- Antes de reutilizar um prompt, confira os caminhos e os contratos atuais no
+  repositório; os exemplos deste roteiro são guias, não instruções para
+  sobrescrever código existente.
+- Após alterar o roteiro, verifique links, paths, sequência das etapas e
+  consistência com as skills disponíveis.
+
+### Contrato recomendado para a futura skill
+
+Se o fluxo for reutilizado, a skill `implementar-feature-classificados`
+deverá:
+
+1. ser acionada somente para implementar uma feature aprovada, não para criar
+   requisitos ou decidir questões pendentes;
+2. consultar a spec, o plano, as tarefas, a arquitetura, a constituição e este
+   roteiro antes de editar código;
+3. executar tarefas pequenas em ordem, com testes antes da implementação;
+4. usar as skills especializadas de SDD, Jira e modelagem de dados em vez de
+   duplicar suas instruções;
+5. parar e perguntar quando a próxima tarefa depender de regra não aprovada;
+6. validar os critérios de aceitação e os testes aplicáveis e reportar
+   claramente o que foi concluído e o que ficou pendente;
+7. não stagear nem criar commits automaticamente; se commits forem pedidos,
+   explicar a divisão antes de criá-los.
