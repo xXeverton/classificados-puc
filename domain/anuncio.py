@@ -49,7 +49,7 @@ class Anuncio:
             not self.preco.is_finite()
             or self.preco < 0
             or self.preco > Decimal("9999999999.99")
-            or self.preco.as_tuple().exponent < -2
+            or self.preco.quantize(Decimal("0.01")) != self.preco
         ):
             raise ValueError(
                 "preco must be between 0 and 9999999999.99 "

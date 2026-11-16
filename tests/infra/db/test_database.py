@@ -235,6 +235,16 @@ def test_anuncios_accept_null_price_and_maximum_price(connection):
     assert prices == [(None,), (9999999999.99,)]
 
 
+def test_anuncios_accepts_and_normalizes_trailing_decimal_zeros(connection):
+    insert_anuncio(connection, preco="1.230")
+
+    price, storage_type = connection.execute(
+        "SELECT preco, typeof(preco) FROM anuncios"
+    ).fetchone()
+    assert price == 1.23
+    assert storage_type == "real"
+
+
 def test_anuncios_accept_title_and_description_boundaries(connection):
     insert_anuncio(connection, titulo="abcde", descricao="x" * 500)
     insert_anuncio(
@@ -462,3 +472,15 @@ def test_anuncio_model_accepts_zero_price():
     )
 
     assert anuncio.preco == Decimal("0.00")
+
+
+def test_anuncio_model_accepts_trailing_decimal_zeros():
+    anuncio = Anuncio(
+        id_anunciante=1,
+        titulo="Produto usado",
+        descricao="Descricao valida",
+        preco=Decimal("1.230"),
+        categoria="produto",
+    )
+
+    assert anuncio.preco == Decimal("1.230")

@@ -73,8 +73,12 @@ autoincrementais e guarda `created_at` como texto UTC ISO-8601. O preço tem
 faixa, escala e tipo de armazenamento verificados por `CHECK`; `NULL` indica
 “a combinar”, sem uma coluna adicional, e o modelo Python usa `Decimal | None`,
 nunca `float`. O sistema usa reais como moeda única, sem armazenar uma coluna
-de moeda. Como SQLite desabilita FKs por padrão, cada conexão da aplicação
-deve ser aberta por `connect_database`, que liga e confirma
+de moeda. A afinidade `NUMERIC` do SQLite normaliza zeros decimais finais
+(por exemplo, `1.230` é armazenado como `1.23`) e converte texto numérico antes
+de aplicar o `CHECK`; texto não numérico que permaneça como `TEXT` é rejeitado.
+O modelo Python exige `Decimal` e valida a precisão do valor numérico, não sua
+representação textual. Como SQLite desabilita FKs por padrão, cada conexão da
+aplicação deve ser aberta por `connect_database`, que liga e confirma
 `PRAGMA foreign_keys` como `ON`. O cascade evita anúncios órfãos quando o
 usuário que os publicou é removido.
 
