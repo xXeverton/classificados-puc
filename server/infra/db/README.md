@@ -17,6 +17,19 @@ classDiagram
         +str matricula
         +str vinculo
     }
+
+    class Ad {
+        +int id
+        +str title
+        +str description
+        +str type
+        +str category
+        +float price
+        +str image_url
+        +datetime created_at
+        +str status
+        +datetime expires_at
+    }
 ```
 
 `id` é a chave primária técnica, gerada pelo banco. `email` e `matricula` são
@@ -35,6 +48,26 @@ maior cuidado de privacidade. A matrícula permanece obrigatória e única.
 | `email` | TEXT | Sim | Único no valor armazenado; não pode ser vazio ou conter somente espaços ASCII | E-mail do usuário |
 | `matricula` | TEXT | Sim | Única no valor armazenado; não pode ser vazia ou conter somente espaços ASCII | Matrícula institucional |
 | `vinculo` | TEXT | Sim | Não pode ser vazio ou conter somente espaços ASCII | Vínculo institucional, como aluno ou funcionário |
+
+## Tabela `ads`
+
+| Coluna | Tipo | Obrigatória | Restrições | Descrição |
+|---|---|---:|---|---|
+| `id` | INTEGER | Sim | Chave primária, autoincremento | Identificador interno do anúncio |
+| `title` | TEXT | Sim | Não pode ser vazio ou conter somente espaços ASCII | Título do anúncio |
+| `description` | TEXT | Não | — | Descrição opcional do anúncio |
+| `type` | TEXT | Sim | `product` ou `service` | Tipo do anúncio |
+| `category` | TEXT | Sim | Não pode ser vazia ou conter somente espaços ASCII | Categoria do anúncio |
+| `price` | REAL | Sim | Valor numérico | Preço do anúncio |
+| `image_url` | TEXT | Não | Pode ser nulo | URL da foto do anúncio |
+| `created_at` | DATETIME | Sim | Data de criação | Momento de criação do anúncio |
+| `status` | TEXT | Sim | `published`, `sold` ou `expired` | Estado de disponibilidade |
+| `expires_at` | DATETIME | Não | Pode ser nulo | Momento de expiração, quando aplicável |
+
+Os anúncios sem foto usam `image_url` nulo. O feed considera disponíveis apenas
+os anúncios publicados; anúncios vendidos ou expirados não devem ser retornados.
+O banco não calcula a expiração automática: essa regra pertence ao domínio e ao
+caso de uso de publicação.
 
 O banco garante as constraints estruturais acima, mas não valida o formato ou
 domínio do e-mail, nem normaliza caixa ou espaços nas extremidades. A entidade

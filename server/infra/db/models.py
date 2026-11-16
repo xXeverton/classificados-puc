@@ -1,6 +1,15 @@
 """SQLAlchemy persistence models."""
 
-from sqlalchemy import CheckConstraint, Integer, Text, UniqueConstraint
+from datetime import datetime
+
+from sqlalchemy import (
+    CheckConstraint,
+    DateTime,
+    Float,
+    Integer,
+    Text,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -37,3 +46,46 @@ class UsuarioModel(Base):
     email: Mapped[str] = mapped_column(Text, nullable=False)
     matricula: Mapped[str] = mapped_column(Text, nullable=False)
     vinculo: Mapped[str] = mapped_column(Text, nullable=False)
+
+
+class AdModel(Base):
+    """Database representation of an advertisement."""
+
+    __tablename__ = "ads"
+    __table_args__ = (
+        CheckConstraint("length(trim(title)) > 0", name="ck_ads_title"),
+        CheckConstraint(
+            "type IN ('product', 'service')",
+            name="ck_ads_type",
+        ),
+        CheckConstraint(
+            "length(trim(category)) > 0",
+            name="ck_ads_category",
+        ),
+        CheckConstraint(
+            "status IN ('published', 'sold', 'expired')",
+            name="ck_ads_status",
+        ),
+        {"sqlite_autoincrement": True},
+    )
+
+    id: Mapped[int] = mapped_column(
+        Integer,
+        primary_key=True,
+        autoincrement=True,
+    )
+    title: Mapped[str] = mapped_column(Text, nullable=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    type: Mapped[str] = mapped_column(Text, nullable=False)
+    category: Mapped[str] = mapped_column(Text, nullable=False)
+    price: Mapped[float] = mapped_column(Float, nullable=False)
+    image_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+    )
+    status: Mapped[str] = mapped_column(Text, nullable=False)
+    expires_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
