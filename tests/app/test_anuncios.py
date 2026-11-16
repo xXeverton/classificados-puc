@@ -1,6 +1,6 @@
 from app.main import create_app
 from infra.repositories.autenticador_mock import AutenticadorMock
-from use_cases.autenticacao import UsuarioAutenticado
+from use_cases.identidade_autenticada import UsuarioAutenticado
 
 
 def autenticador_com_usuario_mock():

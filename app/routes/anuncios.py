@@ -2,7 +2,7 @@
 
 from flask import Flask, redirect, render_template, request, url_for
 
-from use_cases.autenticacao import Autenticador
+from use_cases.identidade_autenticada import Autenticador
 
 
 def registrar_rota_novo_anuncio(

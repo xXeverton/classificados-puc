@@ -5,6 +5,10 @@ migrations incrementais ficam em `migrations/`. A função `initialize_database`
 aplica o schema e as migrations uma vez por versão, usando `PRAGMA user_version`.
 Toda conexão da aplicação deve ser aberta por `connect_database` em
 [database.py](database.py), que habilita e verifica `PRAGMA foreign_keys`.
+A camada Flask abre uma conexão por contexto de requisição em
+`app.database.get_db`, inicializa o schema/migrations e fecha a conexão ao
+encerrar o contexto. O caminho padrão é `instance/classificados.sqlite3`;
+testes podem sobrescrevê-lo pela configuração `DATABASE`.
 
 ## Diagrama UML
 

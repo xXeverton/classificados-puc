@@ -68,7 +68,7 @@ criar a aplicação:
 ```python
 from app.main import create_app
 from infra.repositories.autenticador_mock import AutenticadorMock
-from use_cases.autenticacao import UsuarioAutenticado
+from use_cases.identidade_autenticada import UsuarioAutenticado
 
 app = create_app(
     autenticador=AutenticadorMock(
@@ -192,6 +192,174 @@ flask --app app.main:create_app run --debug
 
 A aplicação sobe em http://127.0.0.1:5000. Para conferir, acesse
 http://127.0.0.1:5000/health, que deve responder `{"status": "ok"}`.
+
+### Variáveis de ambiente
+
+| Variável | Padrão | Uso |
+|---|---|---|
+| `JWT_SECRET` | temporário (gerado a cada início) | Segredo que assina os tokens de sessão. Obrigatório fora do desenvolvimento |
+| `JWT_EXPIRA_MINUTOS` | `60` | Validade do token de sessão |
+| `URL_LINK_MAGICO` | `http://localhost:5000/entrar/link` | Endereço do front que recebe `?token=` do link enviado por e-mail |
+| `SMTP_HOST` | vazio | Servidor SMTP. Vazio: o e-mail é escrito no log em vez de enviado |
+| `SMTP_PORT` | `587` | Porta SMTP |
+| `SMTP_USUARIO` / `SMTP_SENHA` | vazio | Credenciais SMTP, se o servidor exigir |
+| `SMTP_REMETENTE` | `nao-responda@localhost` | Remetente dos e-mails |
+| `SMTP_STARTTLS` | `true` | Usa STARTTLS na conexão SMTP |
+
+As rotas de autenticação (`/auth/...`) estão descritas em
+[spec/features/001-autenticacao/plan.md](spec/features/001-autenticacao/plan.md).
+
+### API de anúncios
+
+`POST /api/ads` cria um anúncio para o usuário autenticado. Envie o JWT no
+cabeçalho `Authorization: Bearer <token>` e um objeto JSON com `titulo`,
+`categoria` e `descricao`. `estado_conservacao` é obrigatório para produtos e
+deve ser omitido ou `null` para serviços e eventos. `preco_a_combinar` é
+opcional e assume `false`; nesse caso, `preco` é obrigatório e aceita número
+JSON ou string numérica. Quando `preco_a_combinar` for `true`, `preco` deve ser
+omitido ou `null`. O corpo não pode definir `id`, `id_anunciante`,
+`nome_anunciante`, `created_at` nem campos desconhecidos.
+
+O preço é validado com `Decimal`, sem `float`; o corpo é limitado a 64 KiB.
+Em sucesso, a resposta `201` contém o anúncio lido do banco após a inserção,
+com `created_at` e `nome_anunciante`. `preco` é uma string com duas casas
+decimais ou `null` para “a combinar”.
+
+Exemplo de produto:
+
+```json
+{
+  "titulo": "Bicicleta urbana",
+  "categoria": "produto",
+  "estado_conservacao": "usado_regular",
+  "descricao": "Revisada e pronta para uso.",
+  "preco": 850.00
+}
+```
+
+Resposta `201`:
+
+```json
+{
+  "id": 1,
+  "id_anunciante": 1,
+  "nome_anunciante": "Ana",
+  "titulo": "Bicicleta urbana",
+  "categoria": "produto",
+  "estado_conservacao": "usado_regular",
+  "descricao": "Revisada e pronta para uso.",
+  "preco": "850.00",
+  "preco_a_combinar": false,
+  "created_at": "2026-11-16T14:00:00.000Z"
+}
+```
+
+Exemplo de serviço “a combinar”:
+
+```json
+{
+  "titulo": "Aulas de matemática",
+  "categoria": "servico",
+  "estado_conservacao": null,
+  "descricao": "Aulas particulares.",
+  "preco_a_combinar": true,
+  "preco": null
+}
+```
+
+Resposta `201`:
+
+```json
+{
+  "id": 2,
+  "id_anunciante": 1,
+  "nome_anunciante": "Ana",
+  "titulo": "Aulas de matemática",
+  "categoria": "servico",
+  "estado_conservacao": null,
+  "descricao": "Aulas particulares.",
+  "preco": null,
+  "preco_a_combinar": true,
+  "created_at": "2026-11-16T14:01:00.000Z"
+}
+```
+
+Exemplo de evento gratuito:
+
+```json
+{
+  "titulo": "Feira comunitária",
+  "categoria": "evento",
+  "descricao": "Evento aberto à comunidade.",
+  "preco": 0
+}
+```
+
+Resposta `201`:
+
+```json
+{
+  "id": 3,
+  "id_anunciante": 1,
+  "nome_anunciante": "Ana",
+  "titulo": "Feira comunitária",
+  "categoria": "evento",
+  "estado_conservacao": null,
+  "descricao": "Evento aberto à comunidade.",
+  "preco": "0.00",
+  "preco_a_combinar": false,
+  "created_at": "2026-11-16T14:02:00.000Z"
+}
+```
+
+Os erros são JSON. `422` inclui um mapa `campos` com a mensagem de cada
+campo inválido. Os demais códigos são:
+
+| Status | Situação |
+|---|---|
+| `400` | JSON inválido ou corpo que não seja um objeto |
+| `401` | Token ausente, inválido ou usuário não encontrado em `usuarios` |
+| `403` | Perfil incompleto, com `codigo: "perfil_incompleto"` |
+| `413` | Corpo maior que 64 KiB |
+| `415` | Content-Type diferente de JSON |
+| `500` | Falha inesperada; detalhes internos não são retornados |
+
+O JWT é enviado como Bearer, não por cookie de sessão; por isso, a rota não
+usa CSRF por cookie. O usuário autenticado precisa existir também em `usuarios`
+para que a chave estrangeira do anúncio seja válida.
+
+#### Mock temporário do perfil US02
+
+**TEMPORÁRIO — não usar em produção.** A US02 ainda não persiste os dados do
+perfil. Até isso existir, `VerificadorPerfilCompletoMock` considera o perfil
+completo quando nome de exibição, foto, WhatsApp e e-mail têm valores não
+vazios. O mock guarda esses dados apenas em memória, não valida se a foto
+existe nem se o WhatsApp é válido. O `create_app` padrão não recebe perfis e,
+portanto, bloqueia a publicação com `403` (fail-closed). Testes e ambientes
+controlados podem injetar um perfil explicitamente:
+
+```python
+verificador = VerificadorPerfilCompletoMock(
+    {
+        1: PerfilAnuncianteMock(
+            nome_exibicao="Ana",
+            foto="mock://foto-temporaria",
+            whatsapp="+5521999999999",
+            email="ana@aluno.puc-rio.br",
+        )
+    }
+)
+app = create_app(verificador_perfil=verificador)
+```
+
+Quando a US02 for implementada, substitua esse adaptador por uma consulta aos
+dados persistidos do perfil, mantendo o contrato `esta_completo(id_usuario)`.
+A autenticação existente também usa repositório de usuários em memória; o
+provisionamento persistente de contas permanece fora desta API.
+
+O SQLite usa `instance/classificados.sqlite3` por padrão. A conexão é obtida
+por requisição com `app.database.get_db`; `DATABASE` pode ser substituído na
+configuração da aplicação, especialmente nos testes.
 
 Para executar os testes:
 

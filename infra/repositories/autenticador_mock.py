@@ -1,6 +1,6 @@
 """Mock temporário de identidade até a implementação da autenticação."""
 
-from use_cases.autenticacao import UsuarioAutenticado
+from use_cases.identidade_autenticada import UsuarioAutenticado
 
 
 class AutenticadorMock:
