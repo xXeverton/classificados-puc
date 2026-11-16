@@ -96,7 +96,6 @@ def create_app(
     app.extensions[CHAVE_EXTENSAO_AUTENTICADOR] = autenticador_ativo
 
     registrar_rota_novo_anuncio(app, autenticador_ativo)
-
     @app.get("/health")
     def health():
         return {"status": "ok"}

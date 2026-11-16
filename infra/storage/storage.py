@@ -151,6 +151,10 @@ class ConfiguracaoStorage:
 class ImageStorage(Protocol):
     """Common operations exposed by every image storage provider."""
 
+    @property
+    def config(self) -> ConfiguracaoStorage:
+        """Return the validated configuration used by this provider."""
+
     def salvar_imagem(
         self, dados: bytes | BinaryIO, *, namespace: str = "anuncios"
     ) -> ImagemArmazenada:
@@ -204,11 +208,23 @@ def _read_image_data(
     if isinstance(dados, bytes):
         content = dados[: max_image_bytes + 1]
     elif hasattr(dados, "read"):
-        content = dados.read(max_image_bytes + 1)
-        if not isinstance(content, bytes):
-            raise ImagemInvalidaError(
-                "O conteúdo da imagem deve ser binário."
-            )
+        chunks = []
+        remaining = max_image_bytes + 1
+        while remaining:
+            chunk = dados.read(remaining)
+            if not isinstance(chunk, bytes):
+                raise ImagemInvalidaError(
+                    "O conteúdo da imagem deve ser binário."
+                )
+            if not chunk:
+                break
+            if len(chunk) > remaining:
+                raise ImagemInvalidaError(
+                    "A imagem excede o tamanho máximo permitido."
+                )
+            chunks.append(chunk)
+            remaining -= len(chunk)
+        content = b"".join(chunks)
     else:
         raise ImagemInvalidaError("O conteúdo da imagem deve ser binário.")
 

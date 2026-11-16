@@ -59,6 +59,17 @@ class TrackingStream(io.BytesIO):
         return super().read(size)
 
 
+class PartialReadStream(io.BytesIO):
+    def __init__(self, content):
+        super().__init__(content)
+        self.bytes_read = 0
+
+    def read(self, size=-1):
+        chunk = super().read(min(size, 3))
+        self.bytes_read += len(chunk)
+        return chunk
+
+
 def local_storage(tmp_path, **overrides):
     settings = ConfiguracaoStorage(
         local_root=tmp_path,
@@ -79,6 +90,19 @@ def s3_storage(client=None, **overrides):
         client or FakeS3Client(),
         (FakeS3Error,),
     )
+
+
+@pytest.fixture
+def local_app(tmp_path):
+    app = create_app(
+        config={
+            "STORAGE_PROVIDER": "local",
+            "STORAGE_LOCAL_ROOT": tmp_path,
+            "STORAGE_LOCAL_URL_BASE": "/images",
+        }
+    )
+    app.config["TESTING"] = True
+    return app
 
 
 @pytest.mark.parametrize(
@@ -134,6 +158,14 @@ def test_image_size_limit_and_stream_read_bound(tmp_path):
     with pytest.raises(ImagemInvalidaError):
         storage.salvar_imagem(stream)
     assert stream.read_sizes == [len(PNG) + 1]
+
+
+def test_stream_with_short_reads_is_saved_completely_within_limit(tmp_path):
+    stream = PartialReadStream(PNG)
+    result = local_storage(tmp_path).salvar_imagem(stream)
+
+    assert (tmp_path / result.chave).read_bytes() == PNG
+    assert stream.bytes_read == len(PNG)
 
 
 def test_generated_keys_are_unique_and_do_not_use_client_filename(tmp_path):
@@ -303,6 +335,25 @@ def test_s3_errors_are_wrapped_without_provider_details():
     assert "provider response" not in str(error.value)
 
 
+@pytest.mark.parametrize("operation", ["obter_url", "remover"])
+def test_s3_url_and_remove_errors_are_wrapped_without_provider_details(
+    operation,
+):
+    client = FakeS3Client()
+    client.error = FakeS3Error("secret-key and provider response")
+    storage = s3_storage(client)
+    key = f"anuncios/{'a' * 32}.png"
+
+    with pytest.raises(StorageIndisponivelError) as error:
+        if operation == "obter_url":
+            storage.obter_url(key)
+        else:
+            storage.remover(key)
+
+    assert "secret-key" not in str(error.value)
+    assert "provider response" not in str(error.value)
+
+
 @pytest.mark.parametrize(
     ("environ", "message"),
     [
@@ -450,4 +501,88 @@ def test_local_route_serves_files_securely_and_s3_has_no_route(tmp_path):
     s3_app = create_app(s3_storage())
     assert "/media/<path:chave>" not in {
         rule.rule for rule in s3_app.url_map.iter_rules()
+    }
+
+
+def test_app_initializes_storage_from_config_and_registers_custom_prefix(
+    local_app,
+):
+    storage = local_app.extensions["image_storage"]
+    stored = storage.salvar_imagem(PNG)
+
+    response = local_app.test_client().get(stored.url)
+
+    assert local_app.config["STORAGE_PROVIDER"] == "local"
+    assert local_app.config["STORAGE_LOCAL_URL_BASE"] == "/images"
+    assert local_app.config["MAX_CONTENT_LENGTH"] is None
+    assert stored.url.startswith("/images/")
+    assert response.status_code == 200
+    assert response.data == PNG
+
+
+def test_app_config_overrides_environment_storage_values(
+    monkeypatch, tmp_path
+):
+    monkeypatch.setenv("STORAGE_PROVIDER", "invalid")
+
+    app = create_app(
+        config={
+            "STORAGE_PROVIDER": "local",
+            "STORAGE_LOCAL_ROOT": tmp_path,
+        }
+    )
+
+    assert isinstance(app.extensions["image_storage"], LocalImageStorage)
+
+
+@pytest.mark.parametrize(
+    "config",
+    [
+        {"STORAGE_PROVIDER": "invalid"},
+        {"STORAGE_PROVIDER": "s3", "STORAGE_S3_BUCKET": ""},
+    ],
+)
+def test_invalid_storage_configuration_fails_app_initialization(config):
+    with pytest.raises(ConfiguracaoStorageError):
+        create_app(config=config)
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "/images/not-a-valid-key",
+        "/images/../outside.jpg",
+        "/images/%2e%2e/outside.jpg",
+        "/images/anuncios%2f..%2foutside.jpg",
+        "/images/anuncios%5c..%5coutside.jpg",
+    ],
+)
+def test_local_media_route_rejects_invalid_and_traversal_keys(
+    local_app, path
+):
+    response = local_app.test_client().get(path)
+
+    assert response.status_code == 404
+
+
+def test_local_media_route_returns_404_for_missing_files(local_app):
+    path = f"/images/anuncios/{'a' * 32}.png"
+
+    response = local_app.test_client().get(path)
+
+    assert response.status_code == 404
+
+
+@pytest.mark.parametrize("path", ["/images/", "/images/anuncios/"])
+def test_local_media_route_does_not_list_directories(local_app, path):
+    response = local_app.test_client().get(path)
+
+    assert response.status_code == 404
+
+
+def test_s3_app_does_not_register_local_media_route():
+    app = create_app(s3_storage())
+
+    assert "/media/<path:chave>" not in {
+        rule.rule for rule in app.url_map.iter_rules()
     }
