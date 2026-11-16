@@ -59,6 +59,17 @@ class TrackingStream(io.BytesIO):
         return super().read(size)
 
 
+class PartialReadStream(io.BytesIO):
+    def __init__(self, content):
+        super().__init__(content)
+        self.bytes_read = 0
+
+    def read(self, size=-1):
+        chunk = super().read(min(size, 3))
+        self.bytes_read += len(chunk)
+        return chunk
+
+
 def local_storage(tmp_path, **overrides):
     settings = ConfiguracaoStorage(
         local_root=tmp_path,
@@ -147,6 +158,14 @@ def test_image_size_limit_and_stream_read_bound(tmp_path):
     with pytest.raises(ImagemInvalidaError):
         storage.salvar_imagem(stream)
     assert stream.read_sizes == [len(PNG) + 1]
+
+
+def test_stream_with_short_reads_is_saved_completely_within_limit(tmp_path):
+    stream = PartialReadStream(PNG)
+    result = local_storage(tmp_path).salvar_imagem(stream)
+
+    assert (tmp_path / result.chave).read_bytes() == PNG
+    assert stream.bytes_read == len(PNG)
 
 
 def test_generated_keys_are_unique_and_do_not_use_client_filename(tmp_path):
@@ -311,6 +330,25 @@ def test_s3_errors_are_wrapped_without_provider_details():
 
     with pytest.raises(StorageIndisponivelError) as error:
         storage.salvar_imagem(PNG)
+
+    assert "secret-key" not in str(error.value)
+    assert "provider response" not in str(error.value)
+
+
+@pytest.mark.parametrize("operation", ["obter_url", "remover"])
+def test_s3_url_and_remove_errors_are_wrapped_without_provider_details(
+    operation,
+):
+    client = FakeS3Client()
+    client.error = FakeS3Error("secret-key and provider response")
+    storage = s3_storage(client)
+    key = f"anuncios/{'a' * 32}.png"
+
+    with pytest.raises(StorageIndisponivelError) as error:
+        if operation == "obter_url":
+            storage.obter_url(key)
+        else:
+            storage.remover(key)
 
     assert "secret-key" not in str(error.value)
     assert "provider response" not in str(error.value)
