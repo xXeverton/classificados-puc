@@ -1,7 +1,10 @@
 # Modelagem do banco de dados
 
-O projeto usa SQLite. O schema de referência fica em [schema.sql](schema.sql)
-e é aplicado pela função `initialize_database` em [database.py](database.py).
+O projeto usa SQLAlchemy sobre SQLite. O modelo ORM fica em
+[models.py](models.py); a função `initialize_database` em
+[database.py](database.py) cria as tabelas declaradas pelo metadata. O arquivo
+[schema.sql](schema.sql) documenta o mesmo schema e deve permanecer sincronizado
+com o modelo.
 
 ## Diagrama UML
 
@@ -34,13 +37,15 @@ maior cuidado de privacidade. A matrícula permanece obrigatória e única.
 | `vinculo` | TEXT | Sim | Não pode ser vazio ou conter somente espaços ASCII | Vínculo institucional, como aluno ou funcionário |
 
 O banco garante as constraints estruturais acima, mas não valida o formato ou
-domínio do e-mail, nem normaliza caixa ou espaços nas extremidades. Essas
-validações devem ser feitas no backend antes da persistência. A unicidade do
-banco compara os valores armazenados segundo a collation padrão do SQLite.
+domínio do e-mail, nem normaliza caixa ou espaços nas extremidades. A entidade
+`Usuario` valida o formato do endereço e aceita somente os domínios
+`@aluno.puc-rio.br` e `@puc-rio.br` antes da persistência. A unicidade do banco
+compara os valores armazenados segundo a collation padrão do SQLite.
 
-O `schema.sql` é usado para criar tabelas que ainda não existem. Alterações
-incompatíveis com bancos já inicializados precisam de uma migração explícita;
-editar o schema de criação não modifica tabelas existentes.
+O banco padrão fica em `server/database/db.sqlite3`; testes devem usar um banco
+SQLite em memória. `create_all` cria tabelas ausentes, mas não atualiza tabelas
+existentes. Alterações incompatíveis precisam de uma migração explícita; editar
+o modelo ou o `schema.sql` não modifica bancos já inicializados.
 
 ## Evolução do modelo
 

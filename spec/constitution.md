@@ -8,25 +8,30 @@ As dependências de código apontam sempre para dentro. Camadas internas não
 conhecem nem importam detalhes das camadas externas:
 
 ```
-app/ (Flask, rotas)  →  use_cases/  →  domain/
-infra/ (SQLite, repositórios)  →  interfaces definidas em use_cases/  →  domain/
+server/api/controllers/ → server/core/usecases/ → server/core/entities/
+server/infra/gateways/ → server/core/interfaces/ → server/core/entities/
 ```
 
-- `domain/`: entidades, objetos de valor e regras de negócio puras. Não importa
-  Flask, SQLite, bibliotecas de infraestrutura nem outras camadas externas.
-- `use_cases/`: coordena uma ação de negócio por caso de uso. Depende do domínio
-  e de abstrações necessárias, nunca de implementações concretas.
-- `infra/`: implementa persistência e integrações externas, incluindo os
-  repositórios concretos que cumprem as interfaces internas.
-- `app/`: adaptador de entrada HTTP. Converte requisições em chamadas aos casos
-  de uso e seus resultados em respostas HTTP; não contém regras de negócio.
-- A montagem das dependências acontece na inicialização da aplicação. Os casos
-  de uso recebem suas dependências por parâmetro, sem criar conexões ou
-  repositórios concretos por conta própria.
+- `server/core/entities/`: entidades, objetos de valor e regras de negócio
+  puras. Não importa Flask, SQLAlchemy ou outras camadas externas.
+- `server/core/usecases/`: coordena uma ação de negócio por caso de uso.
+  Depende das entidades e das interfaces necessárias, nunca de implementações
+  concretas.
+- `server/core/interfaces/`: define os contratos requeridos pelo core, como
+  interfaces de repositório.
+- `server/infra/`: implementa persistência e integrações externas. Os gateways
+  concretos cumprem as interfaces internas; `server/infra/db/` contém os
+  modelos SQLAlchemy e a configuração SQLite.
+- `server/api/controllers/`: adaptador de entrada HTTP. Converte requisições
+  em chamadas aos casos de uso; não contém regras de negócio.
+- `server/api/presenters/`: converte entidades e resultados em respostas HTTP.
+- A montagem das dependências acontece em `server/app.py`. Os casos de uso
+  recebem suas dependências por parâmetro, sem criar conexões ou gateways
+  concretos por conta própria.
 - Dados e erros são traduzidos nas fronteiras entre camadas. Detalhes de HTTP,
-  SQL e Flask não vazam para o domínio nem para os casos de uso.
+  SQLAlchemy e Flask não vazam para o core.
 - Novas integrações externas são acessadas por abstrações consumidas pela
-  camada interna e implementadas em `infra/`.
+  camada interna e implementadas em `server/infra/`.
 
 ## 2. Clean Code
 
