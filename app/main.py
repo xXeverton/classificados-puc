@@ -9,20 +9,33 @@ from infra.storage.storage import (
     LocalImageStorage,
     criar_storage,
 )
+from infra.repositories.autenticador_mock import AutenticadorMock
+from use_cases.autenticacao import (
+    CHAVE_EXTENSAO_AUTENTICADOR,
+    Autenticador,
+)
 
 
-def create_app(image_storage: ImageStorage | None = None) -> Flask:
+def create_app(
+    image_storage: ImageStorage | None = None,
+    *,
+    autenticador: Autenticador | None = None,
+) -> Flask:
     """Cria e configura a instância da aplicação Flask (app factory)."""
     app = Flask(__name__)
     storage = (
         criar_storage() if image_storage is None else image_storage
     )
+    autenticador_ativo = (
+        AutenticadorMock() if autenticador is None else autenticador
+    )
     app.extensions["image_storage"] = storage
+    app.extensions[CHAVE_EXTENSAO_AUTENTICADOR] = autenticador_ativo
 
     if isinstance(storage, LocalImageStorage):
         registrar_rota_local(app, storage)
 
-    registrar_rota_novo_anuncio(app)
+    registrar_rota_novo_anuncio(app, autenticador_ativo)
 
     @app.get("/health")
     def health():

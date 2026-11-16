@@ -54,6 +54,37 @@ serve arquivos pela rota `/media/<chave>`. JPEG, PNG e WebP são aceitos até
 O disco local **não é adequado a ambientes com sistema de arquivos efêmero**,
 como contêineres recriados em cada deploy.
 
+## Autenticação temporária para a prévia
+
+A rota `GET /anuncios/novo` consulta a porta `Autenticador` antes de renderizar
+a página. `AutenticadorMock` é um **mock temporário**: por padrão não fornece
+usuário e a rota redireciona para `/login`, que informa que o login real ainda
+não está disponível. Não há sessão, credenciais, persistência de usuários nem
+endpoint de login funcional.
+
+Para testes ou desenvolvimento controlado, injete uma identidade fictícia ao
+criar a aplicação:
+
+```python
+from app.main import create_app
+from infra.repositories.autenticador_mock import AutenticadorMock
+from use_cases.autenticacao import UsuarioAutenticado
+
+app = create_app(
+    autenticador=AutenticadorMock(
+        UsuarioAutenticado(
+            id_usuario=1,
+            nome_exibicao="Anunciante de teste",
+        )
+    )
+)
+```
+
+Esse mock serve apenas para exercitar a identificação de um usuário e **não
+deve ser usado em produção**. A autenticação real e a regra de perfil completo
+da US02 continuam pendentes; esta prévia não implementa o critério de
+completude nem a publicação pela API.
+
 Para executar localmente, configure `STORAGE_PROVIDER=local` no ambiente
 (opcional, pois é o padrão), instale as dependências com `make install` e inicie
 a aplicação como descrito na seção [Executar a aplicação](#executar-a-aplicação).
