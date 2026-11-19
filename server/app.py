@@ -6,6 +6,7 @@ from collections.abc import Mapping
 from flask_cors import CORS
 from flask_openapi3 import Info, OpenAPI
 
+from server.api.controllers.ads_controller import register_ads_controller
 from server.api.controllers.health_controller import (
     register_health_controller,
 )
@@ -16,6 +17,9 @@ from server.infra.db.database import (
 )
 from server.infra.gateways.usuario_repository_sqlalchemy import (
     UsuarioRepositorySQLAlchemy,
+)
+from server.infra.gateways.ad_repository_sqlalchemy import (
+    AdRepositorySQLAlchemy,
 )
 
 
@@ -50,12 +54,17 @@ def create_app(config: Mapping[str, object] | None = None) -> OpenAPI:
     app.extensions["usuario_repository"] = UsuarioRepositorySQLAlchemy(
         session_factory
     )
+    app.extensions["ad_repository"] = AdRepositorySQLAlchemy(
+        session_factory
+    )
+    app.extensions.setdefault("authenticated_user", None)
 
     cors_origins = app.config["CORS_ORIGINS"]
     if cors_origins:
         CORS(app, origins=cors_origins)
 
     register_health_controller(app)
+    register_ads_controller(app)
     return app
 
 
