@@ -1,7 +1,7 @@
 # Spec: Cadastro, login e verificação de e-mail institucional
 
 - **ID**: 001
-- **Status**: Implementada (pendente apenas o teste manual de SMTP, T34)
+- **Status**: Implementada
 - **Data**: 2026-11-20
 - **Jira**: história [PROJ-1](https://matheuscomputacaopuc.atlassian.net/browse/PROJ-1);
   subtarefa [PROJ-23](https://matheuscomputacaopuc.atlassian.net/browse/PROJ-23),

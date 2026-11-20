@@ -125,6 +125,7 @@ Rode `pytest` ao fim de cada bloco.
 - [x] T33: Conferir o mapa critério → teste do `plan.md`: todos os CA1–CA23
   com teste passando. Marcar os critérios na `spec.md` e mudar o status para
   `Implementada`.
-- [ ] T34: Teste manual com `EMAIL_BACKEND=smtp` enviando para um endereço
+- [x] T34: Teste manual com `EMAIL_BACKEND=smtp` enviando para um endereço
   `@puc-rio.br` real, para conferir a entrega e o filtro anti-spam da
-  universidade.
+  universidade. Feito em 2026-11-20: e-mail na caixa de entrada (não foi para
+  spam) em menos de 30 s; token do link válido; confirmação e login OK.
