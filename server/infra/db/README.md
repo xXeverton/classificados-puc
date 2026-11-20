@@ -1,10 +1,10 @@
 # Modelagem do banco de dados
 
-O projeto usa SQLAlchemy sobre SQLite. O modelo ORM fica em
+O projeto usa SQLAlchemy sobre SQLite. Os modelos ORM ficam em
 [models.py](models.py); a função `initialize_database` em
 [database.py](database.py) cria as tabelas declaradas pelo metadata. O arquivo
 [schema.sql](schema.sql) documenta o mesmo schema e deve permanecer sincronizado
-com o modelo.
+com os modelos.
 
 ## Diagrama UML
 
@@ -14,17 +14,41 @@ classDiagram
         +int id
         +str nome
         +str email
-        +str matricula
+        +str nome_usuario
+        +str? matricula
         +str vinculo
+        +str senha_hash
+        +datetime? confirmado_em
+        +int tentativas_login_falhas
+        +datetime? bloqueado_ate
     }
+    class TokenConfirmacao {
+        +int id
+        +int usuario_id
+        +str token_hash
+        +datetime expira_em
+        +datetime? usado_em
+    }
+    class Sessao {
+        +int id
+        +int usuario_id
+        +str token_hash
+        +datetime criada_em
+        +datetime expira_em
+        +datetime? revogada_em
+    }
+    Usuario "1" --> "0..*" TokenConfirmacao : tokens_confirmacao
+    Usuario "1" --> "0..*" Sessao : sessoes
 ```
 
-`id` é a chave primária técnica, gerada pelo banco. `email` e `matricula` são
-identificadores únicos de negócio, mas não são usados como chave primária.
+`id` é a chave primária técnica, gerada pelo banco. `email` é o identificador
+principal de negócio da conta (único e obrigatório); `nome_usuario` e
+`matricula` são identificadores alternativos, também únicos. Nenhum deles é
+usado como chave primária.
 
 Manter uma chave substituta (`id`) evita que referências internas dependam de
 identificadores institucionais ou dados de contato, que podem mudar ou exigir
-maior cuidado de privacidade. A matrícula permanece obrigatória e única.
+maior cuidado de privacidade. A matrícula é opcional e única quando informada.
 
 ## Tabela `usuarios`
 
@@ -32,20 +56,67 @@ maior cuidado de privacidade. A matrícula permanece obrigatória e única.
 |---|---|---:|---|---|
 | `id` | INTEGER | Sim | Chave primária, autoincremento | Identificador interno do usuário |
 | `nome` | TEXT | Sim | Não pode ser vazio ou conter somente espaços ASCII | Nome do usuário |
-| `email` | TEXT | Sim | Único no valor armazenado; não pode ser vazio ou conter somente espaços ASCII | E-mail do usuário |
-| `matricula` | TEXT | Sim | Única no valor armazenado; não pode ser vazia ou conter somente espaços ASCII | Matrícula institucional |
-| `vinculo` | TEXT | Sim | Não pode ser vazio ou conter somente espaços ASCII | Vínculo institucional, como aluno ou funcionário |
+| `email` | TEXT | Sim | Único; não pode ser vazio ou conter somente espaços ASCII | E-mail institucional, identificador principal |
+| `nome_usuario` | TEXT | Sim | Único; não vazio; não pode conter `@` | Identificador alternativo de login |
+| `matricula` | TEXT | Não | Única quando preenchida (vários `NULL` são aceitos); não vazia se informada | Matrícula informada pela pessoa, sem conferência |
+| `vinculo` | TEXT | Sim | `aluno` ou `funcionario` | Vínculo institucional |
+| `senha_hash` | TEXT | Sim | Não vazio | Hash da senha (werkzeug); a senha nunca é gravada |
+| `confirmado_em` | DATETIME | Não | — | Momento da confirmação do e-mail; `NULL` = pendente |
+| `tentativas_login_falhas` | INTEGER | Sim | Padrão `0`; `>= 0` | Falhas de senha seguidas desde o último login ou bloqueio |
+| `bloqueado_ate` | DATETIME | Não | — | Fim do bloqueio de login, se houver |
+
+## Tabela `tokens_confirmacao`
+
+| Coluna | Tipo | Obrigatória | Restrições | Descrição |
+|---|---|---:|---|---|
+| `id` | INTEGER | Sim | Chave primária, autoincremento | Identificador interno |
+| `usuario_id` | INTEGER | Sim | FK → `usuarios.id`, `ON DELETE CASCADE`; indexada | Dono do link |
+| `token_hash` | TEXT | Sim | Único | SHA-256 do token enviado por e-mail |
+| `expira_em` | DATETIME | Sim | — | Fim da validade (15 minutos após a emissão) |
+| `usado_em` | DATETIME | Não | — | Uso ou invalidação do link; `NULL` = ainda não usado |
+
+## Tabela `sessoes`
+
+| Coluna | Tipo | Obrigatória | Restrições | Descrição |
+|---|---|---:|---|---|
+| `id` | INTEGER | Sim | Chave primária, autoincremento | Identificador interno |
+| `usuario_id` | INTEGER | Sim | FK → `usuarios.id`, `ON DELETE CASCADE`; indexada | Dono da sessão |
+| `token_hash` | TEXT | Sim | Único | SHA-256 do token de sessão (`Authorization: Bearer`) |
+| `criada_em` | DATETIME | Sim | — | Momento do login |
+| `expira_em` | DATETIME | Sim | — | Fim da validade (`SESSAO_DURACAO_HORAS`) |
+| `revogada_em` | DATETIME | Não | — | Logout; `NULL` = não revogada |
+
+## Regras fora do banco
 
 O banco garante as constraints estruturais acima, mas não valida o formato ou
-domínio do e-mail, nem normaliza caixa ou espaços nas extremidades. A entidade
-`Usuario` valida o formato do endereço e aceita somente os domínios
-`@aluno.puc-rio.br` e `@puc-rio.br` antes da persistência. A unicidade do banco
-compara os valores armazenados segundo a collation padrão do SQLite.
+o domínio do e-mail. A entidade `Usuario` valida o endereço (apenas
+`@aluno.puc-rio.br` e `@puc-rio.br`) e grava `email`, `nome_usuario` e
+`matricula` normalizados (sem espaços nas pontas e em minúsculas). Por isso
+os `UNIQUE` simples bastam para a unicidade sem diferenciar maiúsculas de
+minúsculas.
+
+A regra de que nenhum valor pode ser, ao mesmo tempo, o nome de usuário de
+uma conta e a matrícula de outra é conferida pelo caso de uso
+`CadastrarUsuario`: o SQLite não oferece constraint entre colunas diferentes.
+
+Datas são gravadas em UTC, sem fuso, e lidas de volta como `datetime` com fuso
+UTC pelo tipo `UTCDateTime` de `models.py`.
+
+O SQLite só aplica chaves estrangeiras e `ON DELETE CASCADE` com
+`PRAGMA foreign_keys=ON`; `create_database_engine` ativa esse pragma em cada
+conexão.
+
+## Banco local e migração
 
 O banco padrão fica em `server/database/db.sqlite3`; testes devem usar um banco
 SQLite em memória. `create_all` cria tabelas ausentes, mas não atualiza tabelas
-existentes. Alterações incompatíveis precisam de uma migração explícita; editar
-o modelo ou o `schema.sql` não modifica bancos já inicializados.
+existentes.
+
+A feature 001 (cadastro, login e verificação de e-mail) mudou a tabela
+`usuarios` de forma incompatível. Por decisão do time (2026-11-20), não há
+script de migração, pois só existem bancos locais de desenvolvimento: **apague
+`server/database/db.sqlite3`** depois de atualizar o código, e ele será
+recriado na próxima inicialização.
 
 ## Evolução do modelo
 

@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
 from sqlalchemy.engine import Engine, URL, make_url
 from sqlalchemy.orm import Session, sessionmaker
 
@@ -20,9 +20,20 @@ def create_database_engine(database_url: str | None = None) -> Engine:
         database_url = URL.create("sqlite", database=str(_DATABASE_PATH))
 
     engine_options = {}
-    if make_url(database_url).get_backend_name() == "sqlite":
+    is_sqlite = make_url(database_url).get_backend_name() == "sqlite"
+    if is_sqlite:
         engine_options["connect_args"] = {"check_same_thread": False}
-    return create_engine(database_url, **engine_options)
+    engine = create_engine(database_url, **engine_options)
+    if is_sqlite:
+        event.listen(engine, "connect", _enable_sqlite_foreign_keys)
+    return engine
+
+
+def _enable_sqlite_foreign_keys(dbapi_connection, _connection_record) -> None:
+    """SQLite only enforces foreign keys (and ON DELETE) when asked to."""
+    cursor = dbapi_connection.cursor()
+    cursor.execute("PRAGMA foreign_keys=ON")
+    cursor.close()
 
 
 def create_session_factory(engine: Engine) -> sessionmaker[Session]:

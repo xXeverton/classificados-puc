@@ -84,6 +84,39 @@ substituir essa localização. Configure as origens CORS permitidas com
 `CORS_ORIGINS`, separadas por vírgula; sem origens configuradas, CORS fica
 desabilitado.
 
+> **Atualizando de uma versão anterior?** A feature de cadastro e login mudou
+> a tabela `usuarios` sem script de migração. Apague
+> `server/database/db.sqlite3` antes de subir a aplicação; o banco é recriado
+> automaticamente.
+
+### Autenticação e envio de e-mail
+
+O cadastro exige e-mail institucional (`@puc-rio.br` ou `@aluno.puc-rio.br`)
+e só é concluído pelo link de confirmação enviado por e-mail. O login devolve
+um token que o front-end envia em `Authorization: Bearer <token>`. As rotas
+ficam em `/auth/*` e estão documentadas em http://127.0.0.1:5000/openapi.
+
+| Variável | Padrão | Uso |
+|---|---|---|
+| `EMAIL_BACKEND` | `log` | `log` (escreve o e-mail no log da aplicação) ou `smtp` |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USUARIO`, `SMTP_SENHA` | — | Obrigatórias com `EMAIL_BACKEND=smtp` (conexão com STARTTLS) |
+| `EMAIL_REMETENTE` | — | Endereço "De:"; obrigatória com `smtp` |
+| `CONFIRMACAO_URL_BASE` | `http://localhost:5173/confirmar-email` | Página do front-end que recebe `?token=` e chama `POST /auth/confirmacao` |
+| `SESSAO_DURACAO_HORAS` | `8` | Validade da sessão após o login |
+
+Com `EMAIL_BACKEND=smtp`, a aplicação não sobe se faltar alguma das variáveis
+obrigatórias. Segredos SMTP entram só por variável de ambiente, nunca no
+repositório.
+
+Em desenvolvimento (backend `log`), o e-mail de confirmação aparece no
+terminal do `flask run`, com o link `...?token=<token>`. Para confirmar sem
+front-end, envie o token direto à API:
+
+```bash
+curl -X POST http://127.0.0.1:5000/auth/confirmacao \
+  -H "Content-Type: application/json" -d '{"token": "<token>"}'
+```
+
 Para executar os testes:
 
 ```bash
