@@ -8,7 +8,7 @@ Rode `make front-test` ao fim de cada bloco.
 
 - [x] T0: Fechar as dúvidas da `spec.md` sobre confirmar senha,
   mostrar/ocultar senha e textos das mensagens (respondidas em 2026-11-20).
-  Falta mudar o status para `Aprovada` quando o time aprovar.
+  Spec confirmada em 2026-11-20, com teste no navegador.
 - [x] T0a: Criar o tema comum `front/css/tema.css` (tokens e componentes) e a
   demonstração `front/guia-de-estilo/index.html`. (CA28)
 - [x] T1: Criar o resto da estrutura de `front/` (pastas, `package.json` com
