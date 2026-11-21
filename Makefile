@@ -9,7 +9,7 @@ endif
 PYTHON ?= $(if $(wildcard $(VENV_PYTHON)),$(VENV_PYTHON),python)
 SYSTEM_PYTHON ?= python
 
-.PHONY: criar-ambiente-virtual ativar-ambiente-virtual install lint test check
+.PHONY: criar-ambiente-virtual ativar-ambiente-virtual install lint test check front front-test
 
 criar-ambiente-virtual:
 	$(SYSTEM_PYTHON) -m venv .venv
@@ -28,3 +28,9 @@ test:
 	$(PYTHON) -m pytest
 
 check: lint test
+
+front:
+	$(PYTHON) -m http.server 5173 --directory front
+
+front-test:
+	cd front && node --test

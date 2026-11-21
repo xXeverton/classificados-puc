@@ -1,8 +1,8 @@
 # Clean Architecture na API de Classificados
 
 Este documento adapta a arquitetura de [ARQUITETURA.md](ARQUITETURA.md) ao
-domínio de classificados universitários. A API fica em `server/`; o projeto de
-interface `front/` é externo a este repositório.
+domínio de classificados universitários. A API fica em `server/`; a interface web fica em `front/` (HTML, CSS e
+JavaScript puros), na mesma raiz e sem importar nada de `server/`.
 
 ## Estrutura de pastas
 
@@ -93,7 +93,7 @@ link e login.
 | Gateways | `server/infra/gateways/` |
 | DB | `server/infra/db/` (SQLAlchemy + SQLite) |
 | Web | Flask-OpenAPI3 e CORS, configurados em `server/app.py` |
-| UI | `front/` (fora da API e não incluído neste repositório) |
+| UI | `front/` (`paginas/` → `fluxos/` → `dominio/`; `adaptadores/` fala HTTP com a API) |
 | Devices, External Interfaces | não há integração implementada atualmente |
 
 ## Diagrama de dependências
@@ -105,7 +105,7 @@ concretos.
 
 ```mermaid
 flowchart TB
-    UI["front/ (UI, externo)"]
+    UI["front/ (UI)"]
 
     subgraph API["server/api/"]
         CTRL["controllers<br/>rotas + schemas de entrada"]

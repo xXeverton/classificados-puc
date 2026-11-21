@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Criar conta · Classificados PUC</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rethink+Sans:wght@400;600;700&display=swap">
+  <link rel="stylesheet" href="../css/tema.css">
+</head>
+<body>
+  <main class="acesso">
+    <div class="acesso__marca">
+      <div class="acesso__sigla">PUC</div>
+      <div class="acesso__titulo">Classificados<br>da comunidade</div>
+    </div>
+    <div class="acesso__divisor" aria-hidden="true"></div>
+    <div class="acesso__formulario">
+      <section id="secao-formulario">
+        <h1 class="visualmente-oculto">Criar conta</h1>
+        <form class="formulario" id="form-cadastro" novalidate>
+          <div id="alerta" role="alert"></div>
+          <div class="campo">
+            <label class="campo__rotulo" for="campo-nome">Nome</label>
+            <input class="campo__entrada" id="campo-nome" name="nome" autocomplete="name" autofocus>
+            <span class="campo__erro" id="campo-nome-erro"></span>
+          </div>
+          <div class="campo">
+            <label class="campo__rotulo" for="campo-email">E-mail institucional</label>
+            <input class="campo__entrada" id="campo-email" name="email" type="email" autocomplete="email">
+            <span class="campo__ajuda">Use @puc-rio.br ou @aluno.puc-rio.br.</span>
+            <span class="campo__erro" id="campo-email-erro"></span>
+          </div>
+          <div class="campo">
+            <label class="campo__rotulo" for="campo-nome-usuario">Nome de usuário</label>
+            <input class="campo__entrada" id="campo-nome-usuario" name="nome_usuario" autocomplete="username">
+            <span class="campo__erro" id="campo-nome-usuario-erro"></span>
+          </div>
+          <fieldset class="campo opcoes" aria-describedby="campo-vinculo-erro">
+            <legend class="campo__rotulo">Vínculo</legend>
+            <label class="opcoes__item"><input type="radio" name="vinculo" value="aluno"> Aluno</label>
+            <label class="opcoes__item"><input type="radio" name="vinculo" value="funcionario"> Funcionário</label>
+          </fieldset>
+          <span class="campo__erro" id="campo-vinculo-erro"></span>
+          <div class="campo">
+            <label class="campo__rotulo" for="campo-matricula">Matrícula <span class="campo__opcional">(opcional)</span></label>
+            <input class="campo__entrada" id="campo-matricula" name="matricula" inputmode="numeric" autocomplete="off">
+            <span class="campo__erro" id="campo-matricula-erro"></span>
+          </div>
+          <div class="campo">
+            <label class="campo__rotulo" for="campo-senha">Senha</label>
+            <div class="campo-senha">
+              <input class="campo__entrada" id="campo-senha" name="senha" type="password" autocomplete="new-password">
+              <button class="campo-senha__alternar" type="button" aria-pressed="false" aria-label="Mostrar senha">Mostrar</button>
+            </div>
+            <span class="campo__ajuda">Mínimo de 8 caracteres.</span>
+            <span class="campo__erro" id="campo-senha-erro"></span>
+          </div>
+          <div class="campo">
+            <label class="campo__rotulo" for="campo-confirmacao-senha">Confirmar senha</label>
+            <div class="campo-senha">
+              <input class="campo__entrada" id="campo-confirmacao-senha" name="confirmacao_senha" type="password" autocomplete="new-password">
+              <button class="campo-senha__alternar" type="button" aria-pressed="false" aria-label="Mostrar confirmação da senha">Mostrar</button>
+            </div>
+            <span class="campo__erro" id="campo-confirmacao-senha-erro"></span>
+          </div>
+          <button class="botao botao--primario botao--bloco" type="submit">Cadastrar</button>
+          <a class="botao botao--contorno botao--bloco" href="../entrar/">Já tenho conta</a>
+        </form>
+      </section>
+
+      <section id="secao-verifique" hidden>
+        <h1 tabindex="-1">Verifique seu e-mail</h1>
+        <p class="alerta alerta--info" role="status" style="margin: var(--espaco-4) 0">
+          Enviamos um link de confirmação para <strong id="email-enviado"></strong>.
+          Ele vale por 15 minutos.
+        </p>
+        <form class="formulario" id="reenvio" novalidate>
+          <div class="campo">
+            <label class="campo__rotulo" for="reenvio-email">E-mail institucional</label>
+            <input class="campo__entrada" id="reenvio-email" name="email" type="email" autocomplete="email">
+            <span class="campo__erro" id="reenvio-email-erro"></span>
+          </div>
+          <button class="botao botao--contorno botao--bloco" type="submit">Reenviar link</button>
+          <div data-aviso role="status"></div>
+        </form>
+        <a class="botao botao--primario botao--bloco" href="../entrar/" style="margin-top: var(--espaco-4)">Ir para a entrada</a>
+      </section>
+    </div>
+  </main>
+  <script type="module" src="../js/paginas/cadastro.js"></script>
+</body>
+</html>

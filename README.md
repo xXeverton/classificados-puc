@@ -117,6 +117,22 @@ curl -X POST http://127.0.0.1:5000/auth/confirmacao \
   -H "Content-Type: application/json" -d '{"token": "<token>"}'
 ```
 
+### Interface web (`front/`)
+
+HTML, CSS e JavaScript puros, sem build nem dependências de npm. Com a API
+rodando e `CORS_ORIGINS=http://localhost:5173`:
+
+```bash
+make front        # servidor em http://localhost:5173
+make front-test   # testes do front (Node 18 ou mais novo)
+```
+
+Telas: `/entrar/`, `/cadastro/`, `/confirmar-email/` e `/inicio/`. O endereço da
+API fica em `front/js/config.js`. O visual comum está em `front/css/tema.css`,
+com demonstração em `/guia-de-estilo/`: use as variáveis e classes do tema
+antes de criar estilos novos. Quando o backend for usado por outras pessoas,
+`CONFIRMACAO_URL_BASE` precisa apontar para o front publicado.
+
 Para executar os testes:
 
 ```bash

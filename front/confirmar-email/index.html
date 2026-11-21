@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Confirmar e-mail · Classificados PUC</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rethink+Sans:wght@400;600;700&display=swap">
+  <link rel="stylesheet" href="../css/tema.css">
+</head>
+<body>
+  <main class="container" style="max-width: 520px; padding-top: var(--espaco-7)">
+    <div class="painel">
+      <div class="formulario">
+        <h1>Confirmar e-mail</h1>
+        <div id="alerta" role="alert"></div>
+        <button class="botao botao--primario botao--bloco" id="confirmar" type="button">Confirmar meu e-mail</button>
+
+        <form class="formulario" id="reenvio" hidden novalidate>
+          <div class="campo">
+            <label class="campo__rotulo" for="reenvio-email">E-mail institucional do cadastro</label>
+            <input class="campo__entrada" id="reenvio-email" name="email" type="email" autocomplete="email">
+            <span class="campo__erro" id="reenvio-email-erro"></span>
+          </div>
+          <button class="botao botao--contorno botao--bloco" type="submit">Enviar novo link</button>
+          <div data-aviso role="status"></div>
+        </form>
+
+        <div class="formulario" id="caminhos" hidden>
+          <a class="botao botao--primario botao--bloco" id="link-entrar" href="../entrar/">Ir para a entrada</a>
+          <a class="botao botao--contorno botao--bloco" id="link-cadastro" href="../cadastro/">Cadastrar de novo</a>
+        </div>
+      </div>
+    </div>
+  </main>
+  <script type="module" src="../js/paginas/confirmar_email.js"></script>
+</body>
+</html>
