@@ -120,10 +120,10 @@ implementação. Rode `pytest` ao fim de cada bloco.
 
 ## 4. PROJ-29 — Exigir perfil de anunciante antes de anunciar
 
-- [ ] T23: Testes e implementação de `exigir_perfil_anunciante.js` (com
+- [x] T23: Testes e implementação de `exigir_perfil_anunciante.js` (com
   perfil segue, CA29; com `404` leva a `/perfil/anunciante/?depois=anunciar`,
   CA27).
-- [ ] T24: Criar `front/anuncios/novo/index.html` provisória usando a guarda
+- [x] T24: Criar `front/anuncios/novo/index.html` provisória usando a guarda
   de T23, e os links "Meu perfil" e "Anunciar" em `/inicio/`.
 
 ## 5. Documentação

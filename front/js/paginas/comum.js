@@ -28,6 +28,7 @@ export const ROTAS = {
   inicio: "/inicio/",
   perfil: "/perfil/",
   editarPerfilAnunciante: "/perfil/anunciante/",
+  novoAnuncio: "/anuncios/novo/",
 };
 
 export function ligarBotaoSair(botao, deps) {
