@@ -374,8 +374,9 @@ testável.
 ## 12. Integrar o front-end, se fizer parte do escopo
 
 O roteiro de referência inclui `client/scripts.js`, mas o front-end do
-classificados está fora deste repositório. Não crie `client/` nem altere
-arquivos de interface sem pedido e sem confirmar o contrato e o escopo.
+classificados fica em `front/` (spec 002), fora de `server/`. Não crie
+`client/` nem altere arquivos de interface sem pedido e sem confirmar o
+contrato e o escopo.
 
 Quando o front-end for incluído:
 

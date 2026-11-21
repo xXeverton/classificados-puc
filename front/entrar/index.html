@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Entrar · Classificados PUC</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rethink+Sans:wght@400;600;700&display=swap">
+  <link rel="stylesheet" href="../css/tema.css">
+</head>
+<body>
+  <main class="acesso">
+    <div class="acesso__marca">
+      <div class="acesso__sigla">PUC</div>
+      <div class="acesso__titulo">Classificados<br>da comunidade</div>
+    </div>
+    <div class="acesso__divisor" aria-hidden="true"></div>
+    <div class="acesso__formulario">
+      <h1 class="visualmente-oculto">Entrar</h1>
+      <form class="formulario" id="form-entrar" novalidate>
+        <div id="alerta" role="alert"></div>
+        <div class="campo">
+          <label class="campo__rotulo" for="campo-identificador">E-mail, nome de usuário ou matrícula</label>
+          <input class="campo__entrada" id="campo-identificador" name="identificador" autocomplete="username" autofocus>
+          <span class="campo__erro" id="campo-identificador-erro"></span>
+        </div>
+        <div class="campo">
+          <label class="campo__rotulo" for="campo-senha">Senha</label>
+          <div class="campo-senha">
+            <input class="campo__entrada" id="campo-senha" name="senha" type="password" autocomplete="current-password">
+            <button class="campo-senha__alternar" type="button" aria-pressed="false" aria-label="Mostrar senha">Mostrar</button>
+          </div>
+          <span class="campo__erro" id="campo-senha-erro"></span>
+        </div>
+        <button class="botao botao--primario botao--bloco" type="submit">Entrar</button>
+        <a class="botao botao--contorno botao--bloco" href="../cadastro/">Criar conta</a>
+      </form>
+
+      <form class="formulario" id="reenvio" hidden novalidate style="margin-top: var(--espaco-5)">
+        <div class="campo">
+          <label class="campo__rotulo" for="reenvio-email">E-mail institucional do cadastro</label>
+          <input class="campo__entrada" id="reenvio-email" name="email" type="email" autocomplete="email">
+          <span class="campo__erro" id="reenvio-email-erro"></span>
+        </div>
+        <button class="botao botao--contorno botao--bloco" type="submit">Reenviar link de confirmação</button>
+        <div data-aviso role="status"></div>
+      </form>
+    </div>
+  </main>
+  <script type="module" src="../js/paginas/entrar.js"></script>
+</body>
+</html>

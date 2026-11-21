@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Início · Classificados PUC</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rethink+Sans:wght@400;600;700&display=swap">
+  <link rel="stylesheet" href="../css/tema.css">
+</head>
+<body>
+  <header class="cabecalho">
+    <div class="container cabecalho__conteudo">
+      <span class="marca">
+        <span class="marca__sigla">PUC</span>
+        <span class="marca__nome">Classificados</span>
+      </span>
+      <button class="botao botao--contorno" id="sair" type="button">Sair</button>
+    </div>
+  </header>
+  <main class="container" id="conteudo" hidden style="padding-top: var(--espaco-7)">
+    <div id="alerta" role="alert"></div>
+    <h1>Olá, <span id="nome-usuario"></span></h1>
+    <p>Você está logado. O feed de anúncios chega em uma próxima feature.</p>
+  </main>
+  <script type="module" src="../js/paginas/inicio.js"></script>
+</body>
+</html>

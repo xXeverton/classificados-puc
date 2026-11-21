@@ -1,8 +1,8 @@
 # Clean Architecture na API de Classificados
 
 Este documento adapta a arquitetura de [ARQUITETURA.md](ARQUITETURA.md) ao
-domínio de classificados universitários. A API fica em `server/`; o projeto de
-interface `front/` é externo a este repositório.
+domínio de classificados universitários. A API fica em `server/`; a interface web fica em `front/` (HTML, CSS e
+JavaScript puros), na mesma raiz e sem importar nada de `server/`.
 
 ## Estrutura de pastas
 
@@ -12,35 +12,43 @@ server/
 ├── requirements.txt                   # dependências da API e ferramentas Python
 ├── core/                               # regras de negócio sem Flask ou SQLAlchemy
 │   ├── entities/
-│   │   └── usuario.py                 # Usuario como entidade Python pura
-│   ├── interfaces/
-│   │   └── usuario_repository_interface.py  # contrato de persistência de Usuario
+│   │   ├── usuario.py                 # Usuario (conta, confirmação e bloqueio de login)
+│   │   ├── vinculo.py                 # Enum Vinculo (aluno, funcionário)
+│   │   ├── token_de_confirmacao.py    # link de confirmação de uso único
+│   │   ├── sessao.py                  # sessão autenticada
+│   │   ├── senha.py                   # regra de tamanho mínimo da senha
+│   │   └── politicas_autenticacao.py  # prazos, limites e hash de tokens
+│   ├── interfaces/                    # contratos: repositórios, e-mail, hash, token, relógio
 │   └── usecases/
 │       ├── erros.py                   # erros de aplicação sem códigos HTTP
-│       └── __init__.py
+│       ├── cadastrar_usuario.py       # um arquivo por caso de uso
+│       ├── emissor_de_confirmacao.py  # colaborador que emite e envia o link
+│       └── ...                        # confirmar, reenviar, autenticar, sessão
 ├── infra/                              # adaptadores técnicos
 │   ├── db/
-│   │   ├── database.py                # engine, Session e criação das tabelas
-│   │   ├── models.py                  # UsuarioModel do SQLAlchemy
+│   │   ├── database.py                # engine, Session, pragma de FKs e criação das tabelas
+│   │   ├── models.py                  # modelos SQLAlchemy
 │   │   ├── schema.sql                 # schema SQLite de referência
 │   │   └── README.md                  # documentação do modelo persistido
-│   └── gateways/
-│       └── usuario_repository_sqlalchemy.py  # gateway SQLAlchemy
+│   ├── gateways/                      # repositórios SQLAlchemy
+│   └── services/                      # e-mail (log/SMTP), hash de senha, tokens, relógio
 └── api/                                # entrada e saída HTTP
+    ├── autenticacao.py                # decorator exige_sessao (Bearer token)
+    ├── erros_http.py                  # erros do core → status HTTP
     ├── controllers/
-    │   └── health_controller.py       # controller HTTP de saúde da API
-    └── presenters/
-        ├── error_presenter.py          # ErrorSchema e apresentação de erros
-        └── health_presenter.py        # schema e apresentação da resposta de saúde
+    │   ├── health_controller.py       # GET /health
+    │   └── auth_controller.py         # rotas /auth/*
+    └── presenters/                    # schemas de saída e presenters
 
 tests/                                  # testes organizados pelos adaptadores/camadas
 ├── api/
 ├── core/
 │   ├── entities/
-│   └── usecases/
+│   └── usecases/                      # fakes.py: dublês em memória
 └── infra/
     ├── db/
-    └── gateways/
+    ├── gateways/
+    └── services/
 
 spec/                                   # especificações, planos e tarefas SDD
 .github/skills/                         # skills do projeto
@@ -49,9 +57,31 @@ README.md                               # guia principal
 setup.cfg                               # configuração de pytest e Flake8
 ```
 
-O controller de saúde preserva o endpoint existente `GET /health`. Os casos
-de uso de autenticação, perfil e anúncios devem ser acrescentados a `core/`
-quando suas especificações e decisões pendentes estiverem definidas.
+O controller de saúde preserva o endpoint existente `GET /health`. A
+autenticação (feature 001) está em `/auth/*`. Os casos de uso de perfil e
+anúncios devem ser acrescentados a `core/` quando suas especificações e
+decisões pendentes estiverem definidas.
+
+### Rotas protegidas
+
+Todo conteúdo da plataforma exige sessão de uma conta confirmada (RN6 da
+feature 001). **Toda rota de conteúdo (feed, anúncios, eventos etc.) deve usar
+o decorator `exige_sessao`** de `server/api/autenticacao.py`, que responde
+`401` sem um `Authorization: Bearer <token>` válido e deixa o usuário logado
+em `flask.g.usuario`. O controller o recebe já montado com o caso de uso
+`ObterUsuarioDaSessao`, como em `auth_controller.py`:
+
+```python
+protegida = exige_sessao(casos_de_uso.obter_usuario_da_sessao)
+
+@blueprint.get("/feed", security=SEGURANCA_BEARER)
+@protegida
+def feed():
+    ...
+```
+
+Só ficam públicas `/health` e as rotas de cadastro, confirmação, reenvio do
+link e login.
 
 ### Correspondência com o diagrama
 
@@ -63,7 +93,7 @@ quando suas especificações e decisões pendentes estiverem definidas.
 | Gateways | `server/infra/gateways/` |
 | DB | `server/infra/db/` (SQLAlchemy + SQLite) |
 | Web | Flask-OpenAPI3 e CORS, configurados em `server/app.py` |
-| UI | `front/` (fora da API e não incluído neste repositório) |
+| UI | `front/` (`paginas/` → `fluxos/` → `dominio/`; `adaptadores/` fala HTTP com a API) |
 | Devices, External Interfaces | não há integração implementada atualmente |
 
 ## Diagrama de dependências
@@ -75,7 +105,7 @@ concretos.
 
 ```mermaid
 flowchart TB
-    UI["front/ (UI, externo)"]
+    UI["front/ (UI)"]
 
     subgraph API["server/api/"]
         CTRL["controllers<br/>rotas + schemas de entrada"]
@@ -184,12 +214,15 @@ camada que as aplica.
 - O público elegível é composto por alunos e funcionários; terceirizados estão
   fora do escopo atual. Uma conta nova só pode ser criada para pessoa com um
   desses vínculos.
-- O fluxo pretendido usa matrícula e senha. Essa escolha depende do resultado
-  do EN01; se matrícula não for viável, o plano B é usar e-mail institucional.
-  A decisão precisa ser confirmada antes de fixar o mecanismo de login.
-- Credenciais inválidas devem produzir a mensagem
-  `Matrícula ou senha inválidas`. Após cinco tentativas erradas consecutivas,
-  o login fica bloqueado por dez minutos.
+- O grupo adotou o plano B: a plataforma é restrita a e-mails institucionais
+  da PUC-Rio (`@puc-rio.br` e `@aluno.puc-rio.br`), confirmados por um link
+  enviado ao e-mail. Detalhes em
+  `spec/features/001-cadastro-login-verificacao-email/`.
+- O login usa um único campo, que aceita e-mail, nome de usuário ou
+  matrícula (opcional no cadastro), e a senha.
+- Credenciais inválidas produzem a mensagem `Credenciais inválidas`, sem
+  indicar qual dado está errado. Após cinco tentativas erradas consecutivas,
+  o login da conta fica bloqueado por dez minutos.
 - Senhas devem ser armazenadas com hash seguro, nunca em texto puro nem por
   criptografia reversível.
 
@@ -210,9 +243,9 @@ camada que as aplica.
 
 ## Persistência e testes
 
-O modelo SQLite atual contém `Usuario` com `id`, `nome`, `email`, `matricula`
-e `vinculo`, documentado em `server/infra/db/README.md`. `UsuarioModel` no
-SQLAlchemy mantém as mesmas colunas e constraints do `schema.sql`.
+O modelo SQLite atual contém as tabelas `usuarios`, `tokens_confirmacao` e
+`sessoes`, documentadas em `server/infra/db/README.md`. Os modelos
+SQLAlchemy mantêm as mesmas colunas e constraints do `schema.sql`.
 `create_all` cria tabelas ausentes, mas não atualiza tabelas já existentes;
 mudanças incompatíveis exigem migração explícita.
 
