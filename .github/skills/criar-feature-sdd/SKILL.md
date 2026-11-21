@@ -15,6 +15,9 @@ Antes de criar os arquivos, consulte:
 - `spec/README.md` para o fluxo e a estrutura do SDD.
 - `spec/constitution.md` para as regras obrigatórias de arquitetura, código e
   testes.
+- `spec/decisoes.md` para as decisões gerais de produto e técnicas já
+  tomadas. Não pergunte de novo o que já está decidido lá; cite o ID
+  (`D-NNN`) na spec e no plano.
 - `spec/templates/spec-template.md`, `spec/templates/plan-template.md` e
   `spec/templates/tasks-template.md` para os formatos dos artefatos.
 - As features existentes em `spec/features/` para evitar IDs repetidos e
@@ -41,7 +44,9 @@ Antes de criar os arquivos, consulte:
 6. Divida o trabalho em tarefas pequenas e ordenadas, escrevendo testes antes
    da implementação. Inclua validação dos critérios de aceitação, `pytest` e
    `flake8` quando aplicáveis.
-7. Confira que os três documentos concordam entre si, que nenhuma decisão
+7. Quando o usuário responder uma dúvida e a resposta valer para o projeto
+   inteiro, registre-a também em `spec/decisoes.md` com um novo ID.
+8. Confira que os três documentos concordam entre si, que nenhuma decisão
    pendente foi apresentada como certa e que não há código de aplicação sendo
    implementado como parte desta skill.
 

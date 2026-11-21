@@ -3,6 +3,7 @@
 - **ID**: NNN
 - **Status**: Rascunho | Aprovada | Implementada
 - **Data**: AAAA-MM-DD
+- **Decisões gerais aplicadas**: IDs de `spec/decisoes.md` (ex.: D-004, D-020)
 
 ## História de usuário
 
