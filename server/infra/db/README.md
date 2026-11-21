@@ -22,6 +22,19 @@ classDiagram
         +int tentativas_login_falhas
         +datetime? bloqueado_ate
     }
+
+    class Ad {
+        +int id
+        +str title
+        +str description
+        +str type
+        +str category
+        +float price
+        +str image_url
+        +datetime created_at
+        +str status
+        +datetime expires_at
+    }
     class TokenConfirmacao {
         +int id
         +int usuario_id
@@ -152,6 +165,26 @@ Mapeamento com os nomes da subtarefa PROJ-25 do Jira (decisão D-041):
 `contatos_anunciante` (a decisão de contatos como lista é de 2026-11-20).
 
 ## Regras fora do banco
+
+## Tabela `ads`
+
+| Coluna | Tipo | Obrigatória | Restrições | Descrição |
+|---|---|---:|---|---|
+| `id` | INTEGER | Sim | Chave primária, autoincremento | Identificador interno do anúncio |
+| `title` | TEXT | Sim | Não pode ser vazio ou conter somente espaços ASCII | Título do anúncio |
+| `description` | TEXT | Não | — | Descrição opcional do anúncio |
+| `type` | TEXT | Sim | `product` ou `service` | Tipo do anúncio |
+| `category` | TEXT | Sim | Não pode ser vazia ou conter somente espaços ASCII | Categoria do anúncio |
+| `price` | REAL | Sim | Valor numérico | Preço do anúncio |
+| `image_url` | TEXT | Não | Pode ser nulo | URL da foto do anúncio |
+| `created_at` | DATETIME | Sim | Data de criação | Momento de criação do anúncio |
+| `status` | TEXT | Sim | `published`, `sold` ou `expired` | Estado de disponibilidade |
+| `expires_at` | DATETIME | Não | Pode ser nulo | Momento de expiração, quando aplicável |
+
+Os anúncios sem foto usam `image_url` nulo. O feed considera disponíveis apenas
+os anúncios publicados; anúncios vendidos ou expirados não devem ser retornados.
+O banco não calcula a expiração automática: essa regra pertence ao domínio e ao
+caso de uso de publicação.
 
 O banco garante as constraints estruturais acima, mas não valida o formato ou
 o domínio do e-mail. A entidade `Usuario` valida o endereço (apenas

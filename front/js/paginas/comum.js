@@ -5,6 +5,7 @@ import { API_BASE_URL } from "../config.js";
 import { criarClienteHttp } from "../adaptadores/cliente_http.js";
 import { criarAuthApi } from "../adaptadores/auth_api.js";
 import { criarPerfilApi } from "../adaptadores/perfil_api.js";
+import { criarAdsApi } from "../adaptadores/ads_api.js";
 import { sair } from "../fluxos/sessao_atual.js";
 import { criarArmazenamentoSessao } from "../adaptadores/armazenamento_sessao.js";
 
@@ -18,6 +19,7 @@ export function montarDependencias() {
   return {
     authApi: criarAuthApi(cliente),
     perfilApi: criarPerfilApi(cliente),
+    adsApi: criarAdsApi(cliente),
     armazenamentoSessao,
   };
 }

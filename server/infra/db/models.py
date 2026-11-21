@@ -5,6 +5,7 @@ from datetime import UTC, datetime
 from sqlalchemy import (
     CheckConstraint,
     DateTime,
+    Float,
     ForeignKey,
     Integer,
     Text,
@@ -89,6 +90,7 @@ class UsuarioModel(Base):
     email: Mapped[str] = mapped_column(Text, nullable=False)
     nome_usuario: Mapped[str] = mapped_column(Text, nullable=False)
     matricula: Mapped[str | None] = mapped_column(Text, nullable=True)
+    vinculo: Mapped[str] = mapped_column(Text, nullable=False)
     vinculo: Mapped[str] = mapped_column(Text, nullable=False)
     senha_hash: Mapped[str] = mapped_column(Text, nullable=False)
     confirmado_em: Mapped[datetime | None] = mapped_column(
@@ -254,4 +256,47 @@ class SessaoModel(Base):
     expira_em: Mapped[datetime] = mapped_column(UTCDateTime, nullable=False)
     revogada_em: Mapped[datetime | None] = mapped_column(
         UTCDateTime, nullable=True
+    )
+
+
+class AdModel(Base):
+    """Database representation of an advertisement."""
+
+    __tablename__ = "ads"
+    __table_args__ = (
+        CheckConstraint("length(trim(title)) > 0", name="ck_ads_title"),
+        CheckConstraint(
+            "type IN ('product', 'service')",
+            name="ck_ads_type",
+        ),
+        CheckConstraint(
+            "length(trim(category)) > 0",
+            name="ck_ads_category",
+        ),
+        CheckConstraint(
+            "status IN ('published', 'sold', 'expired')",
+            name="ck_ads_status",
+        ),
+        {"sqlite_autoincrement": True},
+    )
+
+    id: Mapped[int] = mapped_column(
+        Integer,
+        primary_key=True,
+        autoincrement=True,
+    )
+    title: Mapped[str] = mapped_column(Text, nullable=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    type: Mapped[str] = mapped_column(Text, nullable=False)
+    category: Mapped[str] = mapped_column(Text, nullable=False)
+    price: Mapped[float] = mapped_column(Float, nullable=False)
+    image_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+    )
+    status: Mapped[str] = mapped_column(Text, nullable=False)
+    expires_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
     )

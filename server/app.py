@@ -9,6 +9,7 @@ from pathlib import Path
 from flask_cors import CORS
 from flask_openapi3 import Info, OpenAPI
 
+from server.api.controllers.ads_controller import register_ads_controller
 from server.api.autenticacao import ESQUEMA_DE_SEGURANCA
 from server.api.controllers.auth_controller import (
     CasosDeUsoDeAutenticacao,
@@ -60,6 +61,9 @@ from server.infra.gateways.token_confirmacao_repository_sqlalchemy import (
 )
 from server.infra.gateways.usuario_repository_sqlalchemy import (
     UsuarioRepositorySQLAlchemy,
+)
+from server.infra.gateways.ad_repository_sqlalchemy import (
+    AdRepositorySQLAlchemy,
 )
 from server.infra.services import enviador_email_log
 from server.infra.services.armazenamento_foto_local import (
@@ -143,6 +147,8 @@ def create_app(config: Mapping[str, object] | None = None) -> OpenAPI:
     session_factory = create_session_factory(engine)
     app.extensions["database_engine"] = engine
     app.extensions["session_factory"] = session_factory
+    app.extensions["session_factory"] = session_factory
+    app.extensions["ad_repository"] = AdRepositorySQLAlchemy(session_factory)
 
     casos_de_uso = _montar_casos_de_uso(app, session_factory)
     app.extensions["casos_de_uso_autenticacao"] = casos_de_uso
@@ -157,6 +163,7 @@ def create_app(config: Mapping[str, object] | None = None) -> OpenAPI:
     registrar_tratamento_de_erros(app)
     register_health_controller(app)
     register_auth_controller(app, casos_de_uso)
+    register_ads_controller(app, casos_de_uso.obter_usuario_da_sessao)
     register_perfil_anunciante_controller(app, casos_de_uso_perfil)
     return app
 
