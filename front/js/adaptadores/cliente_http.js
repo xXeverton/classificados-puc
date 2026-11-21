@@ -4,22 +4,35 @@ export function criarClienteHttp({ fetchFn, baseUrl, obterToken = () => null }) 
   async function requisitar(metodo, caminho, corpo) {
     const cabecalhos = { Accept: "application/json" };
     const opcoes = { method: metodo, headers: cabecalhos };
-    if (corpo !== undefined) {
+    if (corpo instanceof FormData) {
+      // O navegador define o Content-Type do multipart, com o boundary.
+      opcoes.body = corpo;
+    } else if (corpo !== undefined) {
       cabecalhos["Content-Type"] = "application/json";
       opcoes.body = JSON.stringify(corpo);
     }
+    const resposta = await enviar(caminho, opcoes, cabecalhos);
+    return { status: resposta.status, corpo: await lerCorpo(resposta) };
+  }
+
+  // Arquivos (fotos): devolve o conteúdo só quando a resposta é 200.
+  async function baixar(caminho) {
+    const cabecalhos = {};
+    const resposta = await enviar(caminho, { method: "GET", headers: cabecalhos }, cabecalhos);
+    if (resposta.status !== 200) return { status: resposta.status, blob: null };
+    return { status: 200, blob: await resposta.blob() };
+  }
+
+  async function enviar(caminho, opcoes, cabecalhos) {
     const token = obterToken();
     if (token) cabecalhos.Authorization = `Bearer ${token}`;
-
-    let resposta;
     try {
-      resposta = await fetchFn(`${baseUrl}${caminho}`, opcoes);
+      return await fetchFn(`${baseUrl}${caminho}`, opcoes);
     } catch (erro) {
       throw new ErroDeConexao(erro);
     }
-    return { status: resposta.status, corpo: await lerCorpo(resposta) };
   }
-  return { requisitar };
+  return { requisitar, baixar };
 }
 
 async function lerCorpo(resposta) {

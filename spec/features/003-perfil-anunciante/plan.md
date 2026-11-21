@@ -162,7 +162,7 @@ Segue a arquitetura e o visual da spec 002 (D-030 a D-033): HTML, CSS e JS puros
 | Tela | Subtarefa | Conteúdo |
 |---|---|---|
 | `front/perfil/index.html` | PROJ-30 | Perfil comum (de `GET /auth/me`) somente leitura. Sem perfil de anunciante (`404`): botão "Completar perfil de anunciante". Com perfil: nome de exibição, foto, contatos (com o WhatsApp como link de conversa) e botão "Editar". |
-| `front/perfil/anunciante/index.html` | PROJ-27 | Formulário: foto com pré-visualização e opção de remover; nome de exibição; **seção "Contatos"** com a lista de contatos, botão "Adicionar contato" (escolha do tipo: WhatsApp, e-mail, telefone, site ou link), remover e mover para cima/baixo cada contato; vínculo somente leitura. Cada tipo mostra seus campos: WhatsApp com escolha "Número" (lista de países, Brasil padrão) ou "Link"; telefone com lista de países; e-mail; site; link com rótulo opcional. Pré-preenchimento do CA4 ou do CA5. |
+| `front/perfil/anunciante/index.html` | PROJ-27 | Formulário: foto com pré-visualização e opção de remover; nome de exibição; **seção "Contatos"** com a lista de contatos, botão "Adicionar contato" (escolha do tipo: WhatsApp, e-mail, telefone, site ou link), remover e reordenar cada contato arrastando (alça; no teclado, setas); vínculo somente leitura. Cada tipo mostra seus campos: WhatsApp com escolha "Número" (lista de países, Brasil padrão) ou "Link"; telefone com lista de países; e-mail; site; link com rótulo opcional. Pré-preenchimento do CA4 ou do CA5. |
 | `front/anuncios/novo/index.html` | PROJ-29 | Página provisória de novo anúncio: usa a guarda abaixo e mostra que a publicação ainda está em construção. |
 
 Módulos JS:

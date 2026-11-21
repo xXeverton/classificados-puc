@@ -98,24 +98,24 @@ implementação. Rode `pytest` ao fim de cada bloco.
 
 ## 3. PROJ-30 e PROJ-27 — Tela de perfil e formulário
 
-- [ ] T18: Criar `front/js/dominio/codigos_paises.js` (Brasil como padrão) e
+- [x] T18: Criar `front/js/dominio/codigos_paises.js` (Brasil como padrão) e
   testes (`node --test`) e implementação de `regras_perfil.js` (obrigatórios,
   ao menos um e no máximo 10 contatos, repetidos, dígitos de número, host do
   WhatsApp por link, `https://` de site e link, rótulo, formatos e tamanho da
   foto). Textos novos em `mensagens.js`.
-- [ ] T19: Testes e implementação de `obter_perfil.js` (perfil comum de
+- [x] T19: Testes e implementação de `obter_perfil.js` (perfil comum de
   `/auth/me`; com e sem perfil de anunciante; pré-preenchimento com nome e
   contato de e-mail institucional, CA4; dados e ordem atuais, CA5; `401` leva
   a `/entrar/`) e `carregar_foto.js` (com token; `blob:` revogado).
-- [ ] T20: Criar `front/perfil/index.html` (PROJ-30): perfil comum somente
+- [x] T20: Criar `front/perfil/index.html` (PROJ-30): perfil comum somente
   leitura e seção de anunciante com "Completar perfil de anunciante" ou dados,
   contatos + "Editar". (CA1–CA3)
-- [ ] T21: Testes e implementação de `salvar_perfil.js` (monta o `multipart`
+- [x] T21: Testes e implementação de `salvar_perfil.js` (monta o `multipart`
   com os contatos em JSON; estados para `200`, `400`, `413` e `401`; destino
   após salvar com `?depois=anunciar` e valor fora da lista ignorado, CA28).
-- [ ] T22: Criar `front/perfil/anunciante/index.html` (PROJ-27): foto com
+- [x] T22: Criar `front/perfil/anunciante/index.html` (PROJ-27): foto com
   pré-visualização e remoção, nome de exibição, seção "Contatos" (adicionar
-  por tipo, remover, mover para cima e para baixo; campos de cada tipo) e
+  por tipo, remover, reordenar arrastando, com setas no teclado; campos de cada tipo) e
   vínculo somente leitura (CA10), no tema da spec 002 (RN11).
 
 ## 4. PROJ-29 — Exigir perfil de anunciante antes de anunciar
