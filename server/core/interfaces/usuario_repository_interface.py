@@ -13,5 +13,19 @@ class UsuarioRepositoryInterface(ABC):
         """Return a user by its internal ID, or None when it does not exist."""
 
     @abstractmethod
+    def buscar_por_email(self, email: str) -> Usuario | None:
+        """Return the user with this normalized e-mail, if any."""
+
+    @abstractmethod
+    def buscar_por_identificador_alternativo(
+        self, valor: str
+    ) -> Usuario | None:
+        """Return the user whose username or registration equals the value."""
+
+    @abstractmethod
     def salvar(self, usuario: Usuario) -> Usuario:
         """Persist a user and return it with its internal ID."""
+
+    @abstractmethod
+    def remover(self, usuario_id: int) -> None:
+        """Delete a user and the records that belong to it."""

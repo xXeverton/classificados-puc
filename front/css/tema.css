@@ -1,0 +1,546 @@
+/*
+ * Tema do Classificados PUC.
+ *
+ * Inspirado no visual do Ambiente de Aprendizagem On-line da PUC-Rio
+ * (ead.puc-rio.br): fonte Rethink Sans, fundo claro, azul institucional e
+ * botões em pílula. Os componentes de classificado (cartão de anúncio, preço,
+ * etiquetas) são próprios deste projeto.
+ *
+ * Como usar em qualquer página:
+ *   <link rel="preconnect" href="https://fonts.googleapis.com">
+ *   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rethink+Sans:wght@400;600;700&display=swap">
+ *   <link rel="stylesheet" href="/css/tema.css">
+ *
+ * Regras para o grupo:
+ *   - Use as variáveis de :root, nunca cores ou medidas soltas.
+ *   - Use as classes de componente abaixo antes de criar novas.
+ *   - Estilo específico de uma tela vai em um CSS da própria tela.
+ *   - Veja todos os componentes em /guia-de-estilo/.
+ */
+
+/* ------------------------------------------------------------------ */
+/* 1. Tokens                                                           */
+/* ------------------------------------------------------------------ */
+
+:root {
+  /* Marca (valores do login do EAD PUC-Rio) */
+  --cor-primaria: #213f7c;
+  --cor-primaria-escura: #030053;
+  --cor-primaria-clara: #e8edf7;
+  --cor-link: #273a7c;
+  --cor-destaque-contorno: #0d47a1;
+
+  /* Classificados: preço e selo de destaque */
+  --cor-preco: #0b6b3a;
+  --cor-selo: #ffd166;
+  --cor-selo-texto: #3d2c00;
+
+  /* Neutros */
+  --cor-fundo: #f8f8f8;
+  --cor-superficie: #ffffff;
+  --cor-texto: #1d2125;
+  --cor-texto-rotulo: #333333;
+  --cor-texto-suave: #6c757d;
+  --cor-titulo-marca: #777777;
+  --cor-borda: #cccccc;
+  --cor-borda-suave: #dee2e6;
+  --cor-divisor: #6c757d;
+
+  /* Estados */
+  --cor-erro: #b3261e;
+  --cor-erro-fundo: #fdecea;
+  --cor-sucesso: #1e7b34;
+  --cor-sucesso-fundo: #e7f5ea;
+  --cor-aviso: #8a5300;
+  --cor-aviso-fundo: #fff4e0;
+  --cor-info-fundo: var(--cor-primaria-clara);
+  --cor-foco: #4c8dff;
+
+  /* Tipografia */
+  --fonte-base: "Rethink Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --texto-xs: 0.75rem;
+  --texto-sm: 0.875rem;
+  --texto-md: 1rem;
+  --texto-lg: 1.25rem;
+  --texto-xl: 1.75rem;
+  --texto-xxl: 2rem;
+  --peso-normal: 400;
+  --peso-semi: 600;
+  --peso-forte: 700;
+
+  /* Espaços */
+  --espaco-1: 0.25rem;
+  --espaco-2: 0.5rem;
+  --espaco-3: 0.75rem;
+  --espaco-4: 1rem;
+  --espaco-5: 1.5rem;
+  --espaco-6: 2rem;
+  --espaco-7: 3rem;
+
+  /* Formas */
+  --raio-campo: 5px;
+  --raio-cartao: 8px;
+  --raio-pilula: 999px;
+  --sombra-cartao: 0 1px 2px rgba(0, 0, 0, 0.06), 0 2px 8px rgba(0, 0, 0, 0.06);
+  --sombra-cartao-hover: 0 4px 16px rgba(0, 0, 0, 0.12);
+
+  /* Layout */
+  --largura-conteudo: 1100px;
+  --largura-formulario: 350px;
+  --altura-cabecalho: 64px;
+  --margem-lateral: 16px;
+}
+
+/* ------------------------------------------------------------------ */
+/* 2. Base                                                             */
+/* ------------------------------------------------------------------ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--fonte-base);
+  font-size: var(--texto-md);
+  line-height: 1.5;
+  color: var(--cor-texto);
+  background-color: var(--cor-fundo);
+}
+
+h1, h2, h3 {
+  margin: 0 0 var(--espaco-4);
+  line-height: 1.2;
+}
+
+h1 { font-size: var(--texto-xxl); font-weight: var(--peso-forte); }
+h2 { font-size: var(--texto-xl); font-weight: var(--peso-semi); }
+h3 { font-size: var(--texto-lg); font-weight: var(--peso-semi); }
+
+p { margin: 0 0 var(--espaco-4); }
+
+a {
+  color: var(--cor-link);
+  font-weight: var(--peso-semi);
+  text-decoration: none;
+}
+
+a:hover { text-decoration: underline; }
+
+:focus-visible {
+  outline: 3px solid var(--cor-foco);
+  outline-offset: 2px;
+}
+
+img { max-width: 100%; display: block; }
+
+[hidden] { display: none !important; }
+
+.visualmente-oculto {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.container {
+  width: 100%;
+  max-width: var(--largura-conteudo);
+  margin: 0 auto;
+  padding: 0 var(--margem-lateral);
+}
+
+/* ------------------------------------------------------------------ */
+/* 3. Cabeçalho (estilo da barra do EAD)                               */
+/* ------------------------------------------------------------------ */
+
+.cabecalho {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--cor-superficie);
+  border-bottom: 1px solid var(--cor-borda-suave);
+}
+
+.cabecalho__conteudo {
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-5);
+  min-height: var(--altura-cabecalho);
+}
+
+.marca {
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-3);
+  color: var(--cor-primaria);
+  font-weight: var(--peso-forte);
+  text-decoration: none;
+}
+
+.marca:hover { text-decoration: none; }
+
+.marca__sigla {
+  font-size: var(--texto-lg);
+  line-height: 1;
+  padding-right: var(--espaco-3);
+  border-right: 1px solid var(--cor-borda);
+}
+
+.marca__nome {
+  font-size: var(--texto-sm);
+  font-weight: var(--peso-semi);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--cor-texto-rotulo);
+}
+
+.navegacao {
+  display: flex;
+  gap: var(--espaco-4);
+  margin-right: auto;
+}
+
+.navegacao__item {
+  padding: var(--espaco-4) 0;
+  color: var(--cor-texto);
+  font-weight: var(--peso-normal);
+  border-bottom: 3px solid transparent;
+}
+
+.navegacao__item:hover { text-decoration: none; color: var(--cor-primaria); }
+
+.navegacao__item[aria-current="page"] {
+  border-bottom-color: var(--cor-primaria);
+}
+
+/* ------------------------------------------------------------------ */
+/* 4. Layout das telas de acesso (logo | divisor | formulário)          */
+/* ------------------------------------------------------------------ */
+
+.acesso {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: var(--espaco-5) var(--margem-lateral);
+}
+
+.acesso__marca {
+  flex: 1;
+  max-width: 360px;
+  text-align: center;
+}
+
+.acesso__sigla {
+  font-size: 3.5rem;
+  font-weight: var(--peso-forte);
+  color: var(--cor-primaria);
+  line-height: 1;
+}
+
+.acesso__titulo {
+  margin-top: var(--espaco-3);
+  font-size: var(--texto-xxl);
+  font-weight: var(--peso-semi);
+  color: var(--cor-titulo-marca);
+}
+
+.acesso__divisor {
+  align-self: stretch;
+  width: 1px;
+  margin: 0 var(--espaco-7);
+  background: var(--cor-divisor);
+}
+
+.acesso__formulario {
+  flex: 1;
+  width: 100%;
+  max-width: var(--largura-formulario);
+}
+
+@media (max-width: 768px) {
+  .acesso { flex-direction: column; }
+  .acesso__divisor { width: 80%; height: 1px; margin: var(--espaco-5) 0; align-self: center; }
+  .acesso__sigla { font-size: 2.5rem; }
+  .acesso__titulo { font-size: var(--texto-xl); }
+}
+
+/* ------------------------------------------------------------------ */
+/* 5. Formulários                                                      */
+/* ------------------------------------------------------------------ */
+
+.formulario {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-4);
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-1);
+}
+
+.campo__rotulo {
+  font-size: var(--texto-sm);
+  font-weight: var(--peso-semi);
+  color: var(--cor-texto-rotulo);
+}
+
+.campo__opcional {
+  font-weight: var(--peso-normal);
+  color: var(--cor-texto-suave);
+}
+
+.campo__entrada {
+  width: 100%;
+  padding: 10px;
+  font: inherit;
+  color: var(--cor-texto);
+  background: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-campo);
+}
+
+.campo__entrada:focus-visible {
+  outline: none;
+  border-color: var(--cor-primaria);
+  box-shadow: 0 0 0 3px var(--cor-primaria-clara);
+}
+
+.campo__entrada[aria-invalid="true"] {
+  border-color: var(--cor-erro);
+}
+
+.campo__ajuda {
+  font-size: var(--texto-xs);
+  color: var(--cor-texto-suave);
+}
+
+.campo__erro {
+  font-size: var(--texto-sm);
+  color: var(--cor-erro);
+}
+
+.campo__erro:empty { display: none; }
+
+/* Senha com botão de mostrar/ocultar */
+.campo-senha {
+  position: relative;
+}
+
+.campo-senha .campo__entrada {
+  padding-right: 5.5rem;
+}
+
+.campo-senha__alternar {
+  position: absolute;
+  top: 50%;
+  right: var(--espaco-2);
+  transform: translateY(-50%);
+  padding: var(--espaco-1) var(--espaco-2);
+  font: inherit;
+  font-size: var(--texto-sm);
+  font-weight: var(--peso-semi);
+  color: var(--cor-link);
+  background: none;
+  border: none;
+  border-radius: var(--raio-campo);
+  cursor: pointer;
+}
+
+/* Grupo de opções (ex.: vínculo) */
+.opcoes {
+  display: flex;
+  gap: var(--espaco-4);
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+.opcoes__item {
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-2);
+  font-size: var(--texto-md);
+}
+
+/* ------------------------------------------------------------------ */
+/* 6. Botões                                                           */
+/* ------------------------------------------------------------------ */
+
+.botao {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--espaco-2);
+  min-height: 40px;
+  padding: var(--espaco-2) var(--espaco-5);
+  font: inherit;
+  font-weight: var(--peso-semi);
+  text-decoration: none;
+  border: 2px solid transparent;
+  border-radius: var(--raio-pilula);
+  cursor: pointer;
+}
+
+.botao:hover { text-decoration: none; }
+
+.botao--primario {
+  color: #ffffff;
+  background: var(--cor-primaria);
+}
+
+.botao--primario:hover { background: var(--cor-primaria-escura); }
+
+.botao--contorno {
+  color: var(--cor-destaque-contorno);
+  background: transparent;
+  border-color: var(--cor-destaque-contorno);
+}
+
+.botao--contorno:hover { background: var(--cor-primaria-clara); }
+
+.botao--texto {
+  padding-left: var(--espaco-2);
+  padding-right: var(--espaco-2);
+  color: var(--cor-link);
+  background: transparent;
+}
+
+.botao--bloco { width: 100%; }
+
+.botao:disabled,
+.botao[aria-busy="true"] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ------------------------------------------------------------------ */
+/* 7. Alertas e mensagens                                              */
+/* ------------------------------------------------------------------ */
+
+.alerta {
+  padding: var(--espaco-3) var(--espaco-4);
+  font-size: var(--texto-sm);
+  border-left: 4px solid currentColor;
+  border-radius: var(--raio-campo);
+}
+
+.alerta:empty { display: none; }
+
+.alerta--erro { color: var(--cor-erro); background: var(--cor-erro-fundo); }
+.alerta--sucesso { color: var(--cor-sucesso); background: var(--cor-sucesso-fundo); }
+.alerta--aviso { color: var(--cor-aviso); background: var(--cor-aviso-fundo); }
+.alerta--info { color: var(--cor-primaria); background: var(--cor-info-fundo); }
+
+/* ------------------------------------------------------------------ */
+/* 8. Cartões e componentes de classificado                            */
+/* ------------------------------------------------------------------ */
+
+.painel {
+  padding: var(--espaco-5);
+  background: var(--cor-superficie);
+  border: 1px solid var(--cor-borda-suave);
+  border-radius: var(--raio-cartao);
+}
+
+.grade-anuncios {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--espaco-4);
+}
+
+.anuncio {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  color: inherit;
+  background: var(--cor-superficie);
+  border: 1px solid var(--cor-borda-suave);
+  border-radius: var(--raio-cartao);
+  box-shadow: var(--sombra-cartao);
+  transition: box-shadow 0.15s ease;
+}
+
+.anuncio:hover {
+  text-decoration: none;
+  box-shadow: var(--sombra-cartao-hover);
+}
+
+.anuncio__imagem {
+  aspect-ratio: 4 / 3;
+  width: 100%;
+  object-fit: cover;
+  background: var(--cor-primaria-clara);
+}
+
+.anuncio__corpo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-1);
+  padding: var(--espaco-3) var(--espaco-4) var(--espaco-4);
+}
+
+.anuncio__preco {
+  font-size: var(--texto-lg);
+  font-weight: var(--peso-forte);
+  color: var(--cor-preco);
+}
+
+.anuncio__titulo {
+  margin: 0;
+  font-size: var(--texto-md);
+  font-weight: var(--peso-semi);
+  color: var(--cor-link);
+}
+
+.anuncio__meta {
+  font-size: var(--texto-sm);
+  color: var(--cor-texto-suave);
+}
+
+.etiqueta {
+  display: inline-block;
+  align-self: flex-start;
+  padding: 2px var(--espaco-3);
+  font-size: var(--texto-xs);
+  font-weight: var(--peso-semi);
+  color: var(--cor-primaria);
+  background: var(--cor-primaria-clara);
+  border-radius: var(--raio-pilula);
+}
+
+.etiqueta--destaque {
+  color: var(--cor-selo-texto);
+  background: var(--cor-selo);
+}
+
+/* Filtros por categoria */
+.filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espaco-2);
+}
+
+.filtro {
+  padding: var(--espaco-1) var(--espaco-4);
+  font: inherit;
+  font-size: var(--texto-sm);
+  color: var(--cor-texto);
+  background: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-pilula);
+  cursor: pointer;
+}
+
+.filtro[aria-pressed="true"] {
+  color: #ffffff;
+  background: var(--cor-primaria);
+  border-color: var(--cor-primaria);
+}
