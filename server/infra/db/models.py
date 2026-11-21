@@ -1,7 +1,5 @@
 """SQLAlchemy persistence models."""
 
-"""SQLAlchemy persistence models."""
-
 from datetime import UTC, datetime
 
 from sqlalchemy import (

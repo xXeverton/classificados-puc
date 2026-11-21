@@ -1,11 +1,36 @@
 from datetime import datetime, timezone
 
 import pytest
+from werkzeug.security import generate_password_hash
 
 from server.app import create_app
-from server.core.entities.usuario import Usuario
 from server.infra.db.database import create_session_factory
-from server.infra.db.models import AdModel
+from server.infra.db.models import AdModel, UsuarioModel
+
+
+def add_confirmed_user_and_login(app):
+    session_factory = create_session_factory(app.extensions["database_engine"])
+    with session_factory.begin() as session:
+        session.add(
+            UsuarioModel(
+                nome="Ana",
+                email="ana@aluno.puc-rio.br",
+                nome_usuario="ana123",
+                matricula="123",
+                vinculo="aluno",
+                senha_hash=generate_password_hash("Senha123"),
+                confirmado_em=datetime.now(timezone.utc),
+            )
+        )
+    login = app.test_client().post(
+        "/auth/login",
+        json={
+            "identificador": "ana@aluno.puc-rio.br",
+            "senha": "Senha123",
+        },
+    )
+    assert login.status_code == 200
+    return {"Authorization": f"Bearer {login.json['token']}"}
 
 
 def create_ads_app():
@@ -15,14 +40,8 @@ def create_ads_app():
             "CORS_ORIGINS": [],
         }
     )
-    app.extensions["authenticated_user"] = Usuario(
-        nome="Ana",
-        email="ana@aluno.puc-rio.br",
-        nome_usuario="ana123",
-        matricula="123",
-        vinculo="aluno",
-        senha_hash="hash-de-teste",
-    )
+    headers = add_confirmed_user_and_login(app)
+    app.extensions["test_auth_headers"] = headers
     session_factory = create_session_factory(
         app.extensions["database_engine"]
     )
@@ -71,7 +90,10 @@ def create_ads_app():
 def test_get_ads_returns_paginated_cards_with_public_fields():
     app = create_ads_app()
 
-    response = app.test_client().get("/api/ads")
+    response = app.test_client().get(
+        "/api/ads",
+        headers=app.extensions["test_auth_headers"],
+    )
 
     assert response.status_code == 200
     assert response.json["page"] == 1
@@ -98,6 +120,7 @@ def test_get_ads_filters_by_search():
     response = app.test_client().get(
         "/api/ads",
         query_string={"search": "UNIVERSIDADE"},
+        headers=app.extensions["test_auth_headers"],
     )
 
     assert response.status_code == 200
@@ -113,6 +136,7 @@ def test_get_ads_filters_by_service_type():
     response = app.test_client().get(
         "/api/ads",
         query_string={"type": "service"},
+        headers=app.extensions["test_auth_headers"],
     )
 
     assert response.status_code == 200
@@ -129,16 +153,9 @@ def test_get_ads_returns_empty_feed_message():
             "CORS_ORIGINS": [],
         }
     )
-    app.extensions["authenticated_user"] = Usuario(
-        nome="Ana",
-        email="ana@aluno.puc-rio.br",
-        nome_usuario="ana123",
-        matricula="123",
-        vinculo="aluno",
-        senha_hash="hash-de-teste",
-    )
+    headers = add_confirmed_user_and_login(app)
 
-    response = app.test_client().get("/api/ads")
+    response = app.test_client().get("/api/ads", headers=headers)
 
     assert response.status_code == 200
     assert response.json == {
@@ -155,7 +172,10 @@ def test_get_ads_returns_empty_feed_message():
 def test_get_ads_accepts_missing_optional_parameters():
     app = create_ads_app()
 
-    response = app.test_client().get("/api/ads")
+    response = app.test_client().get(
+        "/api/ads",
+        headers=app.extensions["test_auth_headers"],
+    )
 
     assert response.status_code == 200
     app.extensions["database_engine"].dispose()
@@ -184,10 +204,11 @@ def test_get_ads_rejects_invalid_parameters(query_string, message):
     response = app.test_client().get(
         "/api/ads",
         query_string=query_string,
+        headers=app.extensions["test_auth_headers"],
     )
 
     assert response.status_code == 400
-    assert response.json == {"code":None, "message": message}
+    assert response.json == {"code": None, "message": message}
     app.extensions["database_engine"].dispose()
 
 
@@ -198,14 +219,11 @@ def test_get_ads_rejects_unauthenticated_user():
             "CORS_ORIGINS": [],
         }
     )
-    app.extensions["authenticated_user"] = None
-
     response = app.test_client().get("/api/ads")
 
     assert response.status_code == 401
     assert response.get_json() == {
-        "code": None,
-        "message": "Usuário não autenticado.",
+        "message": "Sessão inválida ou expirada.",
     }
     app.extensions["database_engine"].dispose()
 
@@ -227,7 +245,10 @@ def test_get_ads_returns_500_without_sql_details_when_repository_fails(
         fail_repository,
     )
 
-    response = app.test_client().get("/api/ads")
+    response = app.test_client().get(
+        "/api/ads",
+        headers=app.extensions["test_auth_headers"],
+    )
 
     assert response.status_code == 500
     assert response.json == {

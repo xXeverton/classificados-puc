@@ -1,8 +1,9 @@
 """HTTP controller for the advertisements feed."""
 
-from flask import request
+from flask import g, request
 from flask_openapi3 import OpenAPI
 
+from server.api.autenticacao import SEGURANCA_BEARER, exige_sessao
 from server.api.presenters.ad_presenter import (
     AdsFeedViewSchema,
     apresenta_feed,
@@ -15,11 +16,13 @@ from server.core.usecases.erros import ErroDeCasoDeUso
 from server.core.usecases.list_ads import ListAds
 
 
-def register_ads_controller(app: OpenAPI) -> None:
+def register_ads_controller(app: OpenAPI, obter_usuario_da_sessao) -> None:
     """Register the advertisements feed endpoint."""
+    protegida = exige_sessao(obter_usuario_da_sessao)
 
     @app.get(
         "/api/ads",
+        security=SEGURANCA_BEARER,
         responses={
             200: AdsFeedViewSchema,
             400: ErrorSchema,
@@ -27,6 +30,7 @@ def register_ads_controller(app: OpenAPI) -> None:
             500: ErrorSchema,
         },
     )
+    @protegida
     def ads() -> tuple[dict[str, object], int]:
         page_value = request.args.get("page")
         page = None
@@ -50,7 +54,7 @@ def register_ads_controller(app: OpenAPI) -> None:
         list_ads = ListAds(repository)
         try:
             result = list_ads.execute(
-                usuario=app.extensions.get("authenticated_user"),
+                usuario=g.usuario,
                 page=page,
                 search=search,
                 ad_type=ad_type,

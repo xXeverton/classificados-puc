@@ -11,22 +11,33 @@
 <body>
   <header class="cabecalho">
     <div class="container cabecalho__conteudo">
-      <span class="marca">
+      <a class="marca" href="./">
         <span class="marca__sigla">PUC</span>
         <span class="marca__nome">Classificados</span>
-      </span>
+      </a>
+      <form class="cabecalho__busca" id="busca-feed" role="search">
+        <label class="visualmente-oculto" for="termo-busca">Buscar anúncios</label>
+        <input class="campo__entrada" id="termo-busca" name="search" type="search" placeholder="Buscar...">
+      </form>
       <nav class="navegacao" aria-label="Principal">
         <a class="navegacao__item" href="./" aria-current="page">Início</a>
         <a class="navegacao__item" href="../perfil/">Meu perfil</a>
-        <a class="navegacao__item" href="../anuncios/novo/">Anunciar</a>
       </nav>
+      <a class="botao botao--primario" href="../anuncios/novo/">Novo anúncio</a>
       <button class="botao botao--contorno" id="sair" type="button">Sair</button>
     </div>
   </header>
-  <main class="container" id="conteudo" hidden style="padding-top: var(--espaco-7)">
+  <main class="container pagina-feed" id="conteudo" hidden>
     <div id="alerta" role="alert"></div>
-    <h1>Olá, <span id="nome-usuario"></span></h1>
-    <p>Você está logado. O feed de anúncios chega em uma próxima feature.</p>
+    <h1>Feed de anúncios</h1>
+    <div class="filtros" id="filtros-feed" aria-label="Filtrar anúncios">
+      <button class="filtro" type="button" data-type="all" aria-pressed="true">Todos</button>
+      <button class="filtro" type="button" data-type="product" aria-pressed="false">Produtos</button>
+      <button class="filtro" type="button" data-type="service" aria-pressed="false">Serviços</button>
+    </div>
+    <div class="estado-vazio" id="estado-vazio" hidden></div>
+    <div class="grade-anuncios" id="grade-anuncios"></div>
+    <nav class="paginacao" id="paginacao" aria-label="Paginação do feed"></nav>
   </main>
   <script type="module" src="../js/paginas/inicio.js"></script>
 </body>

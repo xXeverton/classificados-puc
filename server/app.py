@@ -163,7 +163,7 @@ def create_app(config: Mapping[str, object] | None = None) -> OpenAPI:
     registrar_tratamento_de_erros(app)
     register_health_controller(app)
     register_auth_controller(app, casos_de_uso)
-    register_ads_controller(app)
+    register_ads_controller(app, casos_de_uso.obter_usuario_da_sessao)
     register_perfil_anunciante_controller(app, casos_de_uso_perfil)
     return app
 
