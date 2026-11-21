@@ -64,14 +64,14 @@ implementação. Rode `pytest` ao fim de cada bloco.
 
 ## 2. PROJ-28 — Salvar o perfil com foto
 
-- [ ] T10: Testes de `FotoDePerfil.de_bytes`: JPEG, PNG e WEBP pela
+- [x] T10: Testes de `FotoDePerfil.de_bytes`: JPEG, PNG e WEBP pela
   assinatura; exatamente 2 MB aceita; 2 MB + 1 byte recusa; vazio, GIF, PDF e
   texto recusados. Implementar `FotoDePerfil` e `FormatoDeFoto`. (CA23, CA24)
-- [ ] T11: Criar `ArmazenamentoDeFotoInterface` e o dublê em memória em
+- [x] T11: Criar `ArmazenamentoDeFotoInterface` e o dublê em memória em
   `fakes.py`. Adicionar `PerfilNaoEncontrado` e `FotoInvalida` em `erros.py`.
-- [ ] T12: Testes de `ObterPerfilAnunciante` (existe; não existe gera
+- [x] T12: Testes de `ObterPerfilAnunciante` (existe; não existe gera
   `PerfilNaoEncontrado`). Implementar. (CA2, CA3, CA27)
-- [ ] T13: Testes de `SalvarPerfilAnunciante`: cria (CA6); atualiza e
+- [x] T13: Testes de `SalvarPerfilAnunciante`: cria (CA6); atualiza e
   substitui os contatos (CA9); dados inválidos (CA7, CA8); contato inválido
   indicando qual falhou (CA12–CA17); mais de 10 e repetidos (CA21, CA22);
   ordem preservada e remoção de contato (CA19, CA20); sem foto (CA25); com
@@ -79,21 +79,21 @@ implementação. Rode `pytest` ao fim de cada bloco.
   inválido não grava foto nem perfil (RN8); mantém a foto atual, remove a foto
   e apaga o arquivo (CA26); troca a foto e apaga a antiga; falha ao salvar
   apaga a foto nova. Implementar.
-- [ ] T14: Testes e implementação de `ArmazenamentoDeFotoLocal` com
+- [x] T14: Testes e implementação de `ArmazenamentoDeFotoLocal` com
   `tmp_path` (grava com nome aleatório e extensão do formato, devolve
   `/fotos-perfil/<arquivo>`, lê, remove; remover arquivo inexistente não
   falha; nome com `..` ou `/` é recusado). Adicionar `server/uploads/` ao
   `.gitignore`.
-- [ ] T15: Presenter `anunciante_presenter.py` (contatos com
+- [x] T15: Presenter `anunciante_presenter.py` (contatos com
   `link_de_conversa` nos WhatsApp) e mapeamento dos novos erros e do `413` em
   `erros_http.py`.
-- [ ] T16: Testes de API em `tests/api/test_perfil_anunciante_controller.py`:
+- [x] T16: Testes de API em `tests/api/test_perfil_anunciante_controller.py`:
   `GET` `404` → `PUT` `200` → `GET` `200` com contatos na ordem; `PUT` com
   foto válida, grande (`400`), falsa (`400`), acima de 3 MB (`413`) e com JSON
   de contatos malformado (`400`); foto com sessão (`200` e `Content-Type`) e
   sem sessão (`401`); as três rotas sem sessão dão `401` (CA30); o perfil
   salvo é o do usuário da sessão (CA31).
-- [ ] T17: Implementar `perfil_anunciante_controller.py` e montar tudo em
+- [x] T17: Implementar `perfil_anunciante_controller.py` e montar tudo em
   `server/app.py` (`FOTOS_PERFIL_DIR`, `MAX_CONTENT_LENGTH`) até T16 passar.
 
 ## 3. PROJ-30 e PROJ-27 — Tela de perfil e formulário
