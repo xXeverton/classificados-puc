@@ -78,8 +78,10 @@ def make_authenticated_user():
     return Usuario(
         nome="Ana",
         email="ana@aluno.puc-rio.br",
+        nome_usuario="ana123",
         matricula="123",
         vinculo="aluno",
+        senha_hash="hash-de-teste",
     )
 
 

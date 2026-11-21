@@ -18,8 +18,10 @@ def create_ads_app():
     app.extensions["authenticated_user"] = Usuario(
         nome="Ana",
         email="ana@aluno.puc-rio.br",
+        nome_usuario="ana123",
         matricula="123",
         vinculo="aluno",
+        senha_hash="hash-de-teste",
     )
     session_factory = create_session_factory(
         app.extensions["database_engine"]
@@ -130,8 +132,10 @@ def test_get_ads_returns_empty_feed_message():
     app.extensions["authenticated_user"] = Usuario(
         nome="Ana",
         email="ana@aluno.puc-rio.br",
+        nome_usuario="ana123",
         matricula="123",
         vinculo="aluno",
+        senha_hash="hash-de-teste",
     )
 
     response = app.test_client().get("/api/ads")
@@ -183,7 +187,7 @@ def test_get_ads_rejects_invalid_parameters(query_string, message):
     )
 
     assert response.status_code == 400
-    assert response.json == {"message": message}
+    assert response.json == {"code":None, "message": message}
     app.extensions["database_engine"].dispose()
 
 
@@ -199,7 +203,8 @@ def test_get_ads_rejects_unauthenticated_user():
     response = app.test_client().get("/api/ads")
 
     assert response.status_code == 401
-    assert response.json == {
+    assert response.get_json() == {
+        "code": None,
         "message": "Usuário não autenticado.",
     }
     app.extensions["database_engine"].dispose()
@@ -226,6 +231,7 @@ def test_get_ads_returns_500_without_sql_details_when_repository_fails(
 
     assert response.status_code == 500
     assert response.json == {
+        "code": None,
         "message": "Erro interno ao buscar anúncios.",
     }
     assert "SQLSTATE" not in response.get_data(as_text=True)
