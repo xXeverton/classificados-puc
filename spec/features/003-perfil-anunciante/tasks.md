@@ -128,18 +128,18 @@ implementação. Rode `pytest` ao fim de cada bloco.
 
 ## 5. Documentação
 
-- [ ] T25: Documentar `FOTOS_PERFIL_DIR` e a pasta `server/uploads/` no
+- [x] T25: Documentar `FOTOS_PERFIL_DIR` e a pasta `server/uploads/` no
   `README.md` raiz.
-- [ ] T26: Atualizar a seção "Perfil de anunciante" do `ARQUITETURA.md` e a
+- [x] T26: Atualizar a seção "Perfil de anunciante" do `ARQUITETURA.md` e a
   lista de rotas públicas/protegidas.
 
 ## 6. Validação
 
-- [ ] T27: `pytest` passando.
-- [ ] T28: `flake8` sem erros.
-- [ ] T29: `node --test` passando em `front/`.
-- [ ] T30: Roteiro manual das telas (CA1–CA5, CA10, CA11, CA19, CA20,
+- [x] T27: `pytest` passando.
+- [x] T28: `flake8` sem erros.
+- [x] T29: `node --test` passando em `front/`.
+- [x] T30: Roteiro manual das telas (CA1–CA5, CA10, CA11, CA19, CA20,
   CA27–CA29, RN11 e upload de uma foto real de celular).
-- [ ] T31: Conferir o mapa critério → teste do `plan.md`: CA1–CA31 com teste
+- [x] T31: Conferir o mapa critério → teste do `plan.md`: CA1–CA31 com teste
   passando. Marcar os critérios na `spec.md` e mudar o status para
   `Implementada`.

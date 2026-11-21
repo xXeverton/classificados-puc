@@ -1,8 +1,8 @@
 # Spec: Perfil de anunciante
 
 - **ID**: 003
-- **Status**: Aprovada (2026-11-20); contatos revistos em 2026-11-20, a pedido
-  do time, antes de implementar a PROJ-28
+- **Status**: Implementada (2026-11-21); aprovada em 2026-11-20, com contatos
+  revistos no mesmo dia a pedido do time, antes de implementar a PROJ-28
 - **Data**: 2026-11-20
 - **Jira**: história [PROJ-4](https://matheuscomputacaopuc.atlassian.net/browse/PROJ-4);
   subtarefas [PROJ-25](https://matheuscomputacaopuc.atlassian.net/browse/PROJ-25)
@@ -53,99 +53,99 @@ publicar um anúncio, e voltar para a publicação depois,
 
 ### Tela de perfil
 
-- [ ] CA1: Dado que estou logado, quando abro meu perfil, então vejo os dados
+- [x] CA1: Dado que estou logado, quando abro meu perfil, então vejo os dados
   do meu perfil comum (nome, e-mail institucional, nome de usuário, matrícula
   se informada e vínculo), sem poder alterá-los por ali.
-- [ ] CA2: Dado que ainda não sou anunciante, quando abro meu perfil, então
+- [x] CA2: Dado que ainda não sou anunciante, quando abro meu perfil, então
   vejo a opção de completar meu perfil de anunciante.
-- [ ] CA3: Dado que já sou anunciante, quando abro meu perfil, então vejo
+- [x] CA3: Dado que já sou anunciante, quando abro meu perfil, então vejo
   também meus dados de anunciante, com meus contatos, e a opção de editá-los.
 
 ### Completar e editar o perfil de anunciante
 
-- [ ] CA4: Dado que escolho completar meu perfil de anunciante, quando o
+- [x] CA4: Dado que escolho completar meu perfil de anunciante, quando o
   formulário abre, então o nome de exibição vem preenchido com o nome da
   minha conta e a seção de contatos já traz um contato de e-mail com meu
   e-mail institucional; posso alterar ou remover tudo antes de salvar.
-- [ ] CA5: Dado que já sou anunciante, quando abro o formulário, então ele
+- [x] CA5: Dado que já sou anunciante, quando abro o formulário, então ele
   vem preenchido com meus dados de anunciante e meus contatos atuais, na
   ordem em que os salvei.
-- [ ] CA6: Dado um nome de exibição e ao menos um contato válido, quando
+- [x] CA6: Dado um nome de exibição e ao menos um contato válido, quando
   salvo, então passo a ser anunciante e posso publicar anúncios.
-- [ ] CA7: Dado que não informo o nome de exibição (ou informo só espaços),
+- [x] CA7: Dado que não informo o nome de exibição (ou informo só espaços),
   quando salvo, então vejo que ele é obrigatório, e nada é salvo.
-- [ ] CA8: Dado que não informo nenhum contato, quando salvo, então vejo que
+- [x] CA8: Dado que não informo nenhum contato, quando salvo, então vejo que
   é preciso ao menos um, e nada é salvo.
-- [ ] CA9: Dado que já sou anunciante, quando altero os dados e salvo, então
+- [x] CA9: Dado que já sou anunciante, quando altero os dados e salvo, então
   os novos dados e a nova lista de contatos substituem os anteriores.
-- [ ] CA10: Dado que estou no formulário, então o vínculo aparece como
+- [x] CA10: Dado que estou no formulário, então o vínculo aparece como
   somente leitura, vindo do cadastro.
 
 ### Contatos
 
-- [ ] CA11: Dado que adiciono um contato, então escolho o tipo entre WhatsApp,
+- [x] CA11: Dado que adiciono um contato, então escolho o tipo entre WhatsApp,
   e-mail, telefone, site e link, e preencho o valor conforme o tipo.
-- [ ] CA12: Dado um contato de WhatsApp informado como **número**, quando
+- [x] CA12: Dado um contato de WhatsApp informado como **número**, quando
   seleciono o país numa lista de códigos de país e digito o número, então ele
   é aceito; o código do país é obrigatório e já vem selecionado como Brasil
   (+55).
-- [ ] CA13: Dado um contato de WhatsApp informado como **link**, quando colo
+- [x] CA13: Dado um contato de WhatsApp informado como **link**, quando colo
   um link de conversa do WhatsApp (por exemplo `https://wa.me/5521999999999`
   ou `https://wa.me/message/...`), então ele é aceito, mesmo sem número de
   telefone.
-- [ ] CA14: Dado um contato de **telefone**, quando seleciono o país (padrão
+- [x] CA14: Dado um contato de **telefone**, quando seleciono o país (padrão
   Brasil, +55) e digito o número, então ele é aceito, seja fixo ou celular.
-- [ ] CA15: Dado um número (de WhatsApp ou de telefone) com letras ou com
+- [x] CA15: Dado um número (de WhatsApp ou de telefone) com letras ou com
   quantidade de dígitos fora do permitido, ou um link de WhatsApp que não é do
   WhatsApp, quando salvo, então vejo o motivo, e nada é salvo.
-- [ ] CA16: Dado um contato de **e-mail** válido de qualquer domínio (não só
+- [x] CA16: Dado um contato de **e-mail** válido de qualquer domínio (não só
   os da PUC-Rio), quando salvo, então ele é aceito; um e-mail em formato
   inválido gera um motivo, e nada é salvo.
-- [ ] CA17: Dado um contato de **site** ou de **link** com endereço
+- [x] CA17: Dado um contato de **site** ou de **link** com endereço
   `https://`, quando salvo, então ele é aceito; um endereço sem `https://`
   ou malformado gera um motivo, e nada é salvo.
-- [ ] CA18: Dado um contato de **link**, quando informo um rótulo (por
+- [x] CA18: Dado um contato de **link**, quando informo um rótulo (por
   exemplo "Instagram"), então o rótulo é salvo e mostrado junto do link; o
   rótulo é opcional e só existe para links.
-- [ ] CA19: Dado o formulário, quando adiciono vários contatos, inclusive
+- [x] CA19: Dado o formulário, quando adiciono vários contatos, inclusive
   mais de um do mesmo tipo (por exemplo, dois links), então todos são salvos,
   na ordem em que os organizei.
-- [ ] CA20: Dado um perfil com contatos, quando removo um contato e salvo,
+- [x] CA20: Dado um perfil com contatos, quando removo um contato e salvo,
   então ele deixa de existir; se removo todos, vale o CA8.
-- [ ] CA21: Dado que tento salvar mais de 10 contatos, então vejo o limite, e
+- [x] CA21: Dado que tento salvar mais de 10 contatos, então vejo o limite, e
   nada é salvo.
-- [ ] CA22: Dado dois contatos idênticos (mesmo tipo e mesmo valor), quando
+- [x] CA22: Dado dois contatos idênticos (mesmo tipo e mesmo valor), quando
   salvo, então vejo que há contato repetido, e nada é salvo.
 
 ### Foto
 
-- [ ] CA23: Dada uma foto JPG, PNG ou WEBP de até 2 MB, quando salvo, então o
+- [x] CA23: Dada uma foto JPG, PNG ou WEBP de até 2 MB, quando salvo, então o
   perfil de anunciante é salvo com essa foto.
-- [ ] CA24: Dada uma foto acima de 2 MB, em outro formato, ou um arquivo que
+- [x] CA24: Dada uma foto acima de 2 MB, em outro formato, ou um arquivo que
   não é de fato uma imagem nesses formatos, quando salvo, então vejo o motivo,
   e nada é salvo (os dados anteriores continuam como estavam).
-- [ ] CA25: Dado que não envio foto, quando salvo os demais dados válidos,
+- [x] CA25: Dado que não envio foto, quando salvo os demais dados válidos,
   então o perfil é salvo normalmente, sem foto.
-- [ ] CA26: Dado um perfil com foto, quando escolho remover a foto e salvo,
+- [x] CA26: Dado um perfil com foto, quando escolho remover a foto e salvo,
   então o perfil fica sem foto; se eu não enviar outra nem pedir para
   remover, a foto atual continua.
 
 ### Anunciar
 
-- [ ] CA27: Dado que estou logado e não sou anunciante, quando tento publicar
+- [x] CA27: Dado que estou logado e não sou anunciante, quando tento publicar
   um anúncio, então sou levado a completar meu perfil de anunciante.
-- [ ] CA28: Dado que fui levado ao formulário pelo CA27, quando salvo o
+- [x] CA28: Dado que fui levado ao formulário pelo CA27, quando salvo o
   perfil com sucesso, então volto automaticamente para a publicação do
   anúncio.
-- [ ] CA29: Dado que já sou anunciante, quando tento publicar um anúncio,
+- [x] CA29: Dado que já sou anunciante, quando tento publicar um anúncio,
   então sigo direto para a publicação.
 
 ### Acesso
 
-- [ ] CA30: Dado que não estou logado, quando tento abrir o perfil, salvar o
+- [x] CA30: Dado que não estou logado, quando tento abrir o perfil, salvar o
   perfil de anunciante ou ver a foto de um perfil, então não tenho acesso e
   sou levado à tela de entrada.
-- [ ] CA31: Dado que estou logado, quando salvo o perfil de anunciante, então
+- [x] CA31: Dado que estou logado, quando salvo o perfil de anunciante, então
   só o meu perfil é alterado; não é possível editar o perfil de outro membro.
 
 ## Regras de negócio
