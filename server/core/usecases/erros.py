@@ -55,3 +55,11 @@ class EmailNaoConfirmado(ErroDeCasoDeUso):
 
 class SessaoInvalida(ErroDeCasoDeUso):
     mensagem_padrao = "Sessão inválida ou expirada."
+
+
+class PerfilNaoEncontrado(ErroDeCasoDeUso):
+    mensagem_padrao = "Perfil de anunciante não encontrado."
+
+
+class FotoInvalida(ErroDeCasoDeUso):
+    mensagem_padrao = "Foto inválida."

@@ -4,6 +4,8 @@
 import { API_BASE_URL } from "../config.js";
 import { criarClienteHttp } from "../adaptadores/cliente_http.js";
 import { criarAuthApi } from "../adaptadores/auth_api.js";
+import { criarPerfilApi } from "../adaptadores/perfil_api.js";
+import { sair } from "../fluxos/sessao_atual.js";
 import { criarArmazenamentoSessao } from "../adaptadores/armazenamento_sessao.js";
 
 export function montarDependencias() {
@@ -13,14 +15,29 @@ export function montarDependencias() {
     baseUrl: API_BASE_URL,
     obterToken: () => armazenamentoSessao.ler()?.token ?? null,
   });
-  return { authApi: criarAuthApi(cliente), armazenamentoSessao };
+  return {
+    authApi: criarAuthApi(cliente),
+    perfilApi: criarPerfilApi(cliente),
+    armazenamentoSessao,
+  };
 }
 
 export const ROTAS = {
   entrar: "/entrar/",
   cadastro: "/cadastro/",
   inicio: "/inicio/",
+  perfil: "/perfil/",
+  editarPerfilAnunciante: "/perfil/anunciante/",
+  novoAnuncio: "/anuncios/novo/",
 };
+
+export function ligarBotaoSair(botao, deps) {
+  botao.addEventListener("click", async () => {
+    botao.disabled = true;
+    await sair(deps);
+    irPara(ROTAS.entrar);
+  });
+}
 
 export function irPara(rota, aviso) {
   const destino = aviso ? `${rota}?aviso=${encodeURIComponent(aviso)}` : rota;

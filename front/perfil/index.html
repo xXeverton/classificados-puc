@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Meu perfil · Classificados PUC</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rethink+Sans:wght@400;600;700&display=swap">
+  <link rel="stylesheet" href="../css/tema.css">
+  <link rel="stylesheet" href="../css/perfil.css">
+</head>
+<body>
+  <header class="cabecalho">
+    <div class="container cabecalho__conteudo">
+      <a class="marca" href="../inicio/">
+        <span class="marca__sigla">PUC</span>
+        <span class="marca__nome">Classificados</span>
+      </a>
+      <nav class="navegacao" aria-label="Principal">
+        <a class="navegacao__item" href="../inicio/">Início</a>
+        <a class="navegacao__item" href="./" aria-current="page">Meu perfil</a>
+      </nav>
+      <button class="botao botao--contorno" id="sair" type="button">Sair</button>
+    </div>
+  </header>
+  <main class="container pagina" id="conteudo" hidden>
+    <div id="alerta" role="alert"></div>
+    <h1>Meu perfil</h1>
+
+    <section class="painel secao-perfil" id="secao-conta" aria-labelledby="titulo-conta" hidden>
+      <h2 id="titulo-conta">Dados da conta</h2>
+      <dl class="lista-dados">
+        <dt>Nome</dt>
+        <dd id="conta-nome"></dd>
+        <dt>E-mail institucional</dt>
+        <dd id="conta-email"></dd>
+        <dt>Nome de usuário</dt>
+        <dd id="conta-nome-usuario"></dd>
+        <dt id="rotulo-matricula">Matrícula</dt>
+        <dd id="conta-matricula"></dd>
+        <dt>Vínculo</dt>
+        <dd id="conta-vinculo"></dd>
+      </dl>
+    </section>
+
+    <section class="painel secao-perfil" id="secao-anunciante" aria-labelledby="titulo-anunciante" hidden>
+      <h2 id="titulo-anunciante">Perfil de anunciante</h2>
+
+      <div id="sem-anunciante" hidden>
+        <p>Você ainda não é anunciante. Complete seu perfil de anunciante para poder publicar anúncios.</p>
+        <a class="botao botao--primario" href="anunciante/">Completar perfil de anunciante</a>
+      </div>
+
+      <div id="com-anunciante" hidden>
+        <div class="perfil-cabecalho">
+          <img class="perfil-foto" id="anunciante-foto" alt="Foto de perfil" hidden>
+          <div class="perfil-foto perfil-foto--vazia" id="anunciante-foto-vazia">Sem foto</div>
+          <h3 id="anunciante-nome"></h3>
+        </div>
+        <h3>Contatos</h3>
+        <ul class="contatos-visao" id="anunciante-contatos"></ul>
+        <div class="acoes">
+          <a class="botao botao--contorno" href="anunciante/">Editar</a>
+        </div>
+      </div>
+    </section>
+  </main>
+  <script type="module" src="../js/paginas/perfil.js"></script>
+</body>
+</html>

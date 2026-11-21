@@ -1,0 +1,207 @@
+/*
+ * Estilos próprios das telas de perfil (/perfil/ e /perfil/anunciante/).
+ * Só usa as variáveis e os componentes de tema.css; veja /guia-de-estilo/.
+ */
+
+.pagina {
+  max-width: 600px;
+  padding-top: var(--espaco-7);
+  padding-bottom: var(--espaco-7);
+}
+
+.pagina .painel + .painel { margin-top: var(--espaco-5); }
+
+.secao-perfil {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-4);
+}
+
+.formulario > .secao-perfil + .secao-perfil {
+  padding-top: var(--espaco-5);
+  border-top: 1px solid var(--cor-borda-suave);
+}
+
+.secao-perfil > h2,
+.secao-perfil > h3 { margin: 0; font-size: var(--texto-lg); }
+
+/* Dados somente leitura */
+.lista-dados {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--espaco-2) var(--espaco-4);
+  margin: 0;
+}
+
+.lista-dados dt {
+  font-size: var(--texto-sm);
+  font-weight: var(--peso-semi);
+  color: var(--cor-texto-rotulo);
+}
+
+.lista-dados dd { margin: 0; overflow-wrap: anywhere; }
+
+@media (max-width: 480px) {
+  .lista-dados { grid-template-columns: 1fr; }
+  .lista-dados dd { margin-bottom: var(--espaco-2); }
+}
+
+.campo__valor { overflow-wrap: anywhere; }
+
+/* Foto */
+.perfil-cabecalho,
+.foto-edicao {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--espaco-4);
+}
+
+.perfil-cabecalho h3 { margin: 0; overflow-wrap: anywhere; }
+
+.perfil-foto {
+  width: 96px;
+  height: 96px;
+  flex: none;
+  object-fit: cover;
+  border-radius: var(--raio-pilula);
+  background: var(--cor-primaria-clara);
+}
+
+.perfil-foto--vazia {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--espaco-2);
+  text-align: center;
+  font-size: var(--texto-xs);
+  color: var(--cor-texto-suave);
+}
+
+.foto-edicao__controles {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  flex: 1 1 200px;
+  gap: var(--espaco-2);
+  min-width: 0;
+}
+
+/* Contatos no formulário */
+.lista-contatos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.contato {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-3);
+  padding: var(--espaco-4);
+  background: var(--cor-fundo);
+  border: 1px solid var(--cor-borda-suave);
+  border-radius: var(--raio-cartao);
+}
+
+.contato--arrastando {
+  background: var(--cor-superficie);
+  border-color: var(--cor-primaria);
+  box-shadow: var(--sombra-cartao-hover);
+}
+
+.contato__topo {
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-2);
+}
+
+.contato__titulo {
+  flex: 1;
+  font-weight: var(--peso-semi);
+  color: var(--cor-texto-rotulo);
+}
+
+/* Alça de arrastar: seis pontinhos */
+.contato__alca {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 40px;
+  padding: 0;
+  color: var(--cor-texto-suave);
+  background: transparent;
+  border: none;
+  border-radius: var(--raio-campo);
+  cursor: grab;
+  touch-action: none;
+}
+
+.contato__alca::before {
+  content: "";
+  width: 10px;
+  height: 16px;
+  background: radial-gradient(circle, currentColor 1.5px, transparent 2px) 0 0 / 5px 5.33px;
+}
+
+.contato__alca:hover { color: var(--cor-primaria); background: var(--cor-primaria-clara); }
+.contato--arrastando .contato__alca { cursor: grabbing; color: var(--cor-primaria); }
+
+.contato__campos {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--espaco-3);
+}
+
+@media (min-width: 600px) {
+  .contato__campos--dupla { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+}
+
+.adicionar-contato {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: var(--espaco-3);
+}
+
+.adicionar-contato .campo { flex: 1 1 160px; }
+
+/* Contatos na tela de perfil */
+.contatos-visao {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.contatos-visao__item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-1);
+  overflow-wrap: anywhere;
+}
+
+.contatos-visao__tipo {
+  font-size: var(--texto-xs);
+  font-weight: var(--peso-semi);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--cor-texto-suave);
+}
+
+.contatos-visao__detalhe {
+  font-size: var(--texto-sm);
+  color: var(--cor-texto-suave);
+}
+
+.acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espaco-3);
+}

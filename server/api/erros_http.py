@@ -2,6 +2,7 @@
 
 from flask import Flask, Response, jsonify
 from pydantic import ValidationError
+from werkzeug.exceptions import RequestEntityTooLarge
 
 from server.api.presenters.error_presenter import (
     apresenta_erro,
@@ -14,16 +15,24 @@ from server.core.usecases.erros import (
     EmailEmUso,
     EmailNaoConfirmado,
     ErroDeCasoDeUso,
+    FotoInvalida,
     IdentificadorEmUso,
+    PerfilNaoEncontrado,
     SessaoInvalida,
     TokenExpirado,
     TokenInvalido,
 )
 
 STATUS_DE_VALIDACAO = 400
+STATUS_ARQUIVO_GRANDE = 413
+MENSAGEM_ARQUIVO_GRANDE = (
+    "O envio é grande demais. A foto deve ter no máximo 2 MB."
+)
 
 _STATUS_POR_ERRO: dict[type[ErroDeCasoDeUso], int] = {
     DadosInvalidos: 400,
+    FotoInvalida: 400,
+    PerfilNaoEncontrado: 404,
     TokenInvalido: 400,
     CredenciaisInvalidas: 401,
     SessaoInvalida: 401,
@@ -36,6 +45,9 @@ _STATUS_POR_ERRO: dict[type[ErroDeCasoDeUso], int] = {
 
 _CODIGO_POR_ERRO: dict[type[ErroDeCasoDeUso], str] = {
     EmailNaoConfirmado: "email_nao_confirmado",
+    DadosInvalidos: "dados_invalidos",
+    FotoInvalida: "foto_invalida",
+    PerfilNaoEncontrado: "perfil_nao_encontrado",
 }
 
 
@@ -56,5 +68,16 @@ def resposta_de_validacao(erro: ValidationError) -> Response:
     return resposta
 
 
+def resposta_de_arquivo_grande(
+    _erro: RequestEntityTooLarge,
+) -> tuple[dict, int]:
+    """Flask answers 413 when the request body exceeds the limit."""
+    corpo = apresenta_erro(MENSAGEM_ARQUIVO_GRANDE, "arquivo_grande")
+    return corpo.model_dump(exclude_none=True), STATUS_ARQUIVO_GRANDE
+
+
 def registrar_tratamento_de_erros(app: Flask) -> None:
     app.register_error_handler(ErroDeCasoDeUso, resposta_de_erro)
+    app.register_error_handler(
+        RequestEntityTooLarge, resposta_de_arquivo_grande
+    )

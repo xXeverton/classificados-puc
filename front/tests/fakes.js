@@ -43,6 +43,21 @@ export function criarAuthApiFalsa(respostas = {}) {
   return api;
 }
 
+export function criarPerfilApiFalso(respostas = {}) {
+  const chamadas = [];
+  const api = {};
+  for (const nome of ["obter", "salvar", "foto"]) {
+    api[nome] = async (...args) => {
+      chamadas.push({ nome, args });
+      const resposta = respostas[nome];
+      if (resposta instanceof Error) throw resposta;
+      return resposta ?? { status: 200, corpo: {} };
+    };
+  }
+  api.chamadas = chamadas;
+  return api;
+}
+
 export function criarArmazenamentoFalso(sessao = null, motivo = "ausente") {
   const estado = { sessao, salvos: [], apagado: 0 };
   return {

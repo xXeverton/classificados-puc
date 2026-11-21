@@ -37,7 +37,8 @@ server/
     ├── erros_http.py                  # erros do core → status HTTP
     ├── controllers/
     │   ├── health_controller.py       # GET /health
-    │   └── auth_controller.py         # rotas /auth/*
+    │   ├── auth_controller.py         # rotas /auth/*
+    │   └── perfil_anunciante_controller.py  # /perfil-anunciante e /fotos-perfil
     └── presenters/                    # schemas de saída e presenters
 
 tests/                                  # testes organizados pelos adaptadores/camadas
@@ -81,7 +82,8 @@ def feed():
 ```
 
 Só ficam públicas `/health` e as rotas de cadastro, confirmação, reenvio do
-link e login.
+link e login. `GET /auth/me`, `GET` e `PUT /perfil-anunciante` e
+`GET /fotos-perfil/<arquivo>` são protegidas.
 
 ### Correspondência com o diagrama
 
@@ -228,23 +230,40 @@ camada que as aplica.
 
 ### Perfil de anunciante
 
-- O perfil inclui nome de exibição, foto opcional, WhatsApp e e-mail de contato.
+Detalhes em `spec/features/003-perfil-anunciante/`.
+
+- O perfil comum é a própria conta (`usuarios`, via `GET /auth/me`). O perfil
+  de anunciante é a entidade `Anunciante` (tabela `anunciantes`, 1:1 opcional
+  com `usuarios`): ter o registro é ser anunciante, e só se grava perfil válido.
+- O perfil inclui nome de exibição, foto opcional e de 1 a 10 contatos
+  ordenados (`Contato`, tabela `contatos_anunciante`). Tipos: WhatsApp (por
+  número ou link `wa.me`/`api.whatsapp.com`), telefone, e-mail, site e link
+  (com rótulo opcional). Site e link só `https://`.
 - O vínculo de aluno ou funcionário vem do cadastro, aparece no perfil e não
   pode ser editado pelo fluxo de perfil.
-- O perfil está completo quando tem nome de exibição e pelo menos uma forma de
-  contato (WhatsApp ou e-mail). A publicação exige perfil completo; a regra
-  pertence ao caso de uso de publicação.
-- Foto acima de 2 MB ou em formato não aceito deve ser rejeitada sem salvar
-  essa foto; ela pode ser omitida. Os formatos aceitos ainda precisam ser
-  definidos.
-- A visibilidade do perfil para compradores ainda consta como pendência na
-  Definition of Ready de PROJ-4. Até essa decisão, não presuma que e-mail,
-  WhatsApp, matrícula ou outros dados sejam públicos.
+- Salvar substitui a lista inteira de contatos e é tudo ou nada: o caso de uso
+  `SalvarPerfilAnunciante` valida foto e contatos antes de gravar; a foto nova
+  é gravada antes do perfil (e apagada se o perfil falhar) e a antiga só é
+  apagada depois.
+- A foto (JPEG, PNG ou WEBP, até 2 MB) é validada pela assinatura do arquivo
+  (`FotoDePerfil`) e guardada por `ArmazenamentoDeFotoInterface`
+  (implementação em disco, `FOTOS_PERFIL_DIR`). Foto inválida é rejeitada sem
+  salvar nada.
+- Rotas, todas com `exige_sessao` e sempre do usuário da sessão (sem id na
+  URL): `GET` e `PUT /perfil-anunciante` e `GET /fotos-perfil/<arquivo>`. O
+  front baixa a foto com `fetch` e o token, pois `<img src>` não envia
+  `Authorization`.
+- Anunciar exige perfil de anunciante: o front (`exigir_perfil_anunciante.js`)
+  leva a `/perfil/anunciante/?depois=anunciar` quando o perfil não existe. A
+  regra definitiva pertence ao caso de uso de publicação.
+- A visibilidade do perfil para compradores ainda é pendência da Definition
+  of Ready de PROJ-4. Até essa decisão, não presuma que e-mail, WhatsApp,
+  matrícula ou outros dados sejam públicos.
 
 ## Persistência e testes
 
-O modelo SQLite atual contém as tabelas `usuarios`, `tokens_confirmacao` e
-`sessoes`, documentadas em `server/infra/db/README.md`. Os modelos
+O modelo SQLite atual contém as tabelas `usuarios`, `tokens_confirmacao`,
+`sessoes`, `anunciantes` e `contatos_anunciante`, documentadas em `server/infra/db/README.md`. Os modelos
 SQLAlchemy mantêm as mesmas colunas e constraints do `schema.sql`.
 `create_all` cria tabelas ausentes, mas não atualiza tabelas já existentes;
 mudanças incompatíveis exigem migração explícita.
