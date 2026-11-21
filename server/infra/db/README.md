@@ -50,8 +50,25 @@ classDiagram
         +datetime expira_em
         +datetime? revogada_em
     }
+    class Anunciante {
+        +int id
+        +int usuario_id
+        +str nome_exibicao
+        +str? foto_url
+    }
+    class ContatoAnunciante {
+        +int id
+        +int anunciante_id
+        +int posicao
+        +str tipo
+        +str? codigo_pais
+        +str valor
+        +str? rotulo
+    }
     Usuario "1" --> "0..*" TokenConfirmacao : tokens_confirmacao
     Usuario "1" --> "0..*" Sessao : sessoes
+    Usuario "1" --> "0..1" Anunciante : anunciantes
+    Anunciante "1" --> "1..10" ContatoAnunciante : contatos_anunciante
 ```
 
 `id` é a chave primária técnica, gerada pelo banco. `email` é o identificador
@@ -99,6 +116,54 @@ maior cuidado de privacidade. A matrícula é opcional e única quando informada
 | `expira_em` | DATETIME | Sim | — | Fim da validade (`SESSAO_DURACAO_HORAS`) |
 | `revogada_em` | DATETIME | Não | — | Logout; `NULL` = não revogada |
 
+## Tabela `anunciantes`
+
+Perfil de anunciante: extensão **opcional** do perfil comum (`usuarios`), com
+no máximo um por usuário. Não há coluna "completo": ter uma linha aqui é ser
+anunciante. Os contatos ficam na tabela filha `contatos_anunciante`. Decisões
+D-010 e D-013 de `spec/decisoes.md`.
+
+| Coluna | Tipo | Obrigatória | Restrições | Descrição |
+|---|---|---:|---|---|
+| `id` | INTEGER | Sim | Chave primária, autoincremento | Identificador interno |
+| `usuario_id` | INTEGER | Sim | Único; FK → `usuarios.id`, `ON DELETE CASCADE` | Dono do perfil (relação 1:1 opcional) |
+| `nome_exibicao` | TEXT | Sim | Não vazio | Nome mostrado aos compradores |
+| `foto_url` | TEXT | Não | Não vazio se informado | Caminho da foto (`/fotos-perfil/<arquivo>`) |
+
+## Tabela `contatos_anunciante`
+
+Uma linha por contato do anunciante: WhatsApp, telefone, e-mail, site ou link.
+Pode haver vários do mesmo tipo.
+
+| Coluna | Tipo | Obrigatória | Restrições | Descrição |
+|---|---|---:|---|---|
+| `id` | INTEGER | Sim | Chave primária, autoincremento | Identificador interno |
+| `anunciante_id` | INTEGER | Sim | FK → `anunciantes.id`, `ON DELETE CASCADE` | Dono do contato |
+| `posicao` | INTEGER | Sim | `>= 0`; único por anunciante | Ordem escolhida pela pessoa (0 é o primeiro) |
+| `tipo` | TEXT | Sim | `whatsapp`, `telefone`, `email`, `site` ou `link` | Tipo do contato |
+| `codigo_pais` | TEXT | Não | Obrigatório em `telefone`, opcional em `whatsapp`, proibido nos demais; só dígitos, 1 a 3 | Código do país (ex.: `55`). Em `whatsapp`, vazio significa "informado por link" |
+| `valor` | TEXT | Sim | Não vazio; veja as regras por tipo abaixo | Número, e-mail ou endereço |
+| `rotulo` | TEXT | Não | Só em `link`; não vazio se informado | Nome mostrado junto do link (ex.: "Instagram") |
+
+Regras de `valor` por tipo:
+
+| Tipo | `codigo_pais` | `valor` |
+|---|---|---|
+| `whatsapp` por número | preenchido | Só dígitos; código + número somam de 8 a 15 dígitos |
+| `whatsapp` por link | vazio | Começa com `https://wa.me/` ou `https://api.whatsapp.com/`, com algo depois e sem espaços |
+| `telefone` | preenchido | Só dígitos; código + número somam de 8 a 15 dígitos |
+| `email` | vazio | Contém `@` depois do primeiro caractere |
+| `site` e `link` | vazio | Começa com `https://` e não tem espaços |
+
+O código do país fica separado do número para que a tela o mostre selecionado
+ao editar (os códigos têm de 1 a 3 dígitos, então não dá para separá-los
+depois de juntos).
+
+Mapeamento com os nomes da subtarefa PROJ-25 do Jira (decisão D-041):
+`id_usuario` → `anunciantes.usuario_id`, `nome` → `anunciantes.nome_exibicao`,
+`foto_url` sem mudança, e `whatsapp` e `email_contato` viram linhas de
+`contatos_anunciante` (a decisão de contatos como lista é de 2026-11-20).
+
 ## Regras fora do banco
 
 ## Tabela `ads`
@@ -128,6 +193,19 @@ o domínio do e-mail. A entidade `Usuario` valida o endereço (apenas
 os `UNIQUE` simples bastam para a unicidade sem diferenciar maiúsculas de
 minúsculas.
 
+O banco **não** garante, em `contatos_anunciante`: o mínimo de 1 e o máximo de
+10 contatos por anunciante, a ausência de contatos repetidos (mesmo tipo, código
+do país e valor) e o formato completo do e-mail. Essas regras ficam nas
+entidades `Anunciante` e `Contato`, que também fazem a limpeza das máscaras de
+telefone (remover `+`, espaços, parênteses e hífens). O gateway grava o
+anunciante e a lista inteira de contatos numa única transação: se algo falhar,
+nada muda.
+
+Os `CHECK` de `contatos_anunciante` repetem de propósito as regras de dígitos e
+de endereço (`https://` e hosts do WhatsApp), para que nenhum caminho de escrita
+grave um endereço de outro tipo (como `javascript:` ou `http://`) que depois
+seria mostrado aos compradores.
+
 A regra de que nenhum valor pode ser, ao mesmo tempo, o nome de usuário de
 uma conta e a matrícula de outra é conferida pelo caso de uso
 `CadastrarUsuario`: o SQLite não oferece constraint entre colunas diferentes.
@@ -144,6 +222,10 @@ conexão.
 O banco padrão fica em `server/database/db.sqlite3`; testes devem usar um banco
 SQLite em memória. `create_all` cria tabelas ausentes, mas não atualiza tabelas
 existentes.
+
+As tabelas `anunciantes` e `contatos_anunciante` (feature 003) são novas e não
+alteram `usuarios`: são criadas tanto em bancos novos quanto em bancos locais já
+existentes, sem apagar nada nem exigir migração.
 
 A feature 001 (cadastro, login e verificação de e-mail) mudou a tabela
 `usuarios` de forma incompatível. Por decisão do time (2026-11-20), não há

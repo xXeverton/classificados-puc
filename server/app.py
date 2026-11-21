@@ -4,6 +4,7 @@ import logging
 import os
 from collections.abc import Mapping
 from datetime import timedelta
+from pathlib import Path
 
 from flask_cors import CORS
 from flask_openapi3 import Info, OpenAPI
@@ -16,6 +17,10 @@ from server.api.controllers.auth_controller import (
 )
 from server.api.controllers.health_controller import (
     register_health_controller,
+)
+from server.api.controllers.perfil_anunciante_controller import (
+    CasosDeUsoDePerfilAnunciante,
+    register_perfil_anunciante_controller,
 )
 from server.api.erros_http import (
     STATUS_DE_VALIDACAO,
@@ -33,11 +38,20 @@ from server.core.usecases.encerrar_sessao import EncerrarSessao
 from server.core.usecases.obter_usuario_da_sessao import (
     ObterUsuarioDaSessao,
 )
+from server.core.usecases.obter_perfil_anunciante import (
+    ObterPerfilAnunciante,
+)
 from server.core.usecases.reenviar_confirmacao import ReenviarConfirmacao
+from server.core.usecases.salvar_perfil_anunciante import (
+    SalvarPerfilAnunciante,
+)
 from server.infra.db.database import (
     create_database_engine,
     create_session_factory,
     initialize_database,
+)
+from server.infra.gateways.anunciante_repository_sqlalchemy import (
+    AnuncianteRepositorySQLAlchemy,
 )
 from server.infra.gateways.sessao_repository_sqlalchemy import (
     SessaoRepositorySQLAlchemy,
@@ -52,6 +66,9 @@ from server.infra.gateways.ad_repository_sqlalchemy import (
     AdRepositorySQLAlchemy,
 )
 from server.infra.services import enviador_email_log
+from server.infra.services.armazenamento_foto_local import (
+    ArmazenamentoDeFotoLocal,
+)
 from server.infra.services.enviador_email_log import EnviadorDeEmailLog
 from server.infra.services.enviador_email_smtp import (
     ConfiguracaoSMTP,
@@ -63,6 +80,11 @@ from server.infra.services.relogio_sistema import RelogioSistema
 
 CONFIRMACAO_URL_BASE_PADRAO = "http://localhost:5173/confirmar-email"
 SESSAO_DURACAO_HORAS_PADRAO = 8
+# 2 MB photo + the other form fields (plan.md, "Tamanho da requisição").
+TAMANHO_MAXIMO_REQUISICAO_BYTES = 3 * 1024 * 1024
+FOTOS_PERFIL_DIR_PADRAO = str(
+    Path(__file__).resolve().parent / "uploads" / "fotos_perfil"
+)
 _CONFIGURACAO_SMTP_OBRIGATORIA = (
     "SMTP_HOST",
     "SMTP_PORT",
@@ -112,6 +134,10 @@ def create_app(config: Mapping[str, object] | None = None) -> OpenAPI:
         SESSAO_DURACAO_HORAS=os.environ.get(
             "SESSAO_DURACAO_HORAS", SESSAO_DURACAO_HORAS_PADRAO
         ),
+        FOTOS_PERFIL_DIR=os.environ.get(
+            "FOTOS_PERFIL_DIR", FOTOS_PERFIL_DIR_PADRAO
+        ),
+        MAX_CONTENT_LENGTH=TAMANHO_MAXIMO_REQUISICAO_BYTES,
     )
     if config is not None:
         app.config.update(config)
@@ -126,6 +152,9 @@ def create_app(config: Mapping[str, object] | None = None) -> OpenAPI:
 
     casos_de_uso = _montar_casos_de_uso(app, session_factory)
     app.extensions["casos_de_uso_autenticacao"] = casos_de_uso
+    casos_de_uso_perfil = _montar_casos_de_uso_de_perfil(
+        app, session_factory, casos_de_uso.obter_usuario_da_sessao
+    )
 
     cors_origins = app.config["CORS_ORIGINS"]
     if cors_origins:
@@ -135,6 +164,7 @@ def create_app(config: Mapping[str, object] | None = None) -> OpenAPI:
     register_health_controller(app)
     register_auth_controller(app, casos_de_uso)
     register_ads_controller(app)
+    register_perfil_anunciante_controller(app, casos_de_uso_perfil)
     return app
 
 
@@ -174,6 +204,19 @@ def _montar_casos_de_uso(app: OpenAPI, session_factory):
         ),
         encerrar_sessao=EncerrarSessao(sessoes, relogio),
         obter_usuario_da_sessao=obter_usuario,
+    )
+
+
+def _montar_casos_de_uso_de_perfil(
+    app: OpenAPI, session_factory, obter_usuario_da_sessao
+) -> CasosDeUsoDePerfilAnunciante:
+    anunciantes = AnuncianteRepositorySQLAlchemy(session_factory)
+    fotos = ArmazenamentoDeFotoLocal(str(app.config["FOTOS_PERFIL_DIR"]))
+    return CasosDeUsoDePerfilAnunciante(
+        obter_perfil=ObterPerfilAnunciante(anunciantes),
+        salvar_perfil=SalvarPerfilAnunciante(anunciantes, fotos),
+        obter_usuario_da_sessao=obter_usuario_da_sessao,
+        fotos=fotos,
     )
 
 

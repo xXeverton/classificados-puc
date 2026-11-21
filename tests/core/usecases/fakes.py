@@ -4,9 +4,17 @@ import re
 from dataclasses import dataclass, replace
 from datetime import UTC, datetime, timedelta
 
+from server.core.entities.anunciante import Anunciante
+from server.core.entities.foto_de_perfil import FotoDePerfil
 from server.core.entities.sessao import Sessao
 from server.core.entities.token_de_confirmacao import TokenDeConfirmacao
 from server.core.entities.usuario import Usuario
+from server.core.interfaces.anunciante_repository_interface import (
+    AnuncianteRepositoryInterface,
+)
+from server.core.interfaces.armazenamento_de_foto_interface import (
+    ArmazenamentoDeFotoInterface,
+)
 from server.core.interfaces.enviador_de_email_interface import (
     EnviadorDeEmailInterface,
 )
@@ -120,6 +128,52 @@ class SessaoRepositoryEmMemoria(SessaoRepositoryInterface):
             (s for s in self.sessoes.values() if s.token_hash == token_hash),
             None,
         )
+
+
+class AnuncianteRepositoryEmMemoria(AnuncianteRepositoryInterface):
+
+    def __init__(self) -> None:
+        self.anunciantes: dict[int, Anunciante] = {}
+        self._proximo_id = 1
+
+    def buscar_por_usuario_id(self, usuario_id: int) -> Anunciante | None:
+        return next(
+            (
+                a
+                for a in self.anunciantes.values()
+                if a.usuario_id == usuario_id
+            ),
+            None,
+        )
+
+    def salvar(self, anunciante: Anunciante) -> Anunciante:
+        existente = self.buscar_por_usuario_id(anunciante.usuario_id)
+        if existente is not None:
+            anunciante = replace(anunciante, id=existente.id)
+        elif anunciante.id is None:
+            anunciante = replace(anunciante, id=self._proximo_id)
+            self._proximo_id += 1
+        self.anunciantes[anunciante.id] = anunciante
+        return anunciante
+
+
+class ArmazenamentoDeFotoEmMemoria(ArmazenamentoDeFotoInterface):
+
+    def __init__(self) -> None:
+        self.fotos: dict[str, bytes] = {}
+        self._contador = 0
+
+    def salvar(self, foto: FotoDePerfil) -> str:
+        self._contador += 1
+        foto_url = f"/fotos-perfil/foto-{self._contador}.{foto.formato.value}"
+        self.fotos[foto_url] = foto.conteudo
+        return foto_url
+
+    def ler(self, foto_url: str) -> bytes | None:
+        return self.fotos.get(foto_url)
+
+    def remover(self, foto_url: str) -> None:
+        self.fotos.pop(foto_url, None)
 
 
 class RelogioFalso(RelogioInterface):

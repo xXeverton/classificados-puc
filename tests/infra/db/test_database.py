@@ -55,6 +55,30 @@ def insert_sessao(engine: Engine, usuario_id: int, token_hash="s") -> int:
     )
 
 
+ANUNCIANTE_PADRAO = {"nome_exibicao": "Ana Vendas"}
+
+
+def insert_anunciante(engine: Engine, usuario_id: int, **overrides) -> int:
+    return insert(
+        engine,
+        "anunciantes",
+        {"usuario_id": usuario_id, **ANUNCIANTE_PADRAO, **overrides},
+    )
+
+
+def insert_contato(engine: Engine, anunciante_id: int, /, **overrides) -> int:
+    valores = {
+        "anunciante_id": anunciante_id,
+        "posicao": 0,
+        "tipo": "email",
+        "valor": "ana@gmail.com",
+        "codigo_pais": None,
+        "rotulo": None,
+    }
+    valores.update(overrides)
+    return insert(engine, "contatos_anunciante", valores)
+
+
 def count(engine: Engine, table: str) -> int:
     with engine.connect() as connection:
         return connection.execute(
@@ -359,3 +383,308 @@ def test_removing_usuario_cascades_to_tokens_and_sessions(database_engine):
 
     assert count(database_engine, "tokens_confirmacao") == 0
     assert count(database_engine, "sessoes") == 0
+
+
+def test_initialize_database_creates_anunciantes_table(database_engine):
+    inspector = inspect(database_engine)
+
+    assert {
+        column["name"]: (str(column["type"]).upper(), column["nullable"])
+        for column in inspector.get_columns("anunciantes")
+    } == {
+        "id": ("INTEGER", False),
+        "usuario_id": ("INTEGER", False),
+        "nome_exibicao": ("TEXT", False),
+        "foto_url": ("TEXT", True),
+    }
+    [foreign_key] = inspector.get_foreign_keys("anunciantes")
+    assert foreign_key["referred_table"] == "usuarios"
+    assert foreign_key["options"].get("ondelete") == "CASCADE"
+    assert "AUTOINCREMENT" in create_statement(
+        database_engine, "anunciantes"
+    ).upper()
+
+
+def test_initialize_database_creates_contatos_anunciante_table(
+    database_engine,
+):
+    inspector = inspect(database_engine)
+
+    assert {
+        column["name"]: (str(column["type"]).upper(), column["nullable"])
+        for column in inspector.get_columns("contatos_anunciante")
+    } == {
+        "id": ("INTEGER", False),
+        "anunciante_id": ("INTEGER", False),
+        "posicao": ("INTEGER", False),
+        "tipo": ("TEXT", False),
+        "codigo_pais": ("TEXT", True),
+        "valor": ("TEXT", False),
+        "rotulo": ("TEXT", True),
+    }
+    [foreign_key] = inspector.get_foreign_keys("contatos_anunciante")
+    assert foreign_key["referred_table"] == "anunciantes"
+    assert foreign_key["options"].get("ondelete") == "CASCADE"
+
+
+def test_advertiser_tables_are_added_to_a_database_that_has_usuarios(
+    tmp_path,
+):
+    engine = database.create_database_engine(
+        f"sqlite:///{tmp_path / 'antigo.sqlite3'}"
+    )
+    try:
+        with engine.begin() as connection:
+            connection.execute(
+                text("CREATE TABLE usuarios (id INTEGER PRIMARY KEY)")
+            )
+            connection.execute(text("INSERT INTO usuarios (id) VALUES (1)"))
+
+        database.initialize_database(engine)
+
+        assert {"anunciantes", "contatos_anunciante"} <= set(
+            inspect(engine).get_table_names()
+        )
+        assert count(engine, "usuarios") == 1
+    finally:
+        engine.dispose()
+
+
+def test_anunciantes_requires_existing_usuario(database_engine):
+    with pytest.raises(IntegrityError):
+        insert_anunciante(database_engine, 999)
+
+
+def test_anunciantes_allows_one_profile_per_usuario(database_engine):
+    usuario_id = insert_usuario(database_engine)
+    insert_anunciante(database_engine, usuario_id)
+
+    with pytest.raises(IntegrityError):
+        insert_anunciante(database_engine, usuario_id)
+
+
+def test_anunciantes_requires_usuario_id_and_display_name(database_engine):
+    usuario_id = insert_usuario(database_engine)
+
+    with pytest.raises(IntegrityError):
+        insert_anunciante(database_engine, None)
+    with pytest.raises(IntegrityError):
+        insert_anunciante(database_engine, usuario_id, nome_exibicao=None)
+
+
+@pytest.mark.parametrize("value", ["", " "])
+def test_anunciantes_rejects_blank_display_name_and_photo(
+    database_engine, value
+):
+    usuario_id = insert_usuario(database_engine)
+
+    with pytest.raises(IntegrityError):
+        insert_anunciante(database_engine, usuario_id, nome_exibicao=value)
+    with pytest.raises(IntegrityError):
+        insert_anunciante(database_engine, usuario_id, foto_url=value)
+
+
+@pytest.fixture
+def anunciante_id(database_engine) -> int:
+    usuario_id = insert_usuario(database_engine)
+    return insert_anunciante(database_engine, usuario_id)
+
+
+CONTATOS_VALIDOS = {
+    "whatsapp_numero": {
+        "tipo": "whatsapp", "codigo_pais": "55", "valor": "21999998888",
+    },
+    "whatsapp_link_wa_me": {
+        "tipo": "whatsapp", "valor": "https://wa.me/5521999998888",
+    },
+    "whatsapp_link_mensagem": {
+        "tipo": "whatsapp", "valor": "https://wa.me/message/ABCDEF123456",
+    },
+    "whatsapp_link_api": {
+        "tipo": "whatsapp",
+        "valor": "https://api.whatsapp.com/send?phone=5521999998888",
+    },
+    "telefone": {
+        "tipo": "telefone", "codigo_pais": "55", "valor": "2133334444",
+    },
+    "telefone_8_digitos": {
+        "tipo": "telefone", "codigo_pais": "1", "valor": "2345678",
+    },
+    "telefone_15_digitos": {
+        "tipo": "telefone", "codigo_pais": "55", "valor": "1234567890123",
+    },
+    "email": {"tipo": "email", "valor": "ana@gmail.com"},
+    "site": {"tipo": "site", "valor": "https://loja.com.br"},
+    "link_sem_rotulo": {"tipo": "link", "valor": "https://x.com/ana"},
+    "link_com_rotulo": {
+        "tipo": "link", "valor": "https://instagram.com/ana",
+        "rotulo": "Instagram",
+    },
+}
+
+
+@pytest.mark.parametrize(
+    "contato", CONTATOS_VALIDOS.values(), ids=CONTATOS_VALIDOS.keys()
+)
+def test_contatos_accepts_every_valid_kind(
+    database_engine, anunciante_id, contato
+):
+    insert_contato(database_engine, anunciante_id, **contato)
+
+    assert count(database_engine, "contatos_anunciante") == 1
+
+
+CONTATOS_INVALIDOS = {
+    "tipo_inexistente": {"tipo": "fax", "valor": "123"},
+    "valor_vazio": {"valor": ""},
+    "valor_so_espacos": {"valor": " "},
+    "telefone_sem_codigo_pais": {"tipo": "telefone", "valor": "21999998888"},
+    "email_com_codigo_pais": {"codigo_pais": "55"},
+    "site_com_codigo_pais": {
+        "tipo": "site", "valor": "https://loja.com.br", "codigo_pais": "55",
+    },
+    "link_com_codigo_pais": {
+        "tipo": "link", "valor": "https://x.com/a", "codigo_pais": "55",
+    },
+    "numero_com_letras": {
+        "tipo": "whatsapp", "codigo_pais": "55", "valor": "2199999abcd",
+    },
+    "numero_com_digitos_nao_ascii": {
+        "tipo": "telefone", "codigo_pais": "55",
+        "valor": "２１９９９９９８８８８",
+    },
+    "codigo_pais_com_letras": {
+        "tipo": "telefone", "codigo_pais": "5a", "valor": "21999998888",
+    },
+    "codigo_pais_com_4_digitos": {
+        "tipo": "telefone", "codigo_pais": "1234", "valor": "99998888",
+    },
+    "codigo_pais_vazio": {
+        "tipo": "telefone", "codigo_pais": "", "valor": "21999998888",
+    },
+    "total_7_digitos": {
+        "tipo": "telefone", "codigo_pais": "1", "valor": "234567",
+    },
+    "total_16_digitos": {
+        "tipo": "whatsapp", "codigo_pais": "55", "valor": "12345678901234",
+    },
+    "whatsapp_link_http": {
+        "tipo": "whatsapp", "valor": "http://wa.me/5521999998888",
+    },
+    "whatsapp_link_sem_caminho": {
+        "tipo": "whatsapp", "valor": "https://wa.me/",
+    },
+    "whatsapp_link_host_falso": {
+        "tipo": "whatsapp", "valor": "https://wa.me.evil.com/5521999998888",
+    },
+    "whatsapp_link_com_usuario": {
+        "tipo": "whatsapp", "valor": "https://wa.me@evil.com/5521999998888",
+    },
+    "whatsapp_link_javascript": {
+        "tipo": "whatsapp", "valor": "javascript:alert(1)",
+    },
+    "whatsapp_link_com_espaco": {
+        "tipo": "whatsapp", "valor": "https://wa.me/5521 999998888",
+    },
+    "email_sem_arroba": {"valor": "ana"},
+    "email_sem_nome": {"valor": "@gmail.com"},
+    "site_http": {"tipo": "site", "valor": "http://loja.com.br"},
+    "site_sem_esquema": {"tipo": "site", "valor": "loja.com.br"},
+    "site_com_espaco": {"tipo": "site", "valor": "https://loja .com.br"},
+    "link_ftp": {"tipo": "link", "valor": "ftp://x.com/a"},
+    "rotulo_em_email": {"rotulo": "Meu e-mail"},
+    "rotulo_em_site": {
+        "tipo": "site", "valor": "https://loja.com.br", "rotulo": "Loja",
+    },
+    "rotulo_em_branco": {
+        "tipo": "link", "valor": "https://x.com/a", "rotulo": " ",
+    },
+    "posicao_negativa": {"posicao": -1},
+}
+
+
+@pytest.mark.parametrize(
+    "contato", CONTATOS_INVALIDOS.values(), ids=CONTATOS_INVALIDOS.keys()
+)
+def test_contatos_rejects_invalid_values(
+    database_engine, anunciante_id, contato
+):
+    with pytest.raises(IntegrityError):
+        insert_contato(database_engine, anunciante_id, **contato)
+
+
+@pytest.mark.parametrize(
+    "coluna", ["anunciante_id", "posicao", "tipo", "valor"]
+)
+def test_contatos_requires_mandatory_columns(
+    database_engine, anunciante_id, coluna
+):
+    with pytest.raises(IntegrityError):
+        insert_contato(database_engine, anunciante_id, **{coluna: None})
+
+
+def test_contatos_requires_existing_anunciante(database_engine):
+    with pytest.raises(IntegrityError):
+        insert_contato(database_engine, 999)
+
+
+def test_contatos_position_is_unique_per_anunciante(
+    database_engine, anunciante_id
+):
+    insert_contato(database_engine, anunciante_id, posicao=0)
+    insert_contato(
+        database_engine, anunciante_id, posicao=1, valor="outro@gmail.com"
+    )
+
+    with pytest.raises(IntegrityError):
+        insert_contato(
+            database_engine, anunciante_id, posicao=1, valor="x@gmail.com"
+        )
+
+
+def test_contatos_same_position_is_allowed_for_other_anunciante(
+    database_engine, anunciante_id
+):
+    outro_usuario = insert_usuario(
+        database_engine,
+        email="bia@aluno.puc-rio.br",
+        nome_usuario="bia",
+        matricula="456",
+    )
+    outro_anunciante = insert_anunciante(database_engine, outro_usuario)
+
+    insert_contato(database_engine, anunciante_id, posicao=0)
+    insert_contato(database_engine, outro_anunciante, posicao=0)
+
+    assert count(database_engine, "contatos_anunciante") == 2
+
+
+def test_contatos_allows_several_of_the_same_kind(
+    database_engine, anunciante_id
+):
+    for posicao in range(3):
+        insert_contato(
+            database_engine,
+            anunciante_id,
+            posicao=posicao,
+            tipo="link",
+            valor=f"https://loja{posicao}.com.br",
+        )
+
+    assert count(database_engine, "contatos_anunciante") == 3
+
+
+def test_removing_usuario_cascades_to_anunciante_and_contatos(
+    database_engine,
+):
+    usuario_id = insert_usuario(database_engine)
+    anunciante = insert_anunciante(database_engine, usuario_id)
+    insert_contato(database_engine, anunciante)
+
+    with database_engine.begin() as connection:
+        connection.execute(
+            text("DELETE FROM usuarios WHERE id = :id"), {"id": usuario_id}
+        )
+
+    assert count(database_engine, "anunciantes") == 0
+    assert count(database_engine, "contatos_anunciante") == 0
