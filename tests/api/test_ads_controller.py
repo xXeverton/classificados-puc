@@ -257,3 +257,74 @@ def test_get_ads_returns_500_without_sql_details_when_repository_fails(
     }
     assert "SQLSTATE" not in response.get_data(as_text=True)
     app.extensions["database_engine"].dispose()
+
+
+def get_ads(app, **query):
+    return app.test_client().get(
+        "/api/ads",
+        query_string=query,
+        headers=app.extensions["test_auth_headers"],
+    )
+
+
+def test_get_ads_filters_by_category():
+    app = create_ads_app()
+
+    response = get_ads(app, category="educação")
+
+    assert response.status_code == 200
+    assert [item["title"] for item in response.json["items"]] == [
+        "Aulas de inglês",
+    ]
+    app.extensions["database_engine"].dispose()
+
+
+def test_get_ads_filters_by_price_range():
+    app = create_ads_app()
+
+    cheap = get_ads(app, max_price="80")
+    expensive = get_ads(app, min_price="80.01", max_price="450")
+
+    assert [item["title"] for item in cheap.json["items"]] == [
+        "Aulas de inglês",
+    ]
+    assert [item["title"] for item in expensive.json["items"]] == [
+        "Bicicleta urbana",
+    ]
+    app.extensions["database_engine"].dispose()
+
+
+def test_get_ads_combines_filters_and_reports_empty_result():
+    app = create_ads_app()
+
+    response = get_ads(
+        app, search="bicicleta", category="Veículos", max_price="100"
+    )
+
+    assert response.status_code == 200
+    assert response.json["items"] == []
+    assert response.json["message"] == "Nenhum anúncio publicado encontrado."
+    app.extensions["database_engine"].dispose()
+
+
+@pytest.mark.parametrize(
+    ("query", "message"),
+    [
+        ({"min_price": "abc"}, "Preço mínimo deve ser um número."),
+        ({"max_price": "10,5"}, "Preço máximo deve ser um número."),
+        ({"max_price": "nan"}, "Preço máximo deve ser um número."),
+        ({"min_price": "-1"}, "Preço mínimo não pode ser negativo."),
+        (
+            {"min_price": "100", "max_price": "50"},
+            "Preço mínimo não pode ser maior que o máximo.",
+        ),
+    ],
+)
+def test_get_ads_rejects_invalid_price(query, message):
+    app = create_ads_app()
+
+    response = get_ads(app, **query)
+
+    assert response.status_code == 400
+    assert response.json["message"] == message
+    app.extensions["database_engine"].dispose()

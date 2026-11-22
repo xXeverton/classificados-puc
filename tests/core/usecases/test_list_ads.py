@@ -13,12 +13,39 @@ class InMemoryAdRepository(AdRepository):
     def __init__(self, ads):
         self.ads = ads
         self.calls = []
+        self.price_and_category_filters = []
 
-    def list_published(self, page, per_page, search, ad_type):
+    def list_published(
+        self,
+        page,
+        per_page,
+        search,
+        ad_type,
+        category=None,
+        min_price=None,
+        max_price=None,
+    ):
         self.calls.append((page, per_page, search, ad_type))
+        self.price_and_category_filters.append(
+            (category, min_price, max_price)
+        )
         available_ads = [
             ad for ad in self.ads if ad.status == "published"
         ]
+        if category is not None:
+            available_ads = [
+                ad
+                for ad in available_ads
+                if ad.category.lower() == category.lower()
+            ]
+        if min_price is not None:
+            available_ads = [
+                ad for ad in available_ads if ad.price >= min_price
+            ]
+        if max_price is not None:
+            available_ads = [
+                ad for ad in available_ads if ad.price <= max_price
+            ]
         if ad_type not in (None, "all"):
             available_ads = [
                 ad for ad in available_ads if ad.type == ad_type
@@ -52,6 +79,7 @@ def make_ad(
     category="Esportes",
     ad_type="product",
     created_at=None,
+    price=100.0,
 ):
     if created_at is None:
         created_at = datetime(
@@ -67,7 +95,7 @@ def make_ad(
         description=description,
         type=ad_type,
         category=category,
-        price=100.0,
+        price=price,
         image_url=None,
         created_at=created_at,
         status=status,
@@ -366,3 +394,128 @@ def test_list_ads_excludes_sold_and_expired_ads():
 
     assert result["items"] == [published_ad]
     assert result["total_items"] == 1
+
+
+def list_titles(ads, **filters):
+    repository = InMemoryAdRepository(ads)
+    result = ListAds(repository).execute(
+        usuario=make_authenticated_user(), **filters
+    )
+    return [ad.title for ad in result["items"]], repository
+
+
+def test_list_ads_filters_by_category_ignoring_case_and_spaces():
+    titles, repository = list_titles(
+        [
+            make_ad("Notebook", "published", category="Eletrônicos"),
+            make_ad("Bicicleta", "published", category="Esportes"),
+        ],
+        category="  ELETRÔNICOS ",
+    )
+
+    assert titles == ["Notebook"]
+    assert repository.price_and_category_filters == [
+        ("ELETRÔNICOS", None, None)
+    ]
+
+
+def test_list_ads_treats_blank_category_as_no_filter():
+    titles, repository = list_titles(
+        [
+            make_ad("Notebook", "published", category="Eletrônicos"),
+            make_ad("Bicicleta", "published", category="Esportes"),
+        ],
+        category="   ",
+    )
+
+    assert sorted(titles) == ["Bicicleta", "Notebook"]
+    assert repository.price_and_category_filters == [(None, None, None)]
+
+
+def test_list_ads_filters_by_inclusive_price_range():
+    ads = [
+        make_ad("Barato", "published", price=49.99),
+        make_ad("No mínimo", "published", price=50),
+        make_ad("No máximo", "published", price=100),
+        make_ad("Caro", "published", price=100.01),
+    ]
+
+    titles, repository = list_titles(ads, min_price=50, max_price=100.0)
+
+    assert sorted(titles) == ["No máximo", "No mínimo"]
+    assert repository.price_and_category_filters == [(None, 50, 100.0)]
+
+
+def test_list_ads_accepts_only_minimum_or_only_maximum_price():
+    ads = [
+        make_ad("Barato", "published", price=10),
+        make_ad("Caro", "published", price=500),
+    ]
+
+    assert list_titles(ads, min_price=100)[0] == ["Caro"]
+    assert list_titles(ads, max_price=100)[0] == ["Barato"]
+
+
+def test_list_ads_combines_all_filters():
+    ads = [
+        make_ad(
+            "Notebook gamer", "published", category="Eletrônicos", price=3000
+        ),
+        make_ad(
+            "Notebook simples", "published", category="Eletrônicos", price=900
+        ),
+        make_ad("Notebook de papel", "published", category="Papelaria",
+                price=20),
+        make_ad(
+            "Conserto de notebook",
+            "published",
+            category="Eletrônicos",
+            ad_type="service",
+            price=150,
+        ),
+    ]
+
+    titles, _ = list_titles(
+        ads,
+        search="notebook",
+        ad_type="product",
+        category="eletrônicos",
+        max_price=1000,
+    )
+
+    assert titles == ["Notebook simples"]
+
+
+@pytest.mark.parametrize(
+    "invalid_filters",
+    [
+        {"min_price": -1},
+        {"max_price": -0.01},
+        {"min_price": "10"},
+        {"max_price": True},
+        {"min_price": 100, "max_price": 50},
+        {"category": 10},
+    ],
+)
+def test_list_ads_rejects_invalid_category_or_price(invalid_filters):
+    repository = InMemoryAdRepository([])
+
+    with pytest.raises(ValueError):
+        ListAds(repository).execute(
+            usuario=make_authenticated_user(), **invalid_filters
+        )
+
+    assert repository.calls == []
+
+
+def test_list_ads_accepts_equal_minimum_and_maximum_price():
+    titles, _ = list_titles(
+        [
+            make_ad("Exato", "published", price=80),
+            make_ad("Outro", "published", price=81),
+        ],
+        min_price=80,
+        max_price=80,
+    )
+
+    assert titles == ["Exato"]

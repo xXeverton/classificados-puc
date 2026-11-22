@@ -20,8 +20,19 @@ class AdRepositorySQLAlchemy(AdRepository):
         per_page: int,
         search: str | None,
         ad_type: str | None,
+        category: str | None = None,
+        min_price: float | None = None,
+        max_price: float | None = None,
     ) -> tuple[list[Ad], int]:
         filters = [AdModel.status == "published"]
+        if category is not None:
+            filters.append(
+                func.lower(AdModel.category) == category.lower()
+            )
+        if min_price is not None:
+            filters.append(AdModel.price >= min_price)
+        if max_price is not None:
+            filters.append(AdModel.price <= max_price)
         if ad_type not in (None, "all"):
             filters.append(AdModel.type == ad_type)
         if search is not None:

@@ -1,5 +1,7 @@
 """HTTP controller for the advertisements feed."""
 
+from math import isfinite
+
 from flask import g, request
 from flask_openapi3 import OpenAPI
 
@@ -44,6 +46,19 @@ def register_ads_controller(app: OpenAPI, obter_usuario_da_sessao) -> None:
 
         search = request.args.get("search")
         ad_type = request.args.get("type")
+        category = request.args.get("category")
+        try:
+            min_price = _parse_price(request.args.get("min_price"))
+        except ValueError:
+            return apresenta_erro(
+                "Preço mínimo deve ser um número."
+            ).model_dump(), 400
+        try:
+            max_price = _parse_price(request.args.get("max_price"))
+        except ValueError:
+            return apresenta_erro(
+                "Preço máximo deve ser um número."
+            ).model_dump(), 400
 
         repository = app.extensions.get("ad_repository")
         if repository is None:
@@ -58,6 +73,9 @@ def register_ads_controller(app: OpenAPI, obter_usuario_da_sessao) -> None:
                 page=page,
                 search=search,
                 ad_type=ad_type,
+                category=category,
+                min_price=min_price,
+                max_price=max_price,
             )
         except ErroDeCasoDeUso as error:
             return apresenta_erro(str(error)).model_dump(), 401
@@ -69,3 +87,17 @@ def register_ads_controller(app: OpenAPI, obter_usuario_da_sessao) -> None:
             ).model_dump(), 500
 
         return apresenta_feed(result).model_dump(mode="json"), 200
+
+
+def _parse_price(value: str | None) -> float | None:
+    """Convert a price query parameter; blank means no filter.
+
+    Raises ValueError for text that is not a finite number, such as
+    "10,5", "abc" or "nan".
+    """
+    if value is None or not value.strip():
+        return None
+    price = float(value)
+    if not isfinite(price):
+        raise ValueError(value)
+    return price
