@@ -1,3 +1,4 @@
+import errno
 import io
 import re
 from types import SimpleNamespace
@@ -235,7 +236,17 @@ def test_local_rejects_symlink_traversal(tmp_path):
     outside = tmp_path / "outside"
     outside.mkdir()
     root.mkdir()
-    (root / "anuncios").symlink_to(outside, target_is_directory=True)
+    try:
+        (root / "anuncios").symlink_to(outside, target_is_directory=True)
+    except OSError as error:
+        if (
+            error.errno == errno.EPERM
+            or getattr(error, "winerror", None) == 1314
+        ):
+            pytest.skip(
+                "Creating symlinks requires additional Windows privileges"
+            )
+        raise
     storage = local_storage(root)
 
     with pytest.raises(ChaveInvalidaError):
