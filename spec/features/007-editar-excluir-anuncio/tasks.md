@@ -10,6 +10,8 @@ Marque `[x]` ao concluir. Escreva os testes antes da implementação.
 - [x] T2: Testes de `EditarAnuncio` e `ExcluirAnuncio` com repositório em
   memória.
 - [x] T3: Implementar os dois use cases e ampliar `Ad` com dono e foto.
+- [x] T11: Testar edição de anúncio expirado com renovação e prazo de 30 dias.
+- [x] T12: Renovar o anúncio expirado atomicamente com a edição.
 
 ## Infra
 

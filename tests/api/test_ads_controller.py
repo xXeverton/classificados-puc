@@ -282,6 +282,36 @@ def get_ads(app, **query):
     )
 
 
+def test_get_ads_owner_me_filters_by_authenticated_owner():
+    app = create_ads_app()
+    session_factory = app.extensions["session_factory"]
+    with session_factory.begin() as session:
+        owned = session.query(AdModel).filter_by(
+            title="Bicicleta urbana"
+        ).one()
+        owned.usuario_id = 1
+
+    response = get_ads(app, owner="me")
+
+    assert response.status_code == 200
+    assert [item["title"] for item in response.json["items"]] == [
+        "Bicicleta urbana",
+    ]
+    app.extensions["database_engine"].dispose()
+
+
+def test_get_ads_owner_me_rejects_invalid_status():
+    app = create_ads_app()
+
+    response = get_ads(app, owner="me", status="sold")
+
+    assert response.status_code == 400
+    assert response.json == {
+        "message": "Status deve ser published ou expired."
+    }
+    app.extensions["database_engine"].dispose()
+
+
 def test_get_ads_filters_by_category():
     app = create_ads_app()
 
@@ -319,6 +349,47 @@ def test_get_ads_combines_filters_and_reports_empty_result():
     assert response.status_code == 200
     assert response.json["items"] == []
     assert response.json["message"] == "Nenhum anúncio publicado encontrado."
+    app.extensions["database_engine"].dispose()
+
+
+def test_renew_expired_owned_ad():
+    app = create_ads_app()
+    session_factory = app.extensions["session_factory"]
+    with session_factory.begin() as session:
+        ad = session.query(AdModel).filter_by(title="Bicicleta urbana").one()
+        ad.status = "expired"
+        ad.usuario_id = 1
+        ad.expires_at = datetime(2026, 11, 1, tzinfo=timezone.utc)
+
+    response = app.test_client().post(
+        "/api/ads/1/renovar",
+        headers=app.extensions["test_auth_headers"],
+    )
+
+    assert response.status_code == 200
+    assert response.json["id"] == 1
+    with session_factory() as session:
+        ad = session.get(AdModel, 1)
+        assert ad.status == "published"
+        assert ad.expires_at > datetime.now(timezone.utc)
+    app.extensions["database_engine"].dispose()
+
+
+def test_renew_rejects_published_ad():
+    app = create_ads_app()
+    session_factory = app.extensions["session_factory"]
+    with session_factory.begin() as session:
+        ad = session.query(AdModel).filter_by(title="Bicicleta urbana").one()
+        ad.usuario_id = 1
+        ad.status = "published"
+
+    response = app.test_client().post(
+        "/api/ads/1/renovar",
+        headers=app.extensions["test_auth_headers"],
+    )
+
+    assert response.status_code == 422
+    assert response.json["code"] == "anuncio_nao_expirado"
     app.extensions["database_engine"].dispose()
 
 

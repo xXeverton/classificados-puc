@@ -25,6 +25,8 @@ class ListAds:
         category: str | None = None,
         min_price: float | None = None,
         max_price: float | None = None,
+        owner_id: int | None = None,
+        ad_status: str = "published",
     ) -> dict[str, object]:
         if usuario is None:
             raise ErroDeCasoDeUso(
@@ -49,6 +51,8 @@ class ListAds:
             category=category,
             min_price=min_price,
             max_price=max_price,
+            owner_id=owner_id,
+            ad_status=ad_status,
         )
         total_pages = ceil(total_items / self.PER_PAGE)
 

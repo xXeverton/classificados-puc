@@ -121,6 +121,27 @@ def test_atualiza_para_preco_a_combinar(database_engine):
         assert model.price == 0
 
 
+def test_atualiza_anuncio_expirado_e_publica_com_novo_prazo(database_engine):
+    repositorio, session_factory = preparar(database_engine)
+    publicado = publicar(repositorio)
+    novo_prazo = CRIADO_EM + timedelta(days=45)
+    with session_factory.begin() as session:
+        session.get(AdModel, publicado.id).status = "expired"
+
+    editado = repositorio.atualizar(
+        publicado.id,
+        anuncio(titulo="Livro de Cálculo revisado"),
+        expires_at=novo_prazo,
+    )
+
+    assert editado.status == "published"
+    assert editado.expires_at == novo_prazo
+    with session_factory() as session:
+        model = session.get(AdModel, publicado.id)
+        assert model.status == "published"
+        assert model.expires_at == novo_prazo
+
+
 def test_exclui_anuncio_do_banco(database_engine):
     repositorio, session_factory = preparar(database_engine)
     publicado = publicar(repositorio)

@@ -20,6 +20,8 @@ class AdRepository(ABC):
         category: str | None = None,
         min_price: float | None = None,
         max_price: float | None = None,
+        owner_id: int | None = None,
+        ad_status: str = "published",
     ) -> tuple[list[Ad], int]:
         """Return one page of available advertisements and the total count.
 

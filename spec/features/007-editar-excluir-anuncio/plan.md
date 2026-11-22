@@ -18,12 +18,17 @@ Referência: `spec.md` desta pasta.
 Interface (`server/core/interfaces/anuncio_editavel_repository_interface.py`):
 
 - `buscar_por_id(ad_id) -> Ad | None`
-- `atualizar(ad_id, anuncio) -> Ad`: troca título, descrição, preço,
-  "a combinar" e estado de conservação; mantém datas, situação e foto.
+- `atualizar(ad_id, anuncio, expires_at?) -> Ad`: troca título, descrição,
+  preço, "a combinar" e estado de conservação; mantém datas, situação e foto,
+  salvo quando a edição expirada define o novo prazo e publica o anúncio na
+  mesma transação.
 - `excluir(ad_id) -> None`
 
 Interface separada da `AdRepository` do feed (ISP), para não obrigar os
 repositórios falsos do feed a implementar edição.
+
+`EditarAnuncio` recebe o relógio por injeção. Ao editar um anúncio expirado,
+calcula o novo prazo e passa os campos e a renovação juntos ao repositório.
 
 ## Infra (`server/infra/gateways/ad_repository_sqlalchemy.py`)
 
