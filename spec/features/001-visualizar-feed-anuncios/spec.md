@@ -13,16 +13,19 @@
 
 **Como** membro da comunidade universitária,
 **quero** visualizar os anúncios publicados,
-**para que** eu possa encontrar produtos/serviços do meu interesse.
+**para que** eu possa encontrar produtos, serviços e eventos do meu interesse.
 
 - A história depende do contrato de publicação de anúncios definido pela PROJ-15.
-- O feed assume que os anúncios publicados respeitam as validações de produto e serviço.
+- Eventos foram incluídos no feed pela decisão do usuário durante a integração
+  das branches PROJ-31 a PROJ-34.
+- O feed assume que os anúncios publicados respeitam as validações de produto,
+  serviço e evento.
 
 ## Critérios de aceitação
 
 - [x] CA1: Dado que existam anúncios publicados e o usuário esteja autenticado, quando ele acessar o feed, então os anúncios serão exibidos em cards.
 
-- [x] CA2: Dado que um anúncio possua foto, quando ele for exibido no feed, então o card mostrará a foto, o título, a categoria, o preço e a data de criação.
+- [x] CA2: Dado que um anúncio possua foto, quando ele for exibido no feed, então o card mostrará a foto, o título, a categoria, o preço, a data de criação e, quando informado, o nome de exibição do anunciante.
 
 - [x] CA3: Dado que um anúncio não possua foto, quando ele for exibido no feed, então o card manterá sua estrutura sem quebrar o layout.
 
@@ -48,6 +51,8 @@
 
 - [x] CA14: Dado que um anúncio do tipo serviço possua descrição, quando ele for exibido no feed, então o card mostrará uma versão resumida da descrição.
 
+- [x] CA15: Dado que um anúncio do tipo evento esteja publicado, quando o usuário filtrar por eventos, então ele será exibido sem exigir estado de conservação de produto.
+
 ## Regras de negócio
 
 - RN1: Apenas anúncios publicados aparecem no feed.
@@ -59,7 +64,7 @@
 - RN7: A paginação do feed é numerada.
 - RN8: O clique em um card direciona para a página de detalhes do anúncio, conforme a PROJ-17.
 - RN9: A busca considera título, descrição e categoria, sem diferenciar maiúsculas e minúsculas.
-- RN10: Os filtros Todos, Produtos e Serviços podem ser usados junto com a busca.
+- RN10: Os filtros Todos, Produtos, Serviços e Eventos podem ser usados junto com a busca.
 - RN11: Aplicar ou alterar uma busca ou filtro inicia a listagem na primeira página.
 - RN12: Cards de serviços podem exibir uma descrição resumida além dos campos comuns.
 

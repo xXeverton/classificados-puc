@@ -6,28 +6,28 @@ Dependências:
 
 - A publicação de anúncios deve estar concluída ou ter seu contrato definido
   pela história PROJ-15.
-- Anúncios vendidos ou expirados não são retornados pelo feed; anúncios
-  excluídos não devem permanecer disponíveis para consulta.
+- Anúncios vendidos ou expirados (por status ou `expires_at`) não são
+  retornados pelo feed; anúncios excluídos não devem permanecer disponíveis
+  para consulta.
 - A PROJ-15 define expiração automática após 30 dias sem renovação; a
   implementação do feed deve considerar o estado resultante dessa regra.
 - O feed é acessado por usuário autenticado da comunidade universitária.
 
-## Domain (`domain/`)
+## Domínio (`server/core/entities/`)
 
 | Entidade | Atributos | Regras/validações |
 |----------|-----------|-------------------|
-| Ad | id, title, description, type, category, price, image_url, created_at, status, expires_at | `title`, `type`, `category`, `price`, `created_at` e `status` são obrigatórios; `description` e `image_url` podem ser opcionais conforme o contrato de publicação; somente anúncios publicados, não vendidos e não expirados podem aparecer no feed |
+| Ad | id, title, description, type, category, price, image_url, created_at, status, expires_at, usuario_id, nome_anunciante, estado_conservacao, preco_a_combinar | `type` aceita `product`, `service` e `event`; foto, anunciante e conservação podem ser nulos para registros antigos ou categorias sem conservação |
 
-O domínio deve representar estados de publicação suficientes para distinguir
-anúncios disponíveis de anúncios vendidos ou expirados. A exclusão remove o
-anúncio da fonte de consulta, conforme o contrato da PROJ-15. A regra de
-expiração pertence ao domínio/use case, e não à rota HTTP.
+O domínio distingue anúncios publicados, vendidos e expirados. Publicações
+novas recebem prazo de 30 dias no caso de uso; o repositório não lista anúncios
+cujo `expires_at` já passou. A regra não pertence à rota HTTP.
 
-## Use cases (`use_cases/`)
+## Casos de uso (`server/core/usecases/`)
 
 | Use case | Entrada | Saída | Erros possíveis |
 |----------|---------|-------|-----------------|
-| ListAds | usuário autenticado, `page` opcional e inteiro positivo, `search` opcional e `type` opcional (`all`, `product` ou `service`); tamanho fixo de 20 | itens do feed e metadados `page`, `per_page`, `total_pages` e `total_items` | usuário não autenticado; parâmetros inválidos; falha de busca |
+| ListAds | usuário autenticado, `page` opcional e inteiro positivo, `search` opcional e `type` opcional (`all`, `product`, `service` ou `event`); tamanho fixo de 20 | itens do feed e metadados `page`, `per_page`, `total_pages` e `total_items` | usuário não autenticado; parâmetros inválidos; falha de busca |
 
 Interfaces de repositório necessárias:
 
@@ -35,29 +35,28 @@ Interfaces de repositório necessárias:
   filtra anúncios disponíveis, exclui vendidos e expirados, aplica busca em
   título, descrição e categoria, filtra por tipo quando solicitado, ordena por
   `created_at DESC` e retorna os itens da página e o total.
-- A interface deve ser definida em `use_cases/` e não pode depender de SQLite,
-  Flask ou qualquer detalhe da infraestrutura.
+- A interface `AdRepository` fica em `server/core/interfaces/` e não depende
+  de SQLite, Flask ou qualquer detalhe da infraestrutura.
 
-## Infra (`infra/`)
+## Infraestrutura (`server/infra/`)
 
 - Tabela SQLite: `ads`
-- Colunas: `id`, `title`, `description`, `type`, `category`, `price`, `image_url`,
-  `created_at`, `status`, `expires_at`
+- Colunas: campos principais do anúncio, `usuario_id`,
+  `estado_conservacao`, `preco_a_combinar` e `image_key`
 - Restrições: `title`, `category`, `price`, `created_at` e `status` obrigatórios;
-  `image_url` nulo quando não houver foto; `expires_at` obrigatório quando o
-  contrato de publicação definir expiração.
+  `type` aceita `product`, `service` e `event`; campos adicionais preservam
+  compatibilidade com anúncios existentes.
 - Consulta: selecionar somente anúncios publicados e disponíveis, excluir
-  anúncios vendidos e expirados, aplicar busca e filtro de tipo quando
-  informados, ordenar por `created_at DESC`, aplicar `LIMIT 20` e
+  anúncios vendidos e expirados por status ou prazo, aplicar busca e filtro de
+  tipo quando informados, ordenar por `created_at DESC`, aplicar `LIMIT 20` e
   `OFFSET (page - 1) * 20`.
-- Implementação: `infra/repositories/ad_repository_sqlite.py`
-- A inicialização deve criar a tabela sem alterar ou remover a tabela
-  `usuarios` existente. Uma eventual migração para bancos já inicializados
-  deve ser explícita e testável.
+- Implementação: `server/infra/gateways/ad_repository_sqlalchemy.py`.
+- `server/infra/db/migrations/0002_ads_publication.sql` migra a tabela
+  existente preservando os anúncios anteriores.
 - O repositório não deve conhecer HTTP nem autenticação; recebe somente os
   dados necessários para a consulta.
 
-## Interface web (`app/routes/`)
+## API (`server/api/controllers/`)
 
 | Método | Rota | Use case chamado | Resposta |
 |--------|------|------------------|----------|
@@ -76,6 +75,8 @@ Contrato de sucesso:
       "category": "Categoria",
       "price": 100.0,
       "image_url": null,
+      "nome_anunciante": "Nome de exibição",
+      "preco_a_combinar": false,
       "created_at": "2026-11-12T10:00:00Z"
     }
   ],
@@ -107,11 +108,14 @@ HTTP 500 sem expor detalhes de SQL.
 
 ## Interface visual
 
+- Interface estática em `front/`, com módulos de página, fluxo, domínio e
+  adaptadores em `front/js/`.
 - A barra superior contém o botão `Novo anúncio`.
 - A barra superior contém um campo de busca por título, descrição ou categoria.
-- O feed oferece os filtros `Todos`, `Produtos` e `Serviços`.
+- O feed oferece os filtros `Todos`, `Produtos`, `Serviços` e `Eventos`.
 - O feed apresenta uma grade responsiva de cards.
-- Cada card exibe foto quando houver, título, categoria, preço e data.
+- Cada card exibe foto quando houver, título, categoria, preço e data; mostra
+  o nome do anunciante quando disponível e "A combinar" para preço negociável.
 - Cards de serviços podem exibir uma descrição resumida.
 - Quando não houver foto, o card deve manter sua estrutura sem quebrar o
   layout; o tratamento visual exato deve seguir o wireframe aprovado.
@@ -127,8 +131,8 @@ HTTP 500 sem expor detalhes de SQL.
 - A rota não acessa o banco diretamente.
 - O use case depende de uma interface de repositório.
 - O repositório SQLite implementa essa interface.
-- A montagem da rota, do caso de uso e do repositório ocorre na inicialização
-  da aplicação.
+- A montagem do controller, do caso de uso e do repositório ocorre em
+  `server/app.py`.
 - A regra de filtragem, disponibilidade, busca, ordenação e paginação fica no
   caso de uso e na abstração do repositório, não na camada HTTP.
 - O card, o grid e a paginação são componentes separados, cada um com uma
@@ -138,17 +142,18 @@ HTTP 500 sem expor detalhes de SQL.
 
 ## Estratégia de testes
 
-- `tests/domain/`: validar campos obrigatórios, foto opcional e estados
+- `tests/core/entities/`: validar campos obrigatórios, foto opcional e estados
   publicável, vendido e expirado da entidade `Ad`.
-- `tests/use_cases/`: testar `ListAds` com repositório em memória para
+- `tests/core/usecases/`: testar `ListAds` com repositório em memória para
   autenticação, filtragem de disponíveis, exclusão de vendidos/expirados,
   busca, filtros por tipo, combinação de busca e filtro, retorno à primeira
   página, ordenação, limite de 20, páginas seguintes, página padrão e feed vazio.
-- `tests/infra/`: testar consulta SQLite, `LIMIT/OFFSET`, ordenação, exclusão
-  de   estados indisponíveis, busca, filtro de tipo e preservação da tabela `usuarios`.
-- `tests/app/`: testar status HTTP, formato JSON, autenticação, mensagem de
+- `tests/infra/gateways/` e `tests/infra/db/`: testar consulta SQLAlchemy,
+  migração, `LIMIT/OFFSET`, ordenação, exclusão de estados indisponíveis,
+  busca, filtros e preservação dos dados existentes.
+- `tests/api/`: testar status HTTP, formato JSON, autenticação, mensagem de
   feed vazio, parâmetros inválidos e falhas do repositório.
-- Testes de interface devem verificar card, descrição resumida de serviço,
+- `front/tests/`: testar card, descrição resumida de serviço,
   grid responsivo, paginação numerada, busca, filtros, botão `Novo anúncio` e
   navegação para detalhes.
 - Cada critério de aceitação deve ter pelo menos um teste correspondente.

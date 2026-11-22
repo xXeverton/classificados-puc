@@ -20,7 +20,8 @@ botaoSair.addEventListener("click", async () => {
   irPara(ROTAS.entrar);
 });
 
-function formatarPreco(valor) {
+function formatarPreco(valor, aCombinar) {
+  if (aCombinar) return "A combinar";
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",
     currency: "BRL",
@@ -54,12 +55,19 @@ function criarCard(anuncio) {
 
   const corpo = criar("div", "anuncio__corpo");
   corpo.append(criar("span", "etiqueta", dados.categoria));
-  corpo.append(criar("span", "anuncio__preco", formatarPreco(dados.preco)));
+  corpo.append(criar(
+    "span",
+    "anuncio__preco",
+    formatarPreco(dados.preco, dados.precoACombinar),
+  ));
   corpo.append(criar("h2", "anuncio__titulo", dados.titulo));
   if (dados.descricaoResumida) {
     corpo.append(criar("p", "anuncio__descricao", dados.descricaoResumida));
   }
   corpo.append(criar("span", "anuncio__meta", formatarData(dados.data)));
+  if (dados.nomeAnunciante) {
+    corpo.append(criar("span", "anuncio__meta", dados.nomeAnunciante));
+  }
   card.append(corpo);
   return card;
 }
@@ -124,7 +132,7 @@ const parametrosIniciais = new URLSearchParams(window.location.search);
 const params = {
   page: Math.max(1, Number(parametrosIniciais.get("page") || 1)),
   search: parametrosIniciais.get("search") || "",
-  type: ["all", "product", "service"].includes(parametrosIniciais.get("type"))
+  type: ["all", "product", "service", "event"].includes(parametrosIniciais.get("type"))
     ? parametrosIniciais.get("type")
     : "all",
 };

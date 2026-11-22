@@ -8,10 +8,15 @@ test("monta URL, envia JSON e devolve status e corpo", async () => {
   const { fetchFn, chamadas } = criarFetchFalso([{ status: 201, corpo: { id: 1 } }]);
   const cliente = criarClienteHttp({ fetchFn, baseUrl: "http://api" });
   const r = await cliente.requisitar("POST", "/auth/cadastro", { a: 1 });
-  assert.deepEqual(r, { status: 201, corpo: { id: 1 } });
+  assert.deepEqual(r, {
+    status: 201,
+    corpo: { id: 1 },
+    redirecionada: false,
+  });
   assert.equal(chamadas[0].url, "http://api/auth/cadastro");
   assert.equal(chamadas[0].opcoes.body, '{"a":1}');
   assert.equal(chamadas[0].opcoes.headers.Authorization, undefined);
+  assert.equal(chamadas[0].opcoes.credentials, "same-origin");
 });
 
 test("envia Bearer quando há token", async () => {
@@ -25,7 +30,11 @@ test("envia Bearer quando há token", async () => {
 test("corpo ausente vira null", async () => {
   const { fetchFn } = criarFetchFalso([{ status: 204 }]);
   const cliente = criarClienteHttp({ fetchFn, baseUrl: "http://api" });
-  assert.deepEqual(await cliente.requisitar("POST", "/auth/logout"), { status: 204, corpo: null });
+  assert.deepEqual(await cliente.requisitar("POST", "/auth/logout"), {
+    status: 204,
+    corpo: null,
+    redirecionada: false,
+  });
 });
 
 test("FormData vai como está, sem Content-Type (o navegador define o boundary)", async () => {

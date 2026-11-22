@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from sqlalchemy import create_engine, event
+from sqlalchemy import create_engine, event, inspect, text
 from sqlalchemy.engine import Engine, URL, make_url
 from sqlalchemy.orm import Session, sessionmaker
 
@@ -10,6 +10,16 @@ from server.infra.db.models import Base
 
 _DATABASE_PATH = (
     Path(__file__).resolve().parents[2] / "database" / "db.sqlite3"
+)
+_ADS_MIGRATION = (
+    Path(__file__).resolve().parent
+    / "migrations"
+    / "0002_ads_publication.sql"
+)
+_ADS_FIELD_CONSTRAINTS_MIGRATION = (
+    Path(__file__).resolve().parent
+    / "migrations"
+    / "0003_ads_field_constraints.sql"
 )
 
 
@@ -42,5 +52,47 @@ def create_session_factory(engine: Engine) -> sessionmaker[Session]:
 
 
 def initialize_database(engine: Engine) -> None:
-    """Create tables declared by the SQLAlchemy models when they are absent."""
+    """Create missing tables and safely extend existing ad databases."""
     Base.metadata.create_all(engine)
+    if engine.dialect.name == "sqlite":
+        _migrate_ads_table(engine)
+
+
+def _migrate_ads_table(engine: Engine) -> None:
+    if "ads" not in inspect(engine).get_table_names():
+        return
+    with engine.connect() as connection:
+        schema = connection.execute(
+            text(
+                "SELECT sql FROM sqlite_master "
+                "WHERE type = 'table' AND name = 'ads'"
+            )
+        ).scalar_one()
+        columns = {
+            column["name"]
+            for column in inspect(connection).get_columns("ads")
+        }
+    has_publication_fields = (
+        {"usuario_id", "estado_conservacao", "preco_a_combinar", "image_key"}
+        <= columns
+        and "'event'" in schema
+    )
+    if not has_publication_fields:
+        _execute_sqlite_migration(engine, _ADS_MIGRATION)
+
+    with engine.connect() as connection:
+        version = connection.exec_driver_sql(
+            "PRAGMA user_version"
+        ).scalar_one()
+    if version < 3:
+        _execute_sqlite_migration(engine, _ADS_FIELD_CONSTRAINTS_MIGRATION)
+
+
+def _execute_sqlite_migration(engine: Engine, migration: Path) -> None:
+    raw_connection = engine.raw_connection()
+    try:
+        raw_connection.driver_connection.executescript(
+            migration.read_text(encoding="utf-8")
+        )
+    finally:
+        raw_connection.close()

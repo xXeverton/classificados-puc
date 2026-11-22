@@ -1,6 +1,6 @@
 """Use case for listing advertisements available in the feed."""
 
-from math import ceil
+from math import ceil, isfinite
 
 from server.core.entities.usuario import Usuario
 from server.core.interfaces.ad_repository_interface import AdRepository
@@ -11,7 +11,7 @@ class ListAds:
     """List published advertisements for an authenticated user."""
 
     PER_PAGE = 20
-    VALID_TYPES = {"all", "product", "service"}
+    VALID_TYPES = {"all", "product", "service", "event"}
 
     def __init__(self, repository: AdRepository):
         self.repository = repository
@@ -22,6 +22,9 @@ class ListAds:
         page: int | None = None,
         search: str | None = None,
         ad_type: str | None = None,
+        category: str | None = None,
+        min_price: float | None = None,
+        max_price: float | None = None,
     ) -> dict[str, object]:
         if usuario is None:
             raise ErroDeCasoDeUso(
@@ -31,6 +34,8 @@ class ListAds:
         page = self._validate_page(page)
         self._validate_search(search)
         self._validate_ad_type(ad_type)
+        category = self._normalize_category(category)
+        self._validate_price_range(min_price, max_price)
 
         # The requested page is kept even with a search or filter, so the
         # user can page through results. Going back to the first page when
@@ -41,6 +46,9 @@ class ListAds:
             per_page=self.PER_PAGE,
             search=search,
             ad_type=ad_type,
+            category=category,
+            min_price=min_price,
+            max_price=max_price,
         )
         total_pages = ceil(total_items / self.PER_PAGE)
 
@@ -73,5 +81,43 @@ class ListAds:
     def _validate_ad_type(cls, ad_type: str | None) -> None:
         if ad_type is not None and ad_type not in cls.VALID_TYPES:
             raise ValueError(
-                "Tipo deve ser all, product ou service.",
+                "Tipo deve ser all, product, service ou event.",
             )
+
+    @staticmethod
+    def _normalize_category(category: str | None) -> str | None:
+        if category is None:
+            return None
+        if not isinstance(category, str):
+            raise ValueError("Categoria deve ser um texto.")
+        return category.strip() or None
+
+    @classmethod
+    def _validate_price_range(
+        cls,
+        min_price: float | None,
+        max_price: float | None,
+    ) -> None:
+        cls._validate_price(min_price, "Preço mínimo")
+        cls._validate_price(max_price, "Preço máximo")
+        if (
+            min_price is not None
+            and max_price is not None
+            and min_price > max_price
+        ):
+            raise ValueError(
+                "Preço mínimo não pode ser maior que o máximo.",
+            )
+
+    @staticmethod
+    def _validate_price(price: float | None, label: str) -> None:
+        if price is None:
+            return
+        if (
+            isinstance(price, bool)
+            or not isinstance(price, (int, float))
+            or not isfinite(price)
+        ):
+            raise ValueError(f"{label} deve ser um número.")
+        if price < 0:
+            raise ValueError(f"{label} não pode ser negativo.")

@@ -34,6 +34,10 @@ classDiagram
         +datetime created_at
         +str status
         +datetime expires_at
+        +int? usuario_id
+        +str? estado_conservacao
+        +bool preco_a_combinar
+        +str? image_key
     }
     class TokenConfirmacao {
         +int id
@@ -69,6 +73,7 @@ classDiagram
     Usuario "1" --> "0..*" Sessao : sessoes
     Usuario "1" --> "0..1" Anunciante : anunciantes
     Anunciante "1" --> "1..10" ContatoAnunciante : contatos_anunciante
+    Usuario "1" --> "0..*" Ad : anuncios
 ```
 
 `id` é a chave primária técnica, gerada pelo banco. `email` é o identificador
@@ -171,20 +176,26 @@ Mapeamento com os nomes da subtarefa PROJ-25 do Jira (decisão D-041):
 | Coluna | Tipo | Obrigatória | Restrições | Descrição |
 |---|---|---:|---|---|
 | `id` | INTEGER | Sim | Chave primária, autoincremento | Identificador interno do anúncio |
-| `title` | TEXT | Sim | Não pode ser vazio ou conter somente espaços ASCII | Título do anúncio |
-| `description` | TEXT | Não | — | Descrição opcional do anúncio |
-| `type` | TEXT | Sim | `product` ou `service` | Tipo do anúncio |
+| `title` | TEXT | Sim | Entre 5 e 80 caracteres, sem espaços nas extremidades | Título do anúncio |
+| `description` | TEXT | Sim para publicações; nulo só em anúncios legados | Até 500 caracteres e não vazia para publicações | Descrição do anúncio |
+| `type` | TEXT | Sim | `product`, `service` ou `event` | Tipo do anúncio |
 | `category` | TEXT | Sim | Não pode ser vazia ou conter somente espaços ASCII | Categoria do anúncio |
 | `price` | REAL | Sim | Valor numérico | Preço do anúncio |
 | `image_url` | TEXT | Não | Pode ser nulo | URL da foto do anúncio |
 | `created_at` | DATETIME | Sim | Data de criação | Momento de criação do anúncio |
 | `status` | TEXT | Sim | `published`, `sold` ou `expired` | Estado de disponibilidade |
-| `expires_at` | DATETIME | Não | Pode ser nulo | Momento de expiração, quando aplicável |
+| `expires_at` | DATETIME | Não | Nulo permitido para anúncios legados; publicações novas recebem prazo; nulo vale `created_at` + 30 dias | Fim do prazo de publicação, definido na publicação ou na última renovação (spec 004) |
+| `usuario_id` | INTEGER | Não | FK → `usuarios.id`, `ON DELETE CASCADE`; nulo apenas para anúncios anteriores à integração | Usuário que publicou |
+| `estado_conservacao` | TEXT | Não | `novo` ou `usado_regular`; nulo para serviço/evento e anúncios antigos | Conservação do produto |
+| `preco_a_combinar` | BOOLEAN | Sim | `0` ou `1`; padrão `0` | Indica preço negociável |
+| `image_key` | TEXT | Não | Pode ser nulo | Chave da imagem no storage local/S3 |
 
-Os anúncios sem foto usam `image_url` nulo. O feed considera disponíveis apenas
-os anúncios publicados; anúncios vendidos ou expirados não devem ser retornados.
-O banco não calcula a expiração automática: essa regra pertence ao domínio e ao
-caso de uso de publicação.
+`image_url` preserva URLs existentes; novas imagens usam `image_key`, e a URL
+é resolvida pelo adaptador de storage. Sem foto, ambos ficam nulos. O feed
+considera disponíveis apenas os anúncios publicados; anúncios vendidos ou
+expirados não devem ser retornados. Publicações novas recebem expiração em
+30 dias, calculada pelo caso de uso; o feed também oculta anúncios publicados
+cujo prazo já passou. O banco não atualiza automaticamente o estado do anúncio.
 
 O banco garante as constraints estruturais acima, mas não valida o formato ou
 o domínio do e-mail. A entidade `Usuario` valida o endereço (apenas
@@ -225,13 +236,22 @@ existentes.
 
 As tabelas `anunciantes` e `contatos_anunciante` (feature 003) são novas e não
 alteram `usuarios`: são criadas tanto em bancos novos quanto em bancos locais já
-existentes, sem apagar nada nem exigir migração.
+existentes, sem apagar nada nem exigir migração. A migração
+`migrations/0002_ads_publication.sql` estende `ads` para autoria, eventos,
+conservação, preço negociável e chave da imagem. A migration
+`migrations/0003_ads_field_constraints.sql` aplica os limites de título e
+descrição, preservando anúncios existentes. Se um registro legado exceder os
+limites, a inicialização falha sem apagar o registro; os dados precisam ser
+corrigidos antes da atualização. As migrations são controladas por
+`PRAGMA user_version`; os testes verificam preservação de dados, repetição e
+rejeição segura de registros incompatíveis.
 
 A feature 001 (cadastro, login e verificação de e-mail) mudou a tabela
 `usuarios` de forma incompatível. Por decisão do time (2026-11-20), não há
 script de migração, pois só existem bancos locais de desenvolvimento: **apague
 `server/database/db.sqlite3`** depois de atualizar o código, e ele será
-recriado na próxima inicialização.
+recriado na próxima inicialização. Essa orientação se refere à antiga mudança
+de `usuarios`; a migração de anúncios acima não descarta os dados de `ads`.
 
 ## Evolução do modelo
 

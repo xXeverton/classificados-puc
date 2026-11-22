@@ -15,9 +15,12 @@ class AdViewSchema(BaseModel):
     description: str | None
     type: str
     category: str
-    price: float
+    price: float | None
     image_url: str | None
     created_at: datetime
+    nome_anunciante: str | None = None
+    estado_conservacao: str | None = None
+    preco_a_combinar: bool = False
 
 
 class AdsFeedViewSchema(BaseModel):
@@ -42,6 +45,9 @@ def apresenta_ad(ad: Ad) -> AdViewSchema:
         price=ad.price,
         image_url=ad.image_url,
         created_at=ad.created_at,
+        nome_anunciante=ad.nome_anunciante,
+        estado_conservacao=ad.estado_conservacao,
+        preco_a_combinar=ad.preco_a_combinar,
     )
 
 

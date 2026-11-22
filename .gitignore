@@ -15,6 +15,7 @@ htmlcov/
 # Banco de dados local
 *.db
 *.sqlite3
+media/
 
 # IDE / SO
 .vscode/
