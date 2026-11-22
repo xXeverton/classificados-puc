@@ -9,7 +9,7 @@
   ("Meus Anúncios")
 - **Decisões gerais aplicadas**: D-004, D-020, D-021, D-030, D-032, D-033, D-034
 - **Relacionadas**: [007-editar-excluir-anuncio](../007-editar-excluir-anuncio/spec.md)
-  e [004-expirar-anuncios](../004-expirar-anuncios/spec.md)
+  e [010-expirar-anuncios](../010-expirar-anuncios/spec.md)
 
 ## História de usuário
 

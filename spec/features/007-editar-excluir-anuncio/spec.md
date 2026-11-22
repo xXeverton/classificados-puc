@@ -9,7 +9,7 @@
   (`PUT` e `DELETE /api/ads/:id`)
 - **Decisões gerais aplicadas**: nenhuma
 - **Relacionadas**: publicação de anúncios (PROJ-2) e
-  [004-expirar-anuncios](../004-expirar-anuncios/spec.md)
+  [010-expirar-anuncios](../010-expirar-anuncios/spec.md)
 
 ## História de usuário
 

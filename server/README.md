@@ -117,7 +117,7 @@ Agende o comando para rodar periodicamente, por exemplo uma vez por hora:
   `.venv\Scripts\flask.exe --app server.app:create_app expirar-anuncios`
   com a pasta do projeto como diretório inicial.
 
-Regras e critérios: [spec 004](../spec/features/004-expirar-anuncios/spec.md).
+Regras e critérios: [spec 010](../spec/features/010-expirar-anuncios/spec.md).
 
 ### Apagar anúncios expirados
 
