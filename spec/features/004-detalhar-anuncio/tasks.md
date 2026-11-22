@@ -6,12 +6,16 @@ implementação. Rode `pytest` e `flake8` ao fim de cada bloco.
 
 ## 0. Decisões pendentes
 
-- [ ] T1: Confirmar localização no campus, estado de conservação, fallback sem
-  fotos e comportamento de anúncio vendido/expirado/excluído.
-- [ ] T2: Confirmar o contrato de múltiplas fotos e atualizar a publicação
-  quando necessário.
-- [ ] T3: Confirmar o wireframe detalhado e os textos de mensagens antes da
-  implementação visual.
+- [x] T1: Confirmar localização no campus, estado de conservação, fallback sem
+  foto e comportamento geral de anúncio vendido/expirado. Decidido: sem
+  localização nesta feature; reutilizar `estado_conservacao`; ocultar a galeria
+  sem foto; manter mensagens distintas para estados indisponíveis.
+- [x] T2: Confirmar o contrato de fotos e manter uma foto opcional por anúncio.
+  Não ampliar a publicação com múltiplas fotos nesta feature.
+- [x] T3: Confirmar o wireframe textual descrito em PROJ-17:
+  carrossel/galeria à esquerda, informações do item à direita e bloco do
+  anunciante com contatos à direita. Os textos exatos das mensagens foram
+  definidos na seção "Mensagens da página" da spec.
 
 ## 1. PROJ-48 — Back-end
 
@@ -50,13 +54,12 @@ implementação. Rode `pytest` e `flake8` ao fim de cada bloco.
 ## 2. PROJ-49 — Front-end
 
 - [ ] T14: Escrever testes dos módulos da página para dados completos,
-  galeria, fallback sem fotos e links de contato.
+  foto, fallback sem foto e links de contato.
 - [ ] T15: Criar `front/anuncios/detalhes/index.html` seguindo o wireframe e o
   guia de estilo.
 - [ ] T16: Implementar o carregamento autenticado de anúncio e anunciante,
-  exibindo título, categoria, conservação, preço, descrição e localização.
-- [ ] T17: Implementar carrossel/galeria com navegação por teclado e estado sem
-  fotos.
+  exibindo título, categoria, conservação, preço e descrição.
+- [ ] T17: Implementar a foto com rótulo acessível e estado sem foto.
 - [ ] T18: Implementar o bloco do anunciante com foto, vínculo e contatos
   reutilizando as regras e formatos de D-013.
 - [ ] T19: Implementar estados de carregamento, falha de conexão, não encontrado

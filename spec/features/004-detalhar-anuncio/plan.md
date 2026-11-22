@@ -6,11 +6,10 @@ Referência: `spec.md` desta pasta. Decisões gerais:
 ## Dependências e contrato
 
 - A publicação/anúncio deve fornecer, no mínimo, `id`, título, categoria,
-  estado de conservação, preço, descrição completa, localização no campus,
-  estado de publicação e fotos.
+  estado de conservação, preço, descrição completa, estado de publicação e
+  uma foto opcional. Localização no campus fica fora desta feature.
 - A feature depende do contrato da publicação e do perfil de anunciante já
-  aprovado. Até os campos pendentes serem definidos em uma decisão do projeto,
-  eles ficam registrados como dúvidas abertas e não devem ser inventados.
+  aprovado.
 - O perfil divulgado usa `Anunciante` e `ContatoAnunciante` já existentes.
 - A API reutiliza o repositório de anúncios e amplia o dado consultado por id;
   não expõe dados privados do usuário.
@@ -20,14 +19,12 @@ Referência: `spec.md` desta pasta. Decisões gerais:
 
 | Entidade | Atributos | Regras/validações |
 |---|---|---|
-| `AdDetails` (nova, representação do domínio) | dados públicos do anúncio e dados resumidos do anunciante | anúncio publicado e disponível; descrição completa; zero ou mais fotos; vínculo e contatos válidos |
-| `AdPhoto` (nova, objeto de valor) | `id`, `url`, `ordem`, opcionalmente descrição alternativa | URL válida e ordem única; não vazia |
+| `AdDetails` (nova, representação do domínio) | dados públicos do anúncio e dados resumidos do anunciante | anúncio publicado e disponível; descrição completa; zero ou uma foto; vínculo e contatos válidos |
 | `AdvertiserSummary` (nova, objeto de valor) | `nome_exibicao`, `vinculo`, `foto_url`, contatos públicos | nome obrigatório; vínculo vem da conta; contatos seguem D-013 |
 
-Caso a localização, conservação e várias fotos não existam na entidade `Ad`,
-não criar constantes ou campos soltos no controller. A modelagem deve seguir a
-skill `manter-modelagem-dados`, com entidade, modelo SQLAlchemy, schema e
-documentação atualizados juntos.
+O contrato reutiliza os campos existentes da entidade `Ad`, incluindo a foto
+opcional por anúncio. Não criar campos de localização ou constantes soltas no
+controller.
 
 ## Use cases (`server/core/usecases/`)
 
@@ -46,11 +43,8 @@ documentação atualizados juntos.
 
 ## Infra (`server/infra/`)
 
-- Confirmar ou ampliar o modelo `AdModel` e a entidade `Ad` somente após fechar
-  os campos pendentes da spec.
-- Campos candidatos já conhecidos pelo Jira: localização no campus, estado de
-  conservação e fotos em lista. Não registrar esses nomes como certos até que
-  a publicação tenha um contrato aprovado.
+- Reutilizar o modelo `AdModel` e a entidade `Ad` existentes. Não ampliar o
+  contrato com localização ou múltiplas fotos nesta feature.
 - Repositório SQLAlchemy usa o `id` técnico, busca o anúncio, verifica estado
   publicado/disponível e carrega o anunciante e contatos.
 - Fotos e fotos de perfil são conteúdo protegido por sessão (D-004/D-025). O
@@ -76,8 +70,7 @@ Contrato de sucesso esperado:
     "conservation": null,
     "price": 100.0,
     "description": "Descrição completa",
-    "location": null,
-    "photos": [],
+    "photo_url": null,
     "status": "published",
     "created_at": "2026-11-21T12:00:00Z"
   },
@@ -100,7 +93,7 @@ do banco e SQL não aparecem nas respostas.
 ## Front-end (`front/anuncios/<id>/`)
 
 - Criar uma página dedicada chamada pelo clique no card do feed.
-- Cabeçalho comum e layout responsivo: carrossel/galeria à esquerda,
+- Cabeçalho comum e layout responsivo conforme `wireframe.md`: foto à esquerda,
   informações do item à direita.
 - Bloco do anunciante abaixo das informações, com nome, vínculo, foto e
   contatos.
@@ -109,7 +102,7 @@ do banco e SQL não aparecem nas respostas.
 - Nenhum dado da API é exibido com `innerHTML`.
 - Estados: carregando, sucesso, inexistente/indisponível, falha de conexão,
   sem fotos e sem sessão.
-- O carrossel usa botões com nome acessível e navegação pelo teclado.
+- A foto usa texto alternativo ou rótulo acessível adequado ao layout.
 - Links de WhatsApp e demais contatos usam os valores validados do perfil.
 - Seguir D-030 a D-034 e `front/css/tema.css`.
 
@@ -134,7 +127,7 @@ do banco e SQL não aparecem nas respostas.
   contatos na ordem e ausência de dados privados.
 - `tests/api/`: `200`, `400`, `401`, `404`, falha do repositório e contrato
   JSON sem campos internos.
-- `front/tests/`: renderização das informações, galeria com várias fotos,
+- `front/tests/`: renderização das informações, foto única,
   fallback sem fotos, navegação acessível, contatos, estados de erro e
   responsabilidade visual móvel.
 - Cada critério de aceitação da spec deve ter pelo menos um teste.

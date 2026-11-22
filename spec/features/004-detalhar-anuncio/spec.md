@@ -5,7 +5,7 @@
   subtarefas [PROJ-48](https://matheuscomputacaopuc.atlassian.net/browse/PROJ-48)
   (back-end) e [PROJ-49](https://matheuscomputacaopuc.atlassian.net/browse/PROJ-49)
   (front-end).
-- **Status**: Rascunho
+- **Status**: Aprovada
 - **Data**: 2026-11-21
 - **Decisões gerais aplicadas**: D-004, D-012, D-013, D-020, D-021, D-030,
   D-032, D-033, D-034, D-040 e D-042.
@@ -15,7 +15,7 @@
 ## Contexto
 
 Ao clicar em um anúncio no feed, o comprador precisa abrir uma página dedicada
-para conhecer todas as fotos, ler a descrição completa, conferir as informações
+para conhecer a foto, ler a descrição completa, conferir as informações
 do item, saber quem está vendendo e escolher uma forma de contato.
 
 ## Histórias de usuário
@@ -34,11 +34,11 @@ que preferir.
 
 - [ ] CA1: Dado que clico em um card publicado no feed, quando a página
   detalhada carrega, então vejo título, categoria, estado de conservação,
-  preço, descrição completa e localização no campus.
-- [ ] CA2: Dado que o anúncio tem fotos, quando a página carrega, então vejo
-  uma galeria ou carrossel com todas as fotos e consigo navegar entre elas.
-- [ ] CA3: Dado que o anúncio não tem fotos, quando a página carrega, então
-  vejo um estado visual adequado que não quebra o layout.
+  preço e descrição completa. Localização no campus não faz parte desta feature.
+- [ ] CA2: Dado que o anúncio tem uma foto, quando a página carrega, então vejo
+  essa foto em um estado visual adequado.
+- [ ] CA3: Dado que o anúncio não tem foto, quando a página carrega, então
+  vejo um estado visual adequado que não quebra o layout e oculta a galeria.
 - [ ] CA4: Dado que o anúncio está publicado, quando a página carrega, então
   vejo o perfil resumido do anunciante com nome de exibição, vínculo e foto,
   quando houver.
@@ -63,10 +63,10 @@ que preferir.
   então vejo um estado de carregamento sem perder o usuário em uma tela vazia.
 - [ ] CA13: Dado que a API falha ou não há conexão, quando tento abrir a
   página, então vejo uma mensagem de falha sem dados parciais enganosos.
-- [ ] CA14: Dado que uso o celular, quando vejo a página, então a galeria e as
+- [ ] CA14: Dado que uso o celular, quando vejo a página, então a foto e as
   informações cabem sem rolagem horizontal.
 - [ ] CA15: Dado que uso o teclado, quando navego pela página, então consigo
-  operar a galeria e os links de contato com foco e rótulos acessíveis.
+  acessar a foto e os links de contato com foco e rótulos acessíveis.
 - [ ] CA16: A página segue o tema e os componentes existentes em
   `front/css/tema.css` e no guia de estilo.
 
@@ -76,8 +76,9 @@ que preferir.
   (D-004 e D-021).
 - RN2: O anúncio exibido deve continuar publicado e disponível; excluído,
   vendido ou expirado não aparece como anúncio ativo.
-- RN3: A galeria mostra todas as fotos anexadas ao anúncio. Uma foto ausente
-  usa o fallback aprovado nesta feature.
+- RN3: A publicação atual admite uma foto por anúncio. Quando houver foto,
+  ela é exibida na página; quando não houver, a galeria é omitida e o layout
+  mantém um estado visual vazio adequado.
 - RN4: Os dados do anunciante exibidos são nome de exibição, vínculo e foto;
   os contatos vêm da lista de contatos do perfil de anunciante (D-013).
 - RN5: Os dados sensíveis ou duplicados do perfil comum não precisam ser
@@ -90,6 +91,17 @@ que preferir.
   não é interpretado como HTML (D-031).
 - RN9: A página usa o visual comum e o comportamento geral das telas
   (D-032 a D-034).
+
+## Mensagens da página
+
+- Sem sessão: `Faça login para ver os detalhes do anúncio.`
+- Anúncio inexistente: `Anúncio não encontrado.`
+- Anúncio vendido: `Este anúncio já foi vendido e não está mais disponível para contato.`
+- Anúncio expirado: `Este anúncio expirou e não está mais disponível para contato.`
+- Anúncio excluído: `Este anúncio foi excluído ou não está mais disponível.`
+- Anúncio não publicado: `Este anúncio não está publicado.`
+- Falha da API ou de conexão: `Não foi possível carregar o anúncio. Tente novamente.`
+- Anúncio sem foto: `Este anúncio não possui foto.`
 
 ## Fora do escopo
 
@@ -104,15 +116,6 @@ que preferir.
 
 ## Dúvidas em aberto
 
-- Como a localização no campus é cadastrada: campo livre ou lista fechada,
-  em qual feature e em qual campo da publicação.
-- Qual campo representa o estado de conservação na publicação e quais valores
-  são aceitos.
-- Qual fallback usar quando o anúncio não tem fotos: imagem padrão ou galeria
-  completamente omitida.
-- O texto exato das mensagens para anúncio vendido, expirado, excluído,
-  inexistente ou não publicado.
-- Como múltiplas fotos são armazenadas e quais formatos e limites serão usados.
-- Qual comportamento visual exato do carrossel e dos botões de contato; o
-  wireframe desta spec é o layout de referência, mas não aprova detalhes finais.
+- A apresentação visual final do estado sem foto e dos detalhes menores dos
+  botões de contato pode seguir o tema e o guia de estilo.
 
