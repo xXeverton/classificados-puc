@@ -10,6 +10,7 @@ from typing import Any
 
 from flask import current_app, g, request
 from flask_openapi3 import OpenAPI
+from pydantic import BaseModel
 from werkzeug.exceptions import RequestEntityTooLarge
 
 from werkzeug.datastructures import FileStorage
@@ -37,7 +38,13 @@ from server.core.entities.anuncio import (
     TITULO_MAX_CARACTERES,
     TITULO_MIN_CARACTERES,
 )
-from server.core.usecases.erros import ErroDeCasoDeUso, PerfilIncompleto
+from server.core.usecases.erros import (
+    AnuncioDeOutroUsuario,
+    AnuncioNaoEncontrado,
+    CategoriaNaoEditavel,
+    ErroDeCasoDeUso,
+    PerfilIncompleto,
+)
 from server.core.usecases.list_ads import ListAds
 from server.infra.storage.storage import (
     ChaveInvalidaError,
@@ -64,6 +71,8 @@ class ErroPublicacaoSchema(ErrorSchema):
 
 class AnuncioIdPath(BaseModel):
     anuncio_id: str
+class AnuncioPath(BaseModel):
+    ad_id: int
 
 
 def _decimal_constante_json(valor: str) -> Decimal:
@@ -243,6 +252,22 @@ def _limpar_imagem(storage: ImageStorage, key: str | None) -> None:
         current_app.logger.exception(
             "Não foi possível remover imagem órfã do anúncio."
         )
+
+
+def _erro_de_dono(
+    erro: AnuncioNaoEncontrado | AnuncioDeOutroUsuario,
+) -> tuple[dict[str, Any], int]:
+    if isinstance(erro, AnuncioNaoEncontrado):
+        return _erro(
+            str(erro),
+            HTTPStatus.NOT_FOUND,
+            codigo="anuncio_nao_encontrado",
+        )
+    return _erro(
+        str(erro),
+        HTTPStatus.FORBIDDEN,
+        codigo="anuncio_de_outro_usuario",
+    )
 
 
 def register_ads_controller(app: OpenAPI, obter_usuario_da_sessao) -> None:
@@ -475,6 +500,79 @@ def register_ads_controller(app: OpenAPI, obter_usuario_da_sessao) -> None:
             )
 
         return apresenta_ad(publicado).model_dump(mode="json"), 201
+
+    @app.put(
+        "/api/ads/<int:ad_id>",
+        security=SEGURANCA_BEARER,
+        responses={
+            200: AdViewSchema,
+            400: ErrorSchema,
+            401: ErrorSchema,
+            403: ErrorSchema,
+            404: ErrorSchema,
+            413: ErrorSchema,
+            415: ErrorSchema,
+            422: ErroPublicacaoSchema,
+        },
+    )
+    @protegida
+    def editar_ad(path: AnuncioPath):
+        if request.mimetype != "application/json":
+            return _erro(
+                "Envie os dados do anúncio em JSON.",
+                HTTPStatus.UNSUPPORTED_MEDIA_TYPE,
+            )
+        dados, _ = _ler_entrada()
+        if dados is None:
+            return _erro(
+                "O corpo enviado não é um objeto válido.",
+                HTTPStatus.BAD_REQUEST,
+            )
+        anuncio, erros = _validar_anuncio(dados, g.usuario.id)
+        if erros:
+            return _erro(
+                "Dados inválidos.",
+                HTTPStatus.UNPROCESSABLE_ENTITY,
+                codigo="dados_invalidos",
+                campos=erros,
+            )
+        try:
+            editado = app.extensions["editar_anuncio"].executar(
+                path.ad_id, anuncio
+            )
+        except CategoriaNaoEditavel as error:
+            return _erro(
+                "Dados inválidos.",
+                HTTPStatus.UNPROCESSABLE_ENTITY,
+                codigo="dados_invalidos",
+                campos={"categoria": str(error)},
+            )
+        except (AnuncioNaoEncontrado, AnuncioDeOutroUsuario) as error:
+            return _erro_de_dono(error)
+        return apresenta_ad(editado).model_dump(mode="json"), 200
+
+    @app.delete(
+        "/api/ads/<int:ad_id>",
+        security=SEGURANCA_BEARER,
+        responses={
+            204: None,
+            401: ErrorSchema,
+            403: ErrorSchema,
+            404: ErrorSchema,
+        },
+    )
+    @protegida
+    def excluir_ad(path: AnuncioPath):
+        try:
+            image_key = app.extensions["excluir_anuncio"].executar(
+                path.ad_id, g.usuario.id
+            )
+        except (AnuncioNaoEncontrado, AnuncioDeOutroUsuario) as error:
+            return _erro_de_dono(error)
+        # The ad is already gone; a photo that fails to delete is only
+        # logged, so the user still gets the deletion they asked for.
+        _limpar_imagem(app.extensions["image_storage"], image_key)
+        return "", HTTPStatus.NO_CONTENT
 
 
 def _parse_price(value: str | None) -> float | None:

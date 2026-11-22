@@ -70,7 +70,6 @@ def create_ads_app(image_root=None):
                         tzinfo=timezone.utc,
                     ),
                     status="published",
-                    usuario_id=1,
                     estado_conservacao="usado_regular",
                 ),
                 AdModel(
@@ -89,7 +88,6 @@ def create_ads_app(image_root=None):
                         tzinfo=timezone.utc,
                     ),
                     status="published",
-                    usuario_id=1,
                 ),
             ]
         )
@@ -104,6 +102,15 @@ def complete_advertiser_profile(app):
             contatos=(Contato.criar("email", "ana@example.com"),),
         )
     )
+
+
+def assign_owner(app, ad_id, usuario_id=1):
+    with app.extensions["session_factory"].begin() as session:
+        session.execute(
+            AdModel.__table__.update()
+            .where(AdModel.id == ad_id)
+            .values(usuario_id=usuario_id)
+        )
 
 
 def test_get_ads_returns_paginated_cards_with_public_fields():
@@ -776,6 +783,7 @@ def test_publish_requires_authentication_and_returns_json_401():
 def test_get_ad_details_returns_public_ad_and_advertiser():
     app = create_ads_app()
     complete_advertiser_profile(app)
+    assign_owner(app,1)
 
     response = app.test_client().get(
         "/api/ads/1",
@@ -802,6 +810,7 @@ def test_get_ad_details_returns_public_ad_and_advertiser():
 def test_get_ad_details_without_photo_succeeds():
     app = create_ads_app()
     complete_advertiser_profile(app)
+    assign_owner(app,2)
 
     response = app.test_client().get(
         "/api/ads/2",

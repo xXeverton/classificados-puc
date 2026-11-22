@@ -104,3 +104,32 @@ def test_ad_that_is_not_published_is_never_overdue(status):
     ad = ad_with(status=status)
 
     assert not ad.is_overdue(PUBLISHED_AT + timedelta(days=365))
+
+
+def test_retention_after_expiry_is_thirty_days():
+    assert Ad.RETENTION_AFTER_EXPIRY == timedelta(days=30)
+
+
+def test_expired_ad_can_be_deleted_thirty_days_after_its_end():
+    ad = ad_with(status="expired")
+    end = ad.publication_ends_at()
+
+    limit = end + timedelta(days=30)
+
+    assert not ad.can_be_deleted(limit - timedelta(seconds=1))
+    assert ad.can_be_deleted(limit)
+
+
+def test_deletion_counts_from_renewed_end_date():
+    renewed_until = PUBLISHED_AT + timedelta(days=50)
+    ad = ad_with(status="expired", expires_at=renewed_until)
+
+    assert not ad.can_be_deleted(PUBLISHED_AT + timedelta(days=79))
+    assert ad.can_be_deleted(PUBLISHED_AT + timedelta(days=80))
+
+
+@pytest.mark.parametrize("status", ["published", "sold"])
+def test_ad_that_is_not_expired_is_never_deleted(status):
+    ad = ad_with(status=status)
+
+    assert not ad.can_be_deleted(PUBLISHED_AT + timedelta(days=365))

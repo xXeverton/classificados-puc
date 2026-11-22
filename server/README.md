@@ -82,6 +82,21 @@ Agende o comando para rodar periodicamente, por exemplo uma vez por hora:
 
 Regras e critérios: [spec 004](../spec/features/004-expirar-anuncios/spec.md).
 
+### Apagar anúncios expirados
+
+Um anúncio expirado fica guardado por mais 30 dias depois do fim do prazo,
+para ainda poder ser renovado. Depois disso, o comando abaixo o apaga de vez,
+junto com a foto, e informa quantos apagou. Anúncios publicados e vendidos
+nunca são apagados. Se uma foto não puder ser apagada, o anúncio continua
+apagado e a falha vai para o log.
+
+```bash
+flask --app server.app:create_app apagar-anuncios-expirados
+```
+
+Agende-o como o `expirar-anuncios`, por exemplo uma vez por dia. Regras:
+[spec 008](../spec/features/008-apagar-anuncios-expirados/spec.md).
+
 ## Feed, publicação e imagens de anúncios
 
 `GET /api/ads` lista anúncios de produtos, serviços e eventos. A rota exige

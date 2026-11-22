@@ -95,3 +95,11 @@ class AnuncioExpirado(ErroDeCasoDeUso):
 
 class AnuncioNaoPublicado(ErroDeCasoDeUso):
     mensagem_padrao = "Este anúncio não está publicado."
+
+
+class AnuncioDeOutroUsuario(ErroDeCasoDeUso):
+    mensagem_padrao = "Você só pode alterar os seus próprios anúncios."
+
+
+class CategoriaNaoEditavel(ErroDeCasoDeUso):
+    mensagem_padrao = "A categoria do anúncio não pode ser alterada."

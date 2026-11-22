@@ -107,3 +107,38 @@ def test_repository_combines_category_price_search_and_type(
         category="eletrônicos",
         max_price=1000,
     ) == (["Notebook simples"], 1)
+
+
+def make_price_on_request_ad_model(title):
+    model = make_priced_ad_model(title, 0)
+    model.preco_a_combinar = True
+    return model
+
+
+def test_repository_hides_price_on_request_ads_when_filtering_by_price(
+    database_engine,
+):
+    add_ads(
+        database_engine,
+        [
+            make_priced_ad_model("Com preço", 40),
+            make_price_on_request_ad_model("A combinar"),
+        ],
+    )
+
+    assert list_titles(database_engine, max_price=100)[0] == ["Com preço"]
+    assert list_titles(database_engine, min_price=0)[0] == ["Com preço"]
+
+
+def test_repository_keeps_price_on_request_ads_without_price_filter(
+    database_engine,
+):
+    add_ads(
+        database_engine,
+        [
+            make_priced_ad_model("Com preço", 40),
+            make_price_on_request_ad_model("A combinar"),
+        ],
+    )
+
+    assert list_titles(database_engine)[0] == ["A combinar", "Com preço"]
