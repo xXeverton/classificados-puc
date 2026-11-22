@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Guia de estilo · Classificados PUC</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rethink+Sans:wght@400;600;700&display=swap">
+  <link rel="stylesheet" href="../css/tema.css">
+  <style>
+    /* Só para esta página de demonstração. */
+    .secao { margin: var(--espaco-7) 0; }
+    .paleta { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: var(--espaco-3); }
+    .amostra { border: 1px solid var(--cor-borda-suave); border-radius: var(--raio-cartao); overflow: hidden; background: var(--cor-superficie); font-size: var(--texto-xs); }
+    .amostra__cor { height: 56px; }
+    .amostra__nome { padding: var(--espaco-2); }
+    .linha { display: flex; flex-wrap: wrap; gap: var(--espaco-3); align-items: center; }
+    .moldura { border: 1px dashed var(--cor-borda); border-radius: var(--raio-cartao); background: var(--cor-fundo); }
+    .moldura .acesso { min-height: 0; padding: var(--espaco-6) var(--margem-lateral); }
+  </style>
+</head>
+<body>
+  <header class="cabecalho">
+    <div class="container cabecalho__conteudo">
+      <a class="marca" href="#">
+        <span class="marca__sigla">PUC</span>
+        <span class="marca__nome">Classificados</span>
+      </a>
+      <nav class="navegacao" aria-label="Principal">
+        <a class="navegacao__item" href="#" aria-current="page">Anúncios</a>
+        <a class="navegacao__item" href="#">Meus anúncios</a>
+      </nav>
+      <a class="botao botao--primario" href="#">Anunciar</a>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="secao">
+      <h1>Guia de estilo</h1>
+      <p>Componentes do <code>front/css/tema.css</code>. Inspirado no login do
+        Ambiente de Aprendizagem On-line da PUC-Rio, com cara de classificado.
+        Use as variáveis e classes daqui antes de criar estilos novos.</p>
+    </section>
+
+    <section class="secao">
+      <h2>Cores</h2>
+      <div class="paleta">
+        <div class="amostra"><div class="amostra__cor" style="background:var(--cor-primaria)"></div><div class="amostra__nome">--cor-primaria<br>#213f7c</div></div>
+        <div class="amostra"><div class="amostra__cor" style="background:var(--cor-primaria-escura)"></div><div class="amostra__nome">--cor-primaria-escura<br>#030053</div></div>
+        <div class="amostra"><div class="amostra__cor" style="background:var(--cor-primaria-clara)"></div><div class="amostra__nome">--cor-primaria-clara<br>#e8edf7</div></div>
+        <div class="amostra"><div class="amostra__cor" style="background:var(--cor-link)"></div><div class="amostra__nome">--cor-link<br>#273a7c</div></div>
+        <div class="amostra"><div class="amostra__cor" style="background:var(--cor-preco)"></div><div class="amostra__nome">--cor-preco<br>#0b6b3a</div></div>
+        <div class="amostra"><div class="amostra__cor" style="background:var(--cor-selo)"></div><div class="amostra__nome">--cor-selo<br>#ffd166</div></div>
+        <div class="amostra"><div class="amostra__cor" style="background:var(--cor-fundo)"></div><div class="amostra__nome">--cor-fundo<br>#f8f8f8</div></div>
+        <div class="amostra"><div class="amostra__cor" style="background:var(--cor-erro)"></div><div class="amostra__nome">--cor-erro<br>#b3261e</div></div>
+      </div>
+    </section>
+
+    <section class="secao">
+      <h2>Tela de acesso</h2>
+      <p>Logo à esquerda, divisor e formulário à direita. No celular, fica em coluna.</p>
+      <div class="moldura">
+        <div class="acesso">
+          <div class="acesso__marca">
+            <div class="acesso__sigla">PUC</div>
+            <div class="acesso__titulo">Classificados<br>da comunidade</div>
+          </div>
+          <div class="acesso__divisor" aria-hidden="true"></div>
+          <div class="acesso__formulario">
+            <form class="formulario" onsubmit="return false">
+              <div class="alerta alerta--erro" role="alert">Credenciais inválidas.</div>
+              <div class="campo">
+                <label class="campo__rotulo" for="demo-id">E-mail, nome de usuário ou matrícula</label>
+                <input class="campo__entrada" id="demo-id" autocomplete="username">
+              </div>
+              <div class="campo">
+                <label class="campo__rotulo" for="demo-senha">Senha</label>
+                <div class="campo-senha">
+                  <input class="campo__entrada" id="demo-senha" type="password" autocomplete="current-password">
+                  <button class="campo-senha__alternar" type="button" aria-pressed="false">Mostrar</button>
+                </div>
+              </div>
+              <button class="botao botao--primario botao--bloco" type="submit">Entrar</button>
+              <a class="botao botao--contorno botao--bloco" href="#">Criar conta</a>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="secao">
+      <h2>Campos</h2>
+      <div class="painel" style="max-width: 420px">
+        <form class="formulario" onsubmit="return false">
+          <div class="campo">
+            <label class="campo__rotulo" for="demo-email">E-mail institucional</label>
+            <input class="campo__entrada" id="demo-email" aria-invalid="true" aria-describedby="demo-email-erro" value="judy@gmail.com">
+            <span class="campo__erro" id="demo-email-erro">Use um e-mail @puc-rio.br ou @aluno.puc-rio.br.</span>
+          </div>
+          <div class="campo">
+            <label class="campo__rotulo" for="demo-mat">Matrícula <span class="campo__opcional">(opcional)</span></label>
+            <input class="campo__entrada" id="demo-mat">
+          </div>
+          <fieldset class="campo opcoes">
+            <legend class="campo__rotulo">Vínculo</legend>
+            <label class="opcoes__item"><input type="radio" name="demo-vinculo"> Aluno</label>
+            <label class="opcoes__item"><input type="radio" name="demo-vinculo"> Funcionário</label>
+          </fieldset>
+        </form>
+      </div>
+    </section>
+
+    <section class="secao">
+      <h2>Botões e mensagens</h2>
+      <div class="linha">
+        <button class="botao botao--primario">Primário</button>
+        <button class="botao botao--contorno">Contorno</button>
+        <button class="botao botao--texto">Texto</button>
+        <button class="botao botao--primario" disabled>Entrando…</button>
+      </div>
+      <div class="formulario" style="margin-top: var(--espaco-5); max-width: 520px">
+        <div class="alerta alerta--sucesso">E-mail confirmado. Você já pode entrar.</div>
+        <div class="alerta alerta--aviso">Confirme seu e-mail para entrar.</div>
+        <div class="alerta alerta--info">Enviamos um link para judy@aluno.puc-rio.br. Ele vale por 15 minutos.</div>
+      </div>
+    </section>
+
+    <section class="secao">
+      <h2>Anúncios</h2>
+      <div class="filtros" style="margin-bottom: var(--espaco-4)">
+        <button class="filtro" aria-pressed="true">Todos</button>
+        <button class="filtro" aria-pressed="false">Livros</button>
+        <button class="filtro" aria-pressed="false">Eletrônicos</button>
+        <button class="filtro" aria-pressed="false">Moradia</button>
+        <button class="filtro" aria-pressed="false">Eventos</button>
+      </div>
+      <div class="grade-anuncios">
+        <a class="anuncio" href="#">
+          <div class="anuncio__imagem"></div>
+          <div class="anuncio__corpo">
+            <span class="etiqueta">Livros</span>
+            <span class="anuncio__preco">R$ 45</span>
+            <h3 class="anuncio__titulo">Cálculo Vol. 1 – Stewart</h3>
+            <span class="anuncio__meta">Gávea · há 2 horas</span>
+          </div>
+        </a>
+        <a class="anuncio" href="#">
+          <div class="anuncio__imagem"></div>
+          <div class="anuncio__corpo">
+            <span class="etiqueta etiqueta--destaque">Destaque</span>
+            <span class="anuncio__preco">R$ 1.200</span>
+            <h3 class="anuncio__titulo">Notebook i5, 16 GB</h3>
+            <span class="anuncio__meta">Gávea · ontem</span>
+          </div>
+        </a>
+        <a class="anuncio" href="#">
+          <div class="anuncio__imagem"></div>
+          <div class="anuncio__corpo">
+            <span class="etiqueta">Moradia</span>
+            <span class="anuncio__preco">R$ 900/mês</span>
+            <h3 class="anuncio__titulo">Quarto perto da PUC</h3>
+            <span class="anuncio__meta">Gávea · há 3 dias</span>
+          </div>
+        </a>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

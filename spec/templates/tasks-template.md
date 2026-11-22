@@ -5,22 +5,22 @@ Marque `[x]` ao concluir. Escreva os testes antes da implementação.
 
 ## Domain
 
-- [ ] T1: Escrever testes da entidade em `tests/domain/`
-- [ ] T2: Implementar a entidade em `domain/`
+- [ ] T1: Escrever testes da entidade em `tests/core/entities/`
+- [ ] T2: Implementar a entidade em `server/core/entities/`
 
 ## Use cases
 
-- [ ] T3: Definir a interface do repositório
-- [ ] T4: Escrever testes do use case em `tests/use_cases/` (repositório em memória)
-- [ ] T5: Implementar o use case em `use_cases/`
+- [ ] T3: Definir a interface do repositório em `server/core/interfaces/`
+- [ ] T4: Escrever testes do use case em `tests/core/usecases/` (repositório em memória)
+- [ ] T5: Implementar o use case em `server/core/usecases/`
 
 ## Infra
 
-- [ ] T6: Implementar o repositório SQLite em `infra/repositories/`
+- [ ] T6: Implementar o gateway SQLAlchemy em `server/infra/gateways/`
 
 ## Web
 
-- [ ] T7: Criar a rota em `app/routes/` e registrar o blueprint em `app/main.py`
+- [ ] T7: Criar o controller em `server/api/controllers/` e conectá-lo em `server/app.py`
 
 ## Validação
 

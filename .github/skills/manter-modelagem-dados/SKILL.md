@@ -11,16 +11,17 @@ relacionamentos, índices ou formatos armazenados.
 
 ## Procedimento
 
-1. Leia `infra/db/README.md`, `infra/db/schema.sql`, o inicializador do banco e
-   os testes existentes antes de propor alterações.
+1. Leia `server/infra/db/README.md`, `server/infra/db/schema.sql`, o
+   inicializador do banco e os testes existentes antes de propor alterações.
 2. Determine se a mudança afeta bancos novos, bancos já existentes, ou ambos.
    O schema com `CREATE TABLE IF NOT EXISTS` não atualiza tabelas existentes.
 3. Preserve dados existentes. Se a alteração exigir migração, implemente uma
    migração explícita e testável; se a regra de transformação ou remoção não
    estiver definida, pergunte antes de descartar ou modificar dados.
-4. Atualize o schema e o código de inicialização/migração para refletir o
-   modelo desejado.
-5. Atualize `infra/db/README.md`, sua tabela de campos, restrições e diagrama.
+4. Atualize o schema e o código de inicialização/migração em `server/infra/db/`
+   para refletir o modelo desejado.
+5. Atualize `server/infra/db/README.md`, sua tabela de campos, restrições e
+   diagrama.
    Atualize também o `README.md` raiz se os procedimentos ou localização
    documentados mudarem.
 6. Adicione ou ajuste testes para constraints, migração e comportamento de

@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Novo anúncio · Classificados PUC</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rethink+Sans:wght@400;600;700&display=swap">
+  <link rel="stylesheet" href="../../css/tema.css">
+  <link rel="stylesheet" href="../../css/perfil.css">
+</head>
+<body>
+  <header class="cabecalho">
+    <div class="container cabecalho__conteudo">
+      <a class="marca" href="../../inicio/">
+        <span class="marca__sigla">PUC</span>
+        <span class="marca__nome">Classificados</span>
+      </a>
+      <nav class="navegacao" aria-label="Principal">
+        <a class="navegacao__item" href="../../inicio/">Início</a>
+        <a class="navegacao__item" href="../../perfil/">Meu perfil</a>
+        <a class="navegacao__item" href="./" aria-current="page">Anunciar</a>
+      </nav>
+      <button class="botao botao--contorno" id="sair" type="button">Sair</button>
+    </div>
+  </header>
+  <main class="container pagina" id="conteudo" hidden>
+    <div id="alerta" role="alert"></div>
+    <h1>Novo anúncio</h1>
+    <p>Compartilhe um produto, serviço ou evento com a comunidade PUC.</p>
+    <form class="formulario" id="form-anuncio" novalidate>
+      <div class="campo">
+        <label class="campo__rotulo" for="titulo">Título</label>
+        <input class="campo__entrada" id="titulo" name="titulo"
+          minlength="5" maxlength="80" required>
+        <span class="campo__ajuda">De 5 a 80 caracteres.</span>
+        <span class="campo__erro" id="titulo-erro"></span>
+      </div>
+      <div class="campo">
+        <label class="campo__rotulo" for="categoria">Categoria</label>
+        <select class="campo__entrada" id="categoria" name="categoria" required>
+          <option value="">Selecione</option>
+          <option value="produto">Produto</option>
+          <option value="servico">Serviço</option>
+          <option value="evento">Evento</option>
+        </select>
+        <span class="campo__erro" id="categoria-erro"></span>
+      </div>
+      <div class="campo" id="campo-estado">
+        <label class="campo__rotulo" for="estado_conservacao">
+          Estado de conservação
+        </label>
+        <select class="campo__entrada" id="estado_conservacao"
+          name="estado_conservacao">
+          <option value="">Selecione</option>
+          <option value="novo">Novo</option>
+          <option value="usado_regular">Usado - regular</option>
+        </select>
+        <span class="campo__erro" id="estado_conservacao-erro"></span>
+      </div>
+      <div class="campo">
+        <label class="campo__rotulo" for="descricao">Descrição</label>
+        <textarea class="campo__entrada" id="descricao" name="descricao"
+          rows="5" maxlength="500" required></textarea>
+        <span class="campo__ajuda">Até 500 caracteres.</span>
+        <span class="campo__erro" id="descricao-erro"></span>
+      </div>
+      <fieldset class="campo">
+        <legend class="campo__rotulo">Preço</legend>
+        <label>
+          <input type="checkbox" id="preco_a_combinar"
+            name="preco_a_combinar" value="true">
+          A combinar
+        </label>
+        <label class="campo__rotulo" for="preco">Valor (R$)</label>
+        <input class="campo__entrada" id="preco" name="preco"
+          inputmode="decimal" autocomplete="off">
+        <span class="campo__ajuda">Use até duas casas decimais.</span>
+        <span class="campo__erro" id="preco-erro"></span>
+        <span class="campo__erro" id="preco_a_combinar-erro"></span>
+      </fieldset>
+      <div class="campo">
+        <label class="campo__rotulo" for="imagem">Foto (opcional)</label>
+        <input class="campo__entrada" id="imagem" name="imagem" type="file"
+          accept="image/jpeg,image/png,image/webp">
+        <span class="campo__ajuda">JPG, PNG ou WEBP, até 5 MiB.</span>
+        <span class="campo__erro" id="imagem-erro"></span>
+      </div>
+      <div class="acoes">
+        <button class="botao botao--primario" id="publicar" type="submit">
+          Publicar anúncio
+        </button>
+        <a class="botao botao--contorno" href="../../inicio/">Cancelar</a>
+      </div>
+    </form>
+  </main>
+  <script type="module" src="../../js/paginas/anuncios_novo.js"></script>
+</body>
+</html>

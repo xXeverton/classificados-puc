@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Perfil de anunciante · Classificados PUC</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rethink+Sans:wght@400;600;700&display=swap">
+  <link rel="stylesheet" href="../../css/tema.css">
+  <link rel="stylesheet" href="../../css/perfil.css">
+</head>
+<body>
+  <header class="cabecalho">
+    <div class="container cabecalho__conteudo">
+      <a class="marca" href="../../inicio/">
+        <span class="marca__sigla">PUC</span>
+        <span class="marca__nome">Classificados</span>
+      </a>
+      <nav class="navegacao" aria-label="Principal">
+        <a class="navegacao__item" href="../../inicio/">Início</a>
+        <a class="navegacao__item" href="../" aria-current="page">Meu perfil</a>
+      </nav>
+      <button class="botao botao--contorno" id="sair" type="button">Sair</button>
+    </div>
+  </header>
+  <main class="container pagina" id="conteudo" hidden>
+    <div id="alerta" role="alert"></div>
+    <h1>Perfil de anunciante</h1>
+
+    <div class="painel">
+    <form class="formulario" id="form-perfil" novalidate hidden>
+      <section class="secao-perfil" aria-labelledby="titulo-dados">
+        <h2 id="titulo-dados">Seus dados</h2>
+
+        <div class="campo">
+          <span class="campo__rotulo" id="rotulo-foto">Foto <span class="campo__opcional">(opcional)</span></span>
+          <div class="foto-edicao">
+            <img class="perfil-foto" id="foto-previa" alt="Pré-visualização da foto" hidden>
+            <div class="perfil-foto perfil-foto--vazia" id="foto-vazia">Sem foto</div>
+            <div class="foto-edicao__controles">
+              <input class="campo__entrada" id="campo-foto" name="foto" type="file"
+                accept="image/jpeg,image/png,image/webp" aria-labelledby="rotulo-foto">
+              <button class="botao botao--texto" id="remover-foto" type="button" hidden>Remover foto</button>
+            </div>
+          </div>
+          <span class="campo__ajuda">JPG, PNG ou WEBP, até 2 MB.</span>
+          <span class="campo__erro" id="campo-foto-erro"></span>
+        </div>
+
+        <div class="campo">
+          <label class="campo__rotulo" for="campo-nome-exibicao">Nome de exibição</label>
+          <input class="campo__entrada" id="campo-nome-exibicao" name="nome_exibicao" autocomplete="name">
+          <span class="campo__erro" id="campo-nome-exibicao-erro"></span>
+        </div>
+
+        <div class="campo">
+          <span class="campo__rotulo">Vínculo</span>
+          <span class="campo__valor" id="vinculo"></span>
+          <span class="campo__ajuda">Vem do seu cadastro e não pode ser alterado aqui.</span>
+        </div>
+      </section>
+
+      <section class="secao-perfil" aria-labelledby="titulo-contatos">
+        <h2 id="titulo-contatos">Contatos</h2>
+        <p class="campo__ajuda" id="ajuda-contatos">
+          Como os compradores podem falar com você. Adicione de 1 a 10 contatos e organize a ordem em que aparecem.
+        </p>
+        <ol class="lista-contatos" id="lista-contatos" aria-describedby="ajuda-contatos"></ol>
+        <span class="campo__erro" id="contatos-erro" role="alert"></span>
+        <div class="adicionar-contato">
+          <div class="campo">
+            <label class="campo__rotulo" for="novo-tipo">Tipo de contato</label>
+            <select class="campo__entrada" id="novo-tipo">
+              <option value="whatsapp">WhatsApp</option>
+              <option value="email">E-mail</option>
+              <option value="telefone">Telefone</option>
+              <option value="site">Site</option>
+              <option value="link">Link</option>
+            </select>
+          </div>
+          <button class="botao botao--contorno" id="adicionar-contato" type="button">Adicionar contato</button>
+        </div>
+        <span class="campo__ajuda" id="contador-contatos"></span>
+      </section>
+
+      <div class="acoes">
+        <button class="botao botao--primario" type="submit">Salvar perfil</button>
+        <a class="botao botao--contorno" href="../">Cancelar</a>
+      </div>
+    </form>
+    </div>
+  </main>
+  <script type="module" src="../../js/paginas/perfil_anunciante.js"></script>
+</body>
+</html>

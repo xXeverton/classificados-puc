@@ -25,3 +25,6 @@ media/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Fotos de perfil enviadas (local)
+server/uploads/

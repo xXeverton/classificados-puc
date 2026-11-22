@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Classificados PUC</title>
+  <noscript><meta http-equiv="refresh" content="0; url=/entrar/"></noscript>
+</head>
+<body>
+  <script type="module">
+    import { montarDependencias, irPara, ROTAS } from "./js/paginas/comum.js";
+    import { haSessao } from "./js/fluxos/sessao_atual.js";
+    irPara(haSessao(montarDependencias()) ? ROTAS.inicio : ROTAS.entrar);
+  </script>
+</body>
+</html>

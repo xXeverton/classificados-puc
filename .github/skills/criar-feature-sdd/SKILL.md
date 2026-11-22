@@ -15,6 +15,9 @@ Antes de criar os arquivos, consulte:
 - `spec/README.md` para o fluxo e a estrutura do SDD.
 - `spec/constitution.md` para as regras obrigatórias de arquitetura, código e
   testes.
+- `spec/decisoes.md` para as decisões gerais de produto e técnicas já
+  tomadas. Não pergunte de novo o que já está decidido lá; cite o ID
+  (`D-NNN`) na spec e no plano.
 - `spec/templates/spec-template.md`, `spec/templates/plan-template.md` e
   `spec/templates/tasks-template.md` para os formatos dos artefatos.
 - As features existentes em `spec/features/` para evitar IDs repetidos e
@@ -34,13 +37,16 @@ Antes de criar os arquivos, consulte:
    dúvidas em aberto. Inicie o status como `Rascunho`; só marque `Aprovada`
    quando o usuário confirmar explicitamente.
 5. Elabore o plano técnico a partir da spec e respeite a constituição. Mantenha
-   as regras de negócio em `domain/` e `use_cases/`, detalhes de HTTP em
-   `app/`, detalhes de persistência e integrações em `infra/`, e dependências
-   apontando para dentro.
+   as regras de negócio em `server/core/entities/` e
+   `server/core/usecases/`, contratos em `server/core/interfaces/`, detalhes
+   de HTTP em `server/api/`, persistência e integrações em `server/infra/`, e
+   dependências apontando para dentro.
 6. Divida o trabalho em tarefas pequenas e ordenadas, escrevendo testes antes
    da implementação. Inclua validação dos critérios de aceitação, `pytest` e
    `flake8` quando aplicáveis.
-7. Confira que os três documentos concordam entre si, que nenhuma decisão
+7. Quando o usuário responder uma dúvida e a resposta valer para o projeto
+   inteiro, registre-a também em `spec/decisoes.md` com um novo ID.
+8. Confira que os três documentos concordam entre si, que nenhuma decisão
    pendente foi apresentada como certa e que não há código de aplicação sendo
    implementado como parte desta skill.
 
