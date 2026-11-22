@@ -44,6 +44,7 @@ export function resolverUrlRecurso(url, apiBaseUrl) {
 
 export function gerarLinkEmailContato(endereco, titulo) {
   if (typeof endereco !== "string" || !endereco.trim()) return null;
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(endereco.trim())) return null;
 
   const assunto = `Interesse no anúncio: ${titulo || ""}`;
   const corpo = typeof titulo === "string" && titulo.trim()
@@ -71,4 +72,31 @@ export function hrefContato(contato, titulo) {
     return gerarLinkEmailContato(contato.valor, titulo);
   }
   return contato.valor;
+}
+
+export function classificarContatosPrincipais(lista, titulo) {
+  const contatos = Array.isArray(lista) ? lista : [];
+
+  let whatsapp = null;
+  for (const contato of contatos) {
+    if (contato.tipo !== "whatsapp") continue;
+    const link = hrefContato(contato, titulo);
+    if (link) {
+      whatsapp = link;
+      break;
+    }
+  }
+
+  let email = null;
+  for (const contato of contatos) {
+    if (contato.tipo !== "email") continue;
+    if (typeof contato.valor !== "string") continue;
+    const link = gerarLinkEmailContato(contato.valor, titulo);
+    if (link) {
+      email = link;
+      break;
+    }
+  }
+
+  return { whatsapp, email };
 }
