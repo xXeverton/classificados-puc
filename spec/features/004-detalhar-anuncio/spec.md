@@ -7,8 +7,6 @@
   (front-end).
 - **Status**: Rascunho
 - **Data**: 2026-11-21
-- **Decisões gerais aplicadas**: D-004, D-012, D-013, D-020, D-021, D-030,
-  D-032, D-033, D-034, D-040 e D-042.
 - **Depende de**: spec 001 (conta e sessão), spec 003 (perfil de anunciante,
   contatos e foto) e spec 001-visualizar-feed-anuncios (card e navegação).
 
