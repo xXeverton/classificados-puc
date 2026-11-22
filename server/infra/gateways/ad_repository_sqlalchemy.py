@@ -109,6 +109,11 @@ class AdRepositorySQLAlchemy(AdRepository):
         image_url = model.image_url
         if model.image_key is not None and self._image_storage is not None:
             image_url = self._image_storage.obter_url(model.image_key)
+        created_at = model.created_at
+        if created_at.tzinfo is None:
+            created_at = created_at.replace(tzinfo=timezone.utc)
+        else:
+            created_at = created_at.astimezone(timezone.utc)
         return Ad(
             id=model.id,
             title=model.title,
@@ -117,7 +122,7 @@ class AdRepositorySQLAlchemy(AdRepository):
             category=model.category,
             price=None if model.preco_a_combinar else model.price,
             image_url=image_url,
-            created_at=model.created_at,
+            created_at=created_at,
             status=model.status,
             expires_at=model.expires_at,
             nome_anunciante=nome_anunciante,

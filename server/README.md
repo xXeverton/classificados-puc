@@ -70,6 +70,97 @@ persistido; aceita JSON ou `multipart/form-data` com imagem JPEG, PNG ou WEBP.
 Imagens são limitadas a 5 MB por padrão. O feed não usa perfil ou autenticação
 mockados.
 
+### `POST /api/ads`
+
+Envie `Authorization: Bearer <token>` e um corpo `application/json` ou
+`multipart/form-data`. O perfil de anunciante é conferido antes da leitura e
+validação do corpo. O anúncio sempre fica vinculado ao usuário do token; o
+cliente não pode enviar `id`, `id_anunciante`, `created_at`,
+`nome_anunciante` nem campos desconhecidos.
+
+| Campo | Regras |
+|---|---|
+| `titulo` | Obrigatório; texto aparado de 5 a 80 caracteres |
+| `categoria` | Obrigatória: `produto`, `servico` ou `evento` |
+| `estado_conservacao` | Obrigatório para `produto` (`novo` ou `usado_regular`); não se aplica a `servico`/`evento` |
+| `descricao` | Obrigatória; texto não vazio de até 500 caracteres |
+| `preco` | De 0 a 9999999999,99, com até duas casas decimais; obrigatório quando não é “a combinar” |
+| `preco_a_combinar` | Booleano JSON opcional, padrão `false`; em multipart, `"true"` ou `"false"` |
+| `imagem` | Opcional, uma foto JPG, PNG ou WebP, respeitando o limite do storage |
+
+Quando `preco_a_combinar` for `true`, omita `preco`. Em JSON, campos de texto
+devem ser strings e `preco_a_combinar` deve ser booleano. Corpos JSON acima de
+64 KiB recebem `413`; multipart mantém o limite maior necessário para suportar
+a foto. A API autentica por Bearer token, portanto não depende de CSRF por
+cookie.
+
+Exemplo de produto:
+
+```json
+{
+  "titulo": "Caderno universitário",
+  "categoria": "produto",
+  "estado_conservacao": "novo",
+  "descricao": "Caderno novo, sem uso.",
+  "preco": "10.50"
+}
+```
+
+Exemplo de serviço:
+
+```json
+{
+  "titulo": "Aulas de inglês",
+  "categoria": "servico",
+  "descricao": "Aulas particulares para iniciantes.",
+  "preco": 50
+}
+```
+
+Exemplo de evento com preço a combinar:
+
+```json
+{
+  "titulo": "Feira comunitária",
+  "categoria": "evento",
+  "descricao": "Encontro aberto à comunidade.",
+  "preco_a_combinar": true
+}
+```
+
+Sucesso retorna `201` com o formato de card usado pelo feed:
+
+```json
+{
+  "id": 42,
+  "title": "Caderno universitário",
+  "description": "Caderno novo, sem uso.",
+  "type": "product",
+  "category": "produto",
+  "price": 10.5,
+  "image_url": null,
+  "created_at": "2026-11-22T01:49:36Z",
+  "nome_anunciante": "Ana Vendas",
+  "estado_conservacao": "novo",
+  "preco_a_combinar": false
+}
+```
+
+Um serviço retorna o mesmo formato, com `type: "service"` e
+`estado_conservacao: null`; um evento a combinar retorna `type: "event"`,
+`estado_conservacao: null`, `price: null` e `preco_a_combinar: true`.
+
+A resposta segue o schema do feed existente: usa `title`/`price` e preço JSON
+numérico, não inclui `id_anunciante`, e `created_at` é fornecido pelo relógio
+UTC da aplicação. O registro é confirmado antes da resposta e aparece na
+consulta seguinte do feed. A persistência preserva o schema atual (`ads.price`
+como `Float` e a flag `preco_a_combinar`); não é feita migração para armazenar
+preços como `Decimal` nem para representar o preço negociável com `NULL`.
+Validações retornam `422` com `campos`; perfil incompleto retorna `403` com
+`code: "perfil_incompleto"`. Falta de sessão retorna `401`; JSON malformado
+retorna `400`; tipo de conteúdo não aceito retorna `415`. Erros inesperados em
+`/api/` são JSON genérico e não expõem detalhes internos.
+
 O storage de anúncio é independente do storage das fotos de perfil. Por padrão,
 as imagens ficam em `media/` e são servidas em `/media/<chave>`. Para configurar
 storage compatível com S3, use `STORAGE_PROVIDER=s3` e `STORAGE_S3_BUCKET`;

@@ -323,6 +323,10 @@ def test_publish_is_visible_in_feed_with_real_profile_name():
     assert response.json["price"] == 850.25
     assert response.json["preco_a_combinar"] is False
     assert response.json["created_at"]
+    instante_criacao = datetime.fromisoformat(
+        response.json["created_at"].replace("Z", "+00:00")
+    )
+    assert instante_criacao.utcoffset() == timedelta(0)
     assert feed.status_code == 200
     assert feed.json["items"][0]["title"] == "Bicicleta urbana"
     assert (
@@ -341,6 +345,27 @@ def test_publish_is_visible_in_feed_with_real_profile_name():
         assert published.expires_at - published.created_at == timedelta(
             days=30
         )
+    app.extensions["database_engine"].dispose()
+
+
+def test_publish_supports_service_without_conservation_state():
+    app = create_ads_app()
+    complete_advertiser_profile(app)
+    response = app.test_client().post(
+        "/api/ads",
+        json={
+            "titulo": "Aulas de inglês",
+            "categoria": "servico",
+            "descricao": "Aulas particulares para iniciantes.",
+            "preco": 50,
+        },
+        headers=app.extensions["test_auth_headers"],
+    )
+
+    assert response.status_code == 201
+    assert response.json["type"] == "service"
+    assert response.json["category"] == "servico"
+    assert response.json["estado_conservacao"] is None
     app.extensions["database_engine"].dispose()
 
 
@@ -446,4 +471,225 @@ def test_publish_allows_ad_images_larger_than_profile_request_limit(
     )
 
     assert response.status_code == 201
+    app.extensions["database_engine"].dispose()
+
+
+def test_publish_checks_profile_before_parsing_the_request_body():
+    app = create_ads_app()
+    response = app.test_client().post(
+        "/api/ads",
+        data="{",
+        content_type="application/json",
+        headers=app.extensions["test_auth_headers"],
+    )
+
+    assert response.status_code == 403
+    assert response.is_json
+    assert response.json["code"] == "perfil_incompleto"
+    with app.extensions["session_factory"]() as session:
+        assert session.query(AdModel).count() == 2
+    app.extensions["database_engine"].dispose()
+
+
+def test_publish_rejects_identity_and_unknown_fields_from_the_client():
+    app = create_ads_app()
+    complete_advertiser_profile(app)
+    dados = {
+        "titulo": "Caderno novo",
+        "categoria": "produto",
+        "estado_conservacao": "novo",
+        "descricao": "Sem uso.",
+        "preco": 10,
+        "id": 8,
+        "id_anunciante": 99,
+        "created_at": "2026-01-01T00:00:00Z",
+        "nome_anunciante": "Outra pessoa",
+        "campo_desconhecido": "valor",
+    }
+
+    response = app.test_client().post(
+        "/api/ads",
+        json=dados,
+        headers=app.extensions["test_auth_headers"],
+    )
+
+    assert response.status_code == 422
+    for campo in (
+        "id",
+        "id_anunciante",
+        "created_at",
+        "nome_anunciante",
+        "campo_desconhecido",
+    ):
+        assert campo in response.json["campos"]
+    with app.extensions["session_factory"]() as session:
+        assert session.query(AdModel).count() == 2
+    app.extensions["database_engine"].dispose()
+
+
+def test_publish_requires_a_boolean_for_negotiable_price_in_json():
+    app = create_ads_app()
+    complete_advertiser_profile(app)
+    response = app.test_client().post(
+        "/api/ads",
+        json={
+            "titulo": "Feira comunitária",
+            "categoria": "evento",
+            "descricao": "Evento aberto à comunidade.",
+            "preco_a_combinar": "true",
+        },
+        headers=app.extensions["test_auth_headers"],
+    )
+
+    assert response.status_code == 422
+    assert "preco_a_combinar" in response.json["campos"]
+    with app.extensions["session_factory"]() as session:
+        assert session.query(AdModel).count() == 2
+    app.extensions["database_engine"].dispose()
+
+
+@pytest.mark.parametrize("preco", ["NaN", "Infinity", "-Infinity"])
+def test_publish_reports_non_finite_json_prices_on_the_price_field(preco):
+    app = create_ads_app()
+    complete_advertiser_profile(app)
+    body = (
+        '{"titulo":"Feira comunitária","categoria":"evento",'
+        '"descricao":"Evento aberto à comunidade.","preco":'
+        f"{preco}"
+        "}"
+    )
+    response = app.test_client().post(
+        "/api/ads",
+        data=body,
+        content_type="application/json",
+        headers=app.extensions["test_auth_headers"],
+    )
+
+    assert response.status_code == 422
+    assert "preco" in response.json["campos"]
+    with app.extensions["session_factory"]() as session:
+        assert session.query(AdModel).count() == 2
+    app.extensions["database_engine"].dispose()
+
+
+def test_publish_keeps_multipart_form_boolean_compatibility():
+    app = create_ads_app()
+    complete_advertiser_profile(app)
+    response = app.test_client().post(
+        "/api/ads",
+        data={
+            "titulo": "Feira comunitária",
+            "categoria": "evento",
+            "descricao": "Evento aberto à comunidade.",
+            "preco_a_combinar": "true",
+        },
+        content_type="multipart/form-data",
+        headers=app.extensions["test_auth_headers"],
+    )
+
+    assert response.status_code == 201
+    assert response.json["preco_a_combinar"] is True
+    assert response.json["price"] is None
+    app.extensions["database_engine"].dispose()
+
+
+def test_publish_rejects_json_larger_than_64_kib_as_json_413():
+    app = create_ads_app()
+    complete_advertiser_profile(app)
+    body = '{"extra":"' + ("x" * (64 * 1024)) + '"}'
+    response = app.test_client().post(
+        "/api/ads",
+        data=body,
+        content_type="application/json",
+        headers=app.extensions["test_auth_headers"],
+    )
+
+    assert response.status_code == 413
+    assert response.is_json
+    with app.extensions["session_factory"]() as session:
+        assert session.query(AdModel).count() == 2
+    app.extensions["database_engine"].dispose()
+
+
+@pytest.mark.parametrize(
+    ("method", "path", "status"),
+    [
+        ("get", "/api/rota-inexistente", 404),
+        ("patch", "/api/ads", 405),
+    ],
+)
+def test_api_http_errors_are_json(method, path, status):
+    app = create_ads_app()
+    response = getattr(app.test_client(), method)(path)
+
+    assert response.status_code == status
+    assert response.is_json
+    assert "message" in response.json
+    app.extensions["database_engine"].dispose()
+
+
+def test_unexpected_api_failure_returns_generic_json_without_details(
+    monkeypatch,
+):
+    app = create_ads_app()
+    repository = app.extensions["anunciante_repository"]
+
+    def fail_repository(*args, **kwargs):
+        raise RuntimeError("private database connection detail")
+
+    monkeypatch.setattr(repository, "buscar_por_usuario_id", fail_repository)
+    response = app.test_client().post(
+        "/api/ads",
+        json={},
+        headers=app.extensions["test_auth_headers"],
+    )
+
+    assert response.status_code == 500
+    assert response.is_json
+    assert response.json == {
+        "message": "Erro interno ao processar a requisição.",
+    }
+    assert "private database connection detail" not in response.get_data(
+        as_text=True
+    )
+    app.extensions["database_engine"].dispose()
+
+
+def test_publish_rejects_non_json_content_type_with_json_error():
+    app = create_ads_app()
+    complete_advertiser_profile(app)
+    response = app.test_client().post(
+        "/api/ads",
+        data="{}",
+        content_type="text/plain",
+        headers=app.extensions["test_auth_headers"],
+    )
+
+    assert response.status_code == 415
+    assert response.is_json
+    app.extensions["database_engine"].dispose()
+
+
+def test_publish_rejects_malformed_json_with_json_error():
+    app = create_ads_app()
+    complete_advertiser_profile(app)
+    response = app.test_client().post(
+        "/api/ads",
+        data="{",
+        content_type="application/json",
+        headers=app.extensions["test_auth_headers"],
+    )
+
+    assert response.status_code == 400
+    assert response.is_json
+    app.extensions["database_engine"].dispose()
+
+
+def test_publish_requires_authentication_and_returns_json_401():
+    app = create_ads_app()
+    response = app.test_client().post("/api/ads", json={})
+
+    assert response.status_code == 401
+    assert response.is_json
+    assert response.json == {"message": "Sessão inválida ou expirada."}
     app.extensions["database_engine"].dispose()

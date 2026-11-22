@@ -5,10 +5,11 @@ import re
 from dataclasses import replace
 from decimal import Decimal, InvalidOperation
 from http import HTTPStatus
-from typing import Any, NoReturn
+from typing import Any
 
 from flask import current_app, g, request
 from flask_openapi3 import OpenAPI
+from werkzeug.exceptions import RequestEntityTooLarge
 
 from werkzeug.datastructures import FileStorage
 
@@ -25,7 +26,9 @@ from server.api.presenters.error_presenter import (
 )
 from server.core.entities.anuncio import (
     Anuncio,
+    CATEGORIAS,
     DESCRICAO_MAX_CARACTERES,
+    ESTADOS_CONSERVACAO,
     PRECO_MAXIMO,
     TITULO_MAX_CARACTERES,
     TITULO_MIN_CARACTERES,
@@ -48,14 +51,15 @@ _CAMPOS_PERMITIDOS = {
     "preco",
     "preco_a_combinar",
 }
+_TAMANHO_MAXIMO_JSON_BYTES = 64 * 1024
 
 
 class ErroPublicacaoSchema(ErrorSchema):
     campos: dict[str, str] | None = None
 
 
-def _rejeitar_constante_json(valor: str) -> NoReturn:
-    raise ValueError(f"Constante JSON não permitida: {valor}")
+def _decimal_constante_json(valor: str) -> Decimal:
+    return Decimal(valor)
 
 
 def _erro(
@@ -97,11 +101,19 @@ def _preco_decimal(valor: Any) -> Decimal | None:
 
 def _ler_entrada() -> tuple[dict[str, Any] | None, FileStorage | None]:
     if request.mimetype == "application/json":
+        if (
+            request.content_length is not None
+            and request.content_length > _TAMANHO_MAXIMO_JSON_BYTES
+        ):
+            raise RequestEntityTooLarge()
+        corpo = request.get_data(cache=False)
+        if len(corpo) > _TAMANHO_MAXIMO_JSON_BYTES:
+            raise RequestEntityTooLarge()
         try:
             dados = json.loads(
-                request.get_data(cache=False),
+                corpo,
                 parse_float=Decimal,
-                parse_constant=_rejeitar_constante_json,
+                parse_constant=_decimal_constante_json,
             )
         except (UnicodeDecodeError, ValueError):
             return None, None
@@ -118,7 +130,10 @@ def _ler_entrada() -> tuple[dict[str, Any] | None, FileStorage | None]:
 
 
 def _validar_anuncio(
-    dados: dict[str, Any], usuario_id: int
+    dados: dict[str, Any],
+    usuario_id: int,
+    *,
+    dados_de_formulario: bool = False,
 ) -> tuple[Anuncio | None, dict[str, str]]:
     erros = {
         campo: "Este campo não é permitido."
@@ -131,11 +146,7 @@ def _validar_anuncio(
         erros["titulo"] = "O título deve ter entre 5 e 80 caracteres."
 
     categoria = dados.get("categoria")
-    if not isinstance(categoria, str) or categoria not in {
-        "produto",
-        "servico",
-        "evento",
-    }:
+    if not isinstance(categoria, str) or categoria not in CATEGORIAS:
         erros["categoria"] = "Escolha produto, serviço ou evento."
         categoria = ""
 
@@ -146,7 +157,7 @@ def _validar_anuncio(
         else None
     )
     if categoria == "produto":
-        if estado not in {"novo", "usado_regular"}:
+        if estado not in ESTADOS_CONSERVACAO:
             erros["estado_conservacao"] = (
                 "Informe o estado de conservação do produto."
             )
@@ -163,7 +174,9 @@ def _validar_anuncio(
         )
 
     combinar_raw = dados.get("preco_a_combinar", False)
-    if isinstance(combinar_raw, str):
+    if isinstance(combinar_raw, bool):
+        combinar = combinar_raw
+    elif dados_de_formulario and isinstance(combinar_raw, str):
         if combinar_raw.lower() in {"true", "1", "on"}:
             combinar = True
         elif combinar_raw.lower() in {"false", "0", "off", ""}:
@@ -180,7 +193,9 @@ def _validar_anuncio(
     preco = None
     preco_raw = dados.get("preco")
     if combinar:
-        if preco_raw not in (None, ""):
+        if preco_raw is not None and not (
+            dados_de_formulario and preco_raw == ""
+        ):
             erros["preco"] = (
                 "Não informe preço quando selecionar 'A combinar'."
             )
@@ -285,11 +300,22 @@ def register_ads_controller(app: OpenAPI, obter_usuario_da_sessao) -> None:
             403: ErrorSchema,
             413: ErrorSchema,
             415: ErrorSchema,
+            422: ErroPublicacaoSchema,
             503: ErrorSchema,
+            500: ErrorSchema,
         },
     )
     @protegida
     def publicar_ad():
+        if app.extensions["anunciante_repository"].buscar_por_usuario_id(
+            g.usuario.id
+        ) is None:
+            return _erro(
+                "Complete seu perfil para publicar anúncios.",
+                HTTPStatus.FORBIDDEN,
+                codigo="perfil_incompleto",
+            )
+
         dados, arquivo = _ler_entrada()
         if dados is None:
             if request.mimetype not in {
@@ -316,22 +342,17 @@ def register_ads_controller(app: OpenAPI, obter_usuario_da_sessao) -> None:
                     for campo in arquivos_desconhecidos
                 },
             )
-        anuncio, erros = _validar_anuncio(dados, g.usuario.id)
+        anuncio, erros = _validar_anuncio(
+            dados,
+            g.usuario.id,
+            dados_de_formulario=request.mimetype == "multipart/form-data",
+        )
         if erros:
             return _erro(
                 "Dados inválidos.",
                 HTTPStatus.UNPROCESSABLE_ENTITY,
                 codigo="dados_invalidos",
                 campos=erros,
-            )
-
-        if app.extensions["anunciante_repository"].buscar_por_usuario_id(
-            g.usuario.id
-        ) is None:
-            return _erro(
-                "Complete seu perfil para publicar anúncios.",
-                HTTPStatus.FORBIDDEN,
-                codigo="perfil_incompleto",
             )
 
         storage: ImageStorage = app.extensions["image_storage"]

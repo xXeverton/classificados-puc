@@ -1,8 +1,8 @@
 """Translate use case errors into HTTP responses at the API boundary."""
 
-from flask import Flask, Response, jsonify
+from flask import Flask, Response, current_app, jsonify, request
 from pydantic import ValidationError
-from werkzeug.exceptions import RequestEntityTooLarge
+from werkzeug.exceptions import HTTPException, RequestEntityTooLarge
 
 from server.api.presenters.error_presenter import (
     apresenta_erro,
@@ -77,8 +77,41 @@ def resposta_de_arquivo_grande(
     return corpo.model_dump(exclude_none=True), STATUS_ARQUIVO_GRANDE
 
 
+def resposta_de_erro_http(erro: HTTPException) -> Response:
+    """Keep framework HTTP errors under /api/ in the public JSON format."""
+    if not request.path.startswith("/api/"):
+        return erro.get_response()
+
+    mensagem = {
+        400: "Requisição inválida.",
+        404: "Rota da API não encontrada.",
+        405: "Método não permitido para esta rota.",
+        415: "Tipo de conteúdo não suportado.",
+    }.get(erro.code, "Requisição inválida.")
+    resposta = jsonify(apresenta_erro(mensagem).model_dump(exclude_none=True))
+    resposta.status_code = erro.code or 500
+    return resposta
+
+
+def resposta_de_erro_inesperado(erro: Exception) -> Response:
+    """Return a generic JSON 500 for unexpected API failures."""
+    if not request.path.startswith("/api/"):
+        return current_app.handle_exception(erro)
+
+    current_app.logger.exception("Falha inesperada em rota da API.")
+    resposta = jsonify(
+        apresenta_erro("Erro interno ao processar a requisição.").model_dump(
+            exclude_none=True
+        )
+    )
+    resposta.status_code = 500
+    return resposta
+
+
 def registrar_tratamento_de_erros(app: Flask) -> None:
     app.register_error_handler(ErroDeCasoDeUso, resposta_de_erro)
     app.register_error_handler(
         RequestEntityTooLarge, resposta_de_arquivo_grande
     )
+    app.register_error_handler(HTTPException, resposta_de_erro_http)
+    app.register_error_handler(Exception, resposta_de_erro_inesperado)
