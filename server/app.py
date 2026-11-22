@@ -38,6 +38,7 @@ from server.core.usecases.cadastrar_usuario import CadastrarUsuario
 from server.core.usecases.confirmar_email import ConfirmarEmail
 from server.core.usecases.emissor_de_confirmacao import EmissorDeConfirmacao
 from server.core.usecases.encerrar_sessao import EncerrarSessao
+from server.core.usecases.delete_expired_ads import DeleteExpiredAds
 from server.core.usecases.expire_ads import ExpireAds
 from server.core.usecases.obter_usuario_da_sessao import (
     ObterUsuarioDaSessao,
@@ -69,6 +70,9 @@ from server.infra.gateways.usuario_repository_sqlalchemy import (
 )
 from server.infra.gateways.ad_repository_sqlalchemy import (
     AdRepositorySQLAlchemy,
+)
+from server.infra.gateways.deletable_ad_repository_sqlalchemy import (
+    DeletableAdRepositorySQLAlchemy,
 )
 from server.infra.storage.initialization import init_storage
 from server.infra.storage.storage import ImageStorage
@@ -199,6 +203,11 @@ def create_app(
             app.extensions["ad_repository"],
             app.config.get("RELOGIO") or RelogioSistema(),
         ),
+        DeleteExpiredAds(
+            DeletableAdRepositorySQLAlchemy(session_factory, storage),
+            app.config.get("RELOGIO") or RelogioSistema(),
+        ),
+        storage,
     )
 
     @app.before_request

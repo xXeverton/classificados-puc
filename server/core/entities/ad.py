@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 from typing import ClassVar
 
 PUBLISHED = "published"
+EXPIRED = "expired"
 
 
 @dataclass(frozen=True)
@@ -12,6 +13,7 @@ class Ad:
     """An advertisement that can be displayed in the feed."""
 
     PUBLICATION_PERIOD: ClassVar[timedelta] = timedelta(days=30)
+    RETENTION_AFTER_EXPIRY: ClassVar[timedelta] = timedelta(days=30)
 
     title: str
     type: str
@@ -40,3 +42,14 @@ class Ad:
     def is_overdue(self, now: datetime) -> bool:
         """Tell whether a published ad has reached the end of its period."""
         return self.status == PUBLISHED and now >= self.publication_ends_at()
+
+    def can_be_deleted(self, now: datetime) -> bool:
+        """Tell whether an expired ad has been kept long enough (spec 008).
+
+        It stays for `RETENTION_AFTER_EXPIRY` after its period ends, so the
+        owner can still renew it before it is deleted.
+        """
+        return (
+            self.status == EXPIRED
+            and now >= self.publication_ends_at() + self.RETENTION_AFTER_EXPIRY
+        )
