@@ -67,3 +67,15 @@ class PerfilIncompleto(ErroDeCasoDeUso):
 
 class FotoInvalida(ErroDeCasoDeUso):
     mensagem_padrao = "Foto inválida."
+
+
+class AnuncioNaoEncontrado(ErroDeCasoDeUso):
+    mensagem_padrao = "Anúncio não encontrado."
+
+
+class AnuncioDeOutroUsuario(ErroDeCasoDeUso):
+    mensagem_padrao = "Você só pode alterar os seus próprios anúncios."
+
+
+class CategoriaNaoEditavel(ErroDeCasoDeUso):
+    mensagem_padrao = "A categoria do anúncio não pode ser alterada."
