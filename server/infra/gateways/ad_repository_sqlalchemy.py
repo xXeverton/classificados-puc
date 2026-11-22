@@ -43,15 +43,22 @@ class AdRepositorySQLAlchemy(
         category: str | None = None,
         min_price: float | None = None,
         max_price: float | None = None,
+        owner_id: int | None = None,
+        ad_status: str = "published",
     ) -> tuple[list[Ad], int]:
         agora = datetime.now(timezone.utc)
         filters = [
-            AdModel.status == "published",
-            or_(
-                AdModel.expires_at.is_(None),
-                AdModel.expires_at > agora,
-            ),
+            AdModel.status == ad_status,
         ]
+        if ad_status == "published":
+            filters.append(
+                or_(
+                    AdModel.expires_at.is_(None),
+                    AdModel.expires_at > agora,
+                )
+            )
+        if owner_id is not None:
+            filters.append(AdModel.usuario_id == owner_id)
         if category is not None:
             filters.append(
                 func.lower(AdModel.category) == category.lower()
@@ -155,7 +162,12 @@ class AdRepositorySQLAlchemy(
         with self._session_factory() as session:
             return self._buscar_com_anunciante(session, ad_id)
 
-    def atualizar(self, ad_id: int, anuncio: Anuncio) -> Ad:
+    def atualizar(
+        self,
+        ad_id: int,
+        anuncio: Anuncio,
+        expires_at: datetime | None = None,
+    ) -> Ad:
         with self._session_factory.begin() as session:
             model = session.get(AdModel, ad_id)
             model.title = anuncio.titulo
@@ -163,6 +175,9 @@ class AdRepositorySQLAlchemy(
             model.price = float(anuncio.preco or 0)
             model.preco_a_combinar = anuncio.preco is None
             model.estado_conservacao = anuncio.estado_conservacao
+            if expires_at is not None:
+                model.status = "published"
+                model.expires_at = expires_at
             session.flush()
             return self._buscar_com_anunciante(session, ad_id)
 
@@ -171,6 +186,14 @@ class AdRepositorySQLAlchemy(
             model = session.get(AdModel, ad_id)
             if model is not None:
                 session.delete(model)
+
+    def renovar(self, ad_id: int, expires_at: datetime) -> Ad:
+        with self._session_factory.begin() as session:
+            model = session.get(AdModel, ad_id)
+            model.status = "published"
+            model.expires_at = expires_at
+            session.flush()
+            return self._buscar_com_anunciante(session, ad_id)
 
     def _buscar_com_anunciante(
         self, session: Session, ad_id: int

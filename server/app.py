@@ -52,6 +52,7 @@ from server.core.usecases.obter_detalhes_anuncio import (
 from server.core.usecases.publicar_anuncio import PublicarAnuncio
 from server.core.usecases.editar_anuncio import EditarAnuncio
 from server.core.usecases.excluir_anuncio import ExcluirAnuncio
+from server.core.usecases.renovar_anuncio import RenovarAnuncio
 from server.core.usecases.reenviar_confirmacao import ReenviarConfirmacao
 from server.core.usecases.salvar_perfil_anunciante import (
     SalvarPerfilAnunciante,
@@ -183,8 +184,15 @@ def create_app(
         anunciante_repository,
         relogio,
     )
-    app.extensions["editar_anuncio"] = EditarAnuncio(ad_repository)
+    app.extensions["editar_anuncio"] = EditarAnuncio(
+        ad_repository,
+        relogio,
+    )
     app.extensions["excluir_anuncio"] = ExcluirAnuncio(ad_repository)
+    app.extensions["renovar_anuncio"] = RenovarAnuncio(
+        ad_repository,
+        relogio,
+    )
 
     casos_de_uso = _montar_casos_de_uso(app, session_factory, relogio)
     app.extensions["casos_de_uso_autenticacao"] = casos_de_uso
@@ -220,6 +228,8 @@ def create_app(
             app.config.get("RELOGIO") or RelogioSistema(),
         ),
         storage,
+        session_factory,
+        engine,
     )
 
     @app.before_request

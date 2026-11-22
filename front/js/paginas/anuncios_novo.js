@@ -6,6 +6,11 @@ import {
 import { exigirPerfilAnunciante } from "../fluxos/exigir_perfil_anunciante.js";
 import { publicarAnuncio } from "../fluxos/publicar_anuncio.js";
 import {
+  carregarAnuncioParaEdicao as buscarAnuncioParaEdicao,
+  mapearAnuncioParaFormulario,
+} from "../fluxos/anuncio_edicao.js";
+import { chamarApi } from "../fluxos/conexao.js";
+import {
   ROTAS,
   aoEnviar,
   irPara,
@@ -38,6 +43,7 @@ const previaImagem = document.querySelector("#foto-previa-imagem");
 const removerFoto = document.querySelector("#remover-foto");
 let imagemSelecionada = null;
 let urlPrevia = null;
+const adEditandoId = new URLSearchParams(window.location.search).get("editar");
 
 ligarBotaoSair(document.querySelector("#sair"), deps);
 
@@ -172,10 +178,38 @@ async function enviar() {
   }
 
   const payload = montarPayloadAnuncio(dados);
-  const estado = await publicarAnuncio(deps, criarCorpo(payload));
+  let estado;
+  if (adEditandoId) {
+    const { resposta, falha } = await chamarApi(
+      () => deps.adsApi.editar(Number(adEditandoId), payload),
+    );
+    if (falha) {
+      estado = { tipo: "erro", mensagem: "Não foi possível conectar ao servidor." };
+    } else if (resposta.status === 200) {
+      estado = { tipo: "editado" };
+    } else if (resposta.status === 401) {
+      estado = { tipo: "sem_sessao" };
+    } else if (resposta.status === 422) {
+      estado = {
+        tipo: "dados_invalidos",
+        campos: resposta.corpo?.campos ?? {},
+        temCampoDesconhecido: Boolean(resposta.corpo?.campos),
+        mensagem: resposta.corpo?.message,
+      };
+    } else {
+      estado = {
+        tipo: "erro",
+        mensagem: resposta.corpo?.message ?? "Não foi possível salvar o anúncio.",
+      };
+    }
+  } else {
+    estado = await publicarAnuncio(deps, criarCorpo(payload));
+  }
   if (estado.tipo === "publicado") {
     limparFormularioPublicado();
     irPara(ROTAS.inicio);
+  } else if (estado.tipo === "editado") {
+    irPara(ROTAS.meusAnuncios);
   } else if (estado.tipo === "sem_sessao") {
     irPara(ROTAS.entrar, "sessao_expirada");
   } else if (estado.tipo === "perfil_incompleto") {
@@ -223,6 +257,33 @@ removerFoto.addEventListener("click", removerImagem);
 atualizarCamposCondicionais();
 atualizarContadores();
 
+async function carregarAnuncioParaEdicao() {
+  if (!adEditandoId) return true;
+  document.querySelector("#titulo-pagina").textContent = "Editar anúncio";
+  botaoPublicar.textContent = "Salvar alterações";
+  const resultado = await buscarAnuncioParaEdicao(deps, adEditandoId);
+  if (resultado.tipo !== "carregado") return false;
+
+  const valores = mapearAnuncioParaFormulario(resultado.anuncio);
+  titulo.value = valores.titulo;
+  categoria.value = valores.categoria;
+  descricao.value = valores.descricao;
+  estadoConservacao.value = valores.estadoConservacao;
+  if (valores.precoACombinar) {
+    tipoPreco[1].checked = true;
+  } else {
+    tipoPreco[0].checked = true;
+    preco.value = valores.preco;
+  }
+  atualizarCamposCondicionais();
+  atualizarContadores();
+  if (valores.imageUrl) {
+    previaImagem.src = valores.imageUrl;
+    previa.hidden = false;
+  }
+  return true;
+}
+
 const acesso = await exigirPerfilAnunciante(deps);
 if (acesso.tipo === "sem_sessao") {
   irPara(ROTAS.entrar, "sessao_expirada");
@@ -234,6 +295,16 @@ if (acesso.tipo === "sem_sessao") {
     for (const controle of formulario.elements) controle.disabled = true;
     mostrarAlerta(alerta, "erro", acesso.mensagem);
   } else {
-    aoEnviar(formulario, botaoPublicar, "Publicando...", enviar);
+    const carregado = await carregarAnuncioParaEdicao();
+    if (!carregado) {
+      mostrarAlerta(alerta, "erro", "Não foi possível carregar o anúncio.");
+    } else {
+      aoEnviar(
+        formulario,
+        botaoPublicar,
+        adEditandoId ? "Salvando..." : "Publicando...",
+        enviar,
+      );
+    }
   }
 }

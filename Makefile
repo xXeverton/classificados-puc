@@ -9,7 +9,7 @@ endif
 PYTHON ?= $(if $(wildcard $(VENV_PYTHON)),$(VENV_PYTHON),python)
 SYSTEM_PYTHON ?= python
 
-.PHONY: criar-ambiente-virtual ativar-ambiente-virtual install lint test check front front-test
+.PHONY: criar-ambiente-virtual ativar-ambiente-virtual install lint test check backend front front-test demo-data
 
 criar-ambiente-virtual:
 	$(SYSTEM_PYTHON) -m venv .venv
@@ -27,10 +27,16 @@ lint:
 test:
 	$(PYTHON) -m pytest
 
-check: lint test
+check: lint test front-test
+
+backend:
+	$(PYTHON) -m flask --app server.app:create_app run --debug
 
 front:
 	node front/dev_server.js
 
 front-test:
 	cd front && node --test
+
+demo-data:
+	$(PYTHON) -m flask --app server.app:create_app criar-dados-demo

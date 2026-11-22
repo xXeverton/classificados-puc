@@ -103,3 +103,7 @@ class AnuncioDeOutroUsuario(ErroDeCasoDeUso):
 
 class CategoriaNaoEditavel(ErroDeCasoDeUso):
     mensagem_padrao = "A categoria do anúncio não pode ser alterada."
+
+
+class AnuncioNaoExpirado(ErroDeCasoDeUso):
+    mensagem_padrao = "Somente anúncios expirados podem ser renovados."
