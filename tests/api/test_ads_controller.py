@@ -70,6 +70,7 @@ def create_ads_app(image_root=None):
                         tzinfo=timezone.utc,
                     ),
                     status="published",
+                    estado_conservacao="usado_regular",
                 ),
                 AdModel(
                     title="Aulas de inglês",
@@ -101,6 +102,15 @@ def complete_advertiser_profile(app):
             contatos=(Contato.criar("email", "ana@example.com"),),
         )
     )
+
+
+def assign_owner(app, ad_id, usuario_id=1):
+    with app.extensions["session_factory"].begin() as session:
+        session.execute(
+            AdModel.__table__.update()
+            .where(AdModel.id == ad_id)
+            .values(usuario_id=usuario_id)
+        )
 
 
 def test_get_ads_returns_paginated_cards_with_public_fields():
@@ -387,6 +397,7 @@ def test_publish_is_visible_in_feed_with_real_profile_name():
             .filter(
                 AdModel.title == "Bicicleta urbana",
                 AdModel.usuario_id == 1,
+                AdModel.description == "Revisada e pronta para uso.",
             )
             .one()
         )
@@ -766,4 +777,122 @@ def test_publish_requires_authentication_and_returns_json_401():
     assert response.status_code == 401
     assert response.is_json
     assert response.json == {"message": "Sessão inválida ou expirada."}
+    app.extensions["database_engine"].dispose()
+
+
+def test_get_ad_details_returns_public_ad_and_advertiser():
+    app = create_ads_app()
+    complete_advertiser_profile(app)
+    assign_owner(app,1)
+
+    response = app.test_client().get(
+        "/api/ads/1",
+        headers=app.extensions["test_auth_headers"],
+    )
+
+    assert response.status_code == 200
+    assert response.json["ad"]["title"] == "Bicicleta urbana"
+    assert response.json["ad"]["estado_conservacao"] == "usado_regular"
+    assert response.json["advertiser"]["display_name"] == "Ana Vendas"
+    assert response.json["advertiser"]["affiliation"] == "aluno"
+    assert response.json["advertiser"]["contacts"] == [
+        {
+            "tipo": "email",
+            "codigo_pais": None,
+            "valor": "ana@example.com",
+            "rotulo": None,
+            "link_de_conversa": None,
+        }
+    ]
+    app.extensions["database_engine"].dispose()
+
+
+def test_get_ad_details_without_photo_succeeds():
+    app = create_ads_app()
+    complete_advertiser_profile(app)
+    assign_owner(app,2)
+
+    response = app.test_client().get(
+        "/api/ads/2",
+        headers=app.extensions["test_auth_headers"],
+    )
+
+    assert response.status_code == 200
+    assert response.json["ad"]["image_url"] is None
+    app.extensions["database_engine"].dispose()
+
+
+def test_get_ad_details_rejects_missing_authentication():
+    app = create_app(
+        {
+            "DATABASE_URL": "sqlite:///:memory:",
+            "CORS_ORIGINS": [],
+        }
+    )
+
+    response = app.test_client().get("/api/ads/1")
+
+    assert response.status_code == 401
+    assert response.json == {"message": "Sessão inválida ou expirada."}
+    app.extensions["database_engine"].dispose()
+
+
+def test_get_ad_details_rejects_invalid_id():
+    app = create_ads_app()
+
+    response = app.test_client().get(
+        "/api/ads/abc",
+        headers=app.extensions["test_auth_headers"],
+    )
+
+    assert response.status_code == 400
+    assert response.json["code"] == "dados_invalidos"
+    app.extensions["database_engine"].dispose()
+
+
+def test_get_ad_details_reports_not_found():
+    app = create_ads_app()
+
+    response = app.test_client().get(
+        "/api/ads/999",
+        headers=app.extensions["test_auth_headers"],
+    )
+
+    assert response.status_code == 404
+    assert response.json == {"message": "Anúncio não encontrado."}
+    app.extensions["database_engine"].dispose()
+
+
+@pytest.mark.parametrize(
+    ("status", "message"),
+    [
+        (
+            "sold",
+            "Este anúncio já foi vendido e não está mais disponível "
+            "para contato.",
+        ),
+        (
+            "expired",
+            "Este anúncio expirou e não está mais disponível "
+            "para contato.",
+        ),
+    ],
+)
+def test_get_ad_details_reports_unavailable_status(status, message):
+    app = create_ads_app()
+    session_factory = app.extensions["session_factory"]
+    with session_factory.begin() as session:
+        session.execute(
+            AdModel.__table__.update()
+            .where(AdModel.id == 1)
+            .values(status=status)
+        )
+
+    response = app.test_client().get(
+        "/api/ads/1",
+        headers=app.extensions["test_auth_headers"],
+    )
+
+    assert response.status_code == 404
+    assert response.json == {"message": message}
     app.extensions["database_engine"].dispose()

@@ -38,7 +38,7 @@ export function dadosDoCard(anuncio) {
     descricaoResumida: anuncio.type === "service"
       ? resumirDescricao(anuncio.description)
       : null,
-    detalhesUrl: `/anuncios/${encodeURIComponent(anuncio.id)}/`,
+    detalhesUrl: `/anuncios/detalhes/?id=${encodeURIComponent(anuncio.id)}`,
   };
 }
 

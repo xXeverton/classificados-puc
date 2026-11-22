@@ -11,6 +11,10 @@ class AdRepository(ABC):
     """Persistence operations required to list published advertisements."""
 
     @abstractmethod
+    def buscar_por_id(self, anuncio_id: int) -> Ad | None:
+        """Return an ad by ID, including unavailable states."""
+
+    @abstractmethod
     def list_published(
         self,
         page: int,

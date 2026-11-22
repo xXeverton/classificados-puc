@@ -1,3 +1,5 @@
+import { API_BASE_URL } from "../config.js";
+import { resolverUrlRecurso } from "../dominio/detalhes_anuncio.js";
 import {
   contarFiltrosAtivos,
   dadosDoCard,
@@ -61,7 +63,7 @@ function criarCard(anuncio) {
 
   if (dados.imagem) {
     const imagem = criar("img", "anuncio__imagem");
-    imagem.src = dados.imagem;
+    imagem.src = resolverUrlRecurso(dados.imagem, API_BASE_URL);
     imagem.alt = dados.titulo;
     card.append(imagem);
   } else {

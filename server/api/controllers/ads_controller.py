@@ -14,12 +14,15 @@ from pydantic import BaseModel
 from werkzeug.exceptions import RequestEntityTooLarge
 
 from werkzeug.datastructures import FileStorage
+from pydantic import BaseModel
 
 from server.api.autenticacao import SEGURANCA_BEARER, exige_sessao
 from server.api.presenters.ad_presenter import (
+    AdDetailsViewSchema,
     AdViewSchema,
     AdsFeedViewSchema,
     apresenta_ad,
+    apresenta_detalhes,
     apresenta_feed,
 )
 from server.api.presenters.error_presenter import (
@@ -66,6 +69,8 @@ class ErroPublicacaoSchema(ErrorSchema):
     campos: dict[str, str] | None = None
 
 
+class AnuncioIdPath(BaseModel):
+    anuncio_id: str
 class AnuncioPath(BaseModel):
     ad_id: int
 
@@ -336,6 +341,57 @@ def register_ads_controller(app: OpenAPI, obter_usuario_da_sessao) -> None:
                 HTTPStatus.INTERNAL_SERVER_ERROR,
             )
         return apresenta_feed(result).model_dump(mode="json"), 200
+
+    @app.get(
+        "/api/ads/<anuncio_id>",
+        security=SEGURANCA_BEARER,
+        responses={
+            200: AdDetailsViewSchema,
+            400: ErrorSchema,
+            401: ErrorSchema,
+            404: ErrorSchema,
+            500: ErrorSchema,
+        },
+    )
+    @protegida
+    def ad_details(path: AnuncioIdPath) -> tuple[dict[str, object], int]:
+        anuncio_id = path.anuncio_id
+        if not anuncio_id.isdigit():
+            return _erro(
+                "O identificador do anúncio deve ser um inteiro positivo.",
+                HTTPStatus.BAD_REQUEST,
+                codigo="dados_invalidos",
+            )
+        anuncio_id_int = int(anuncio_id)
+        if anuncio_id_int < 1:
+            return _erro(
+                "O identificador do anúncio deve ser um inteiro positivo.",
+                HTTPStatus.BAD_REQUEST,
+                codigo="dados_invalidos",
+            )
+
+        use_case = app.extensions.get("obter_detalhes_anuncio")
+        if use_case is None:
+            return _erro(
+                "Erro interno ao buscar detalhes do anúncio.",
+                HTTPStatus.INTERNAL_SERVER_ERROR,
+            )
+        try:
+            details = use_case.executar(
+                usuario=g.usuario,
+                anuncio_id=anuncio_id_int,
+            )
+        except ErroDeCasoDeUso:
+            raise
+        except Exception:
+            current_app.logger.exception(
+                "Falha ao consultar detalhes do anúncio."
+            )
+            return _erro(
+                "Erro interno ao buscar detalhes do anúncio.",
+                HTTPStatus.INTERNAL_SERVER_ERROR,
+            )
+        return apresenta_detalhes(details).model_dump(mode="json"), 200
 
     @app.post(
         "/api/ads",

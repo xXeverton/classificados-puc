@@ -10,6 +10,11 @@ from server.api.presenters.error_presenter import (
 )
 from server.core.usecases.erros import (
     ContaBloqueada,
+    AnuncioExcluido,
+    AnuncioExpirado,
+    AnuncioNaoEncontrado,
+    AnuncioNaoPublicado,
+    AnuncioVendido,
     CredenciaisInvalidas,
     DadosInvalidos,
     EmailEmUso,
@@ -22,6 +27,7 @@ from server.core.usecases.erros import (
     SessaoInvalida,
     TokenExpirado,
     TokenInvalido,
+    UsuarioNaoAutenticado,
 )
 
 STATUS_DE_VALIDACAO = 400
@@ -29,6 +35,11 @@ STATUS_ARQUIVO_GRANDE = 413
 MENSAGEM_ARQUIVO_GRANDE = "O envio excede o limite permitido."
 
 _STATUS_POR_ERRO: dict[type[ErroDeCasoDeUso], int] = {
+    AnuncioExcluido: 404,
+    AnuncioExpirado: 404,
+    AnuncioNaoEncontrado: 404,
+    AnuncioNaoPublicado: 404,
+    AnuncioVendido: 404,
     DadosInvalidos: 400,
     FotoInvalida: 400,
     PerfilNaoEncontrado: 404,
@@ -41,6 +52,7 @@ _STATUS_POR_ERRO: dict[type[ErroDeCasoDeUso], int] = {
     IdentificadorEmUso: 409,
     TokenExpirado: 410,
     ContaBloqueada: 429,
+    UsuarioNaoAutenticado: 401,
 }
 
 _CODIGO_POR_ERRO: dict[type[ErroDeCasoDeUso], str] = {

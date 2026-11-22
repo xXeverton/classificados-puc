@@ -1,0 +1,123 @@
+.pagina-detalhes {
+  padding-block: var(--espaco-6);
+}
+
+.estado-carregamento {
+  min-height: 12rem;
+  display: grid;
+  place-items: center;
+  color: var(--cor-texto-suave);
+}
+
+.detalhes {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(18rem, 0.9fr);
+  gap: var(--espaco-6);
+  align-items: start;
+}
+
+.detalhes__foto {
+  min-height: 26rem;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid var(--cor-borda-suave);
+  border-radius: var(--raio-cartao);
+  background: var(--cor-superficie);
+  box-shadow: var(--sombra-cartao);
+}
+
+.detalhes__foto img {
+  width: 100%;
+  max-height: 32rem;
+  object-fit: contain;
+}
+
+.detalhes__foto-vazia {
+  color: var(--cor-texto-suave);
+  text-align: center;
+  padding: var(--espaco-6);
+}
+
+.detalhes__painel {
+  min-width: 0;
+  display: grid;
+  gap: var(--espaco-4);
+  box-shadow: var(--sombra-cartao);
+}
+
+.detalhes__preco {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--cor-primaria);
+}
+
+.detalhes__dados {
+  margin: 0;
+}
+
+.detalhes__dados div {
+  display: grid;
+  gap: var(--espaco-2);
+}
+
+.detalhes__dados dt {
+  color: var(--cor-texto-suave);
+}
+
+.detalhes__dados dd {
+  margin: 0;
+}
+
+.detalhes__descricao {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  margin-bottom: var(--espaco-1);
+}
+
+.detalhes__anunciante {
+  display: grid;
+  gap: var(--espaco-4);
+  margin-top: var(--espaco-2);
+  background: var(--cor-fundo);
+}
+
+.detalhes__perfil {
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-3);
+}
+
+.detalhes__perfil img {
+  width: 4rem;
+  height: 4rem;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.detalhes__perfil div {
+  display: grid;
+  gap: var(--espaco-2);
+}
+
+.detalhes__contatos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espaco-2);
+}
+
+.detalhes__contato {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 760px) {
+  .detalhes {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .detalhes__foto {
+    min-height: 14rem;
+  }
+}

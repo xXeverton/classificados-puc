@@ -81,6 +81,12 @@ class InMemoryAdRepository(AdRepository):
     ) -> Ad:
         raise NotImplementedError
 
+    def buscar_por_id(self, anuncio_id):
+        return next(
+            (ad for ad in self.ads if ad.id == anuncio_id),
+            None,
+        )
+
 
 def make_ad(
     title,

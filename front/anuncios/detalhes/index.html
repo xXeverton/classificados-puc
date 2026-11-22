@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Detalhes do anúncio · Classificados PUC</title>
+  <link rel="stylesheet" href="../../css/tema.css">
+  <link rel="stylesheet" href="../../css/detalhes.css">
+</head>
+<body>
+  <header class="cabecalho">
+    <div class="container cabecalho__conteudo">
+      <a class="marca" href="../../inicio/">
+        <span class="marca__sigla">PUC</span>
+        <span class="marca__nome">Classificados</span>
+      </a>
+      <nav class="navegacao" aria-label="Principal">
+        <a class="navegacao__item" href="../../inicio/">Início</a>
+        <a class="navegacao__item" href="../../perfil/">Meu perfil</a>
+      </nav>
+      <a class="botao botao--primario" href="../../anuncios/novo/">Novo anúncio</a>
+      <button class="botao botao--contorno" id="sair" type="button">Sair</button>
+    </div>
+  </header>
+  <main class="container pagina-detalhes">
+    <div id="alerta" role="alert"></div>
+    <div id="carregando" class="estado-carregamento" role="status">
+      Carregando anúncio...
+    </div>
+    <article id="conteudo" class="detalhes" hidden>
+      <section class="detalhes__foto" aria-label="Foto do anúncio">
+        <img id="foto-anuncio" alt="" hidden>
+        <div id="sem-foto" class="detalhes__foto-vazia" hidden>
+          Este anúncio não possui foto.
+        </div>
+      </section>
+      <section class="painel detalhes__painel">
+        <span id="categoria" class="etiqueta"></span>
+        <h1 id="titulo"></h1>
+        <p id="preco" class="detalhes__preco"></p>
+        <dl class="detalhes__dados">
+          <div id="linha-conservacao" hidden>
+            <dt>Estado de conservação</dt>
+            <dd id="conservacao"></dd>
+          </div>
+        </dl>
+        <h2>Descrição</h2>
+        <p id="descricao" class="detalhes__descricao"></p>
+        <section class="painel detalhes__anunciante" aria-labelledby="titulo-anunciante">
+          <h2 id="titulo-anunciante">Anunciante</h2>
+          <div class="detalhes__perfil">
+            <img id="foto-anunciante" alt="" hidden>
+            <div>
+              <strong id="nome-anunciante"></strong>
+              <span id="vinculo" class="etiqueta"></span>
+            </div>
+          </div>
+          <div id="contatos" class="detalhes__contatos" aria-label="Contatos do anunciante"></div>
+        </section>
+      </section>
+    </article>
+  </main>
+  <script type="module" src="../../js/paginas/detalhes_anuncio.js"></script>
+</body>
+</html>

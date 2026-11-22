@@ -37,7 +37,7 @@ test("dados do card incluem campos obrigatorios e foto opcional", () => {
   assert.equal(card.categoria, "Livros");
   assert.equal(card.preco, 45);
   assert.equal(card.imagem, null);
-  assert.equal(card.detalhesUrl, "/anuncios/7/");
+  assert.equal(card.detalhesUrl, "/anuncios/detalhes/?id=7");
 });
 
 test("servico mostra descricao resumida e produto nao", () => {

@@ -33,6 +33,7 @@ class AdRepositorySQLAlchemy(
         self._session_factory = session_factory
         self._image_storage = image_storage
 
+
     def list_published(
         self,
         page: int,
