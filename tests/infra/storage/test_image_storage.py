@@ -382,6 +382,30 @@ def test_s3_url_and_remove_errors_are_wrapped_without_provider_details(
             {"STORAGE_S3_PRESIGN_EXPIRES_SECONDS": "0"},
             "STORAGE_S3_PRESIGN_EXPIRES_SECONDS",
         ),
+        (
+            {"STORAGE_LOCAL_URL_BASE": "//cdn.example/media"},
+            "STORAGE_LOCAL_URL_BASE",
+        ),
+        (
+            {"STORAGE_LOCAL_URL_BASE": "/media/../private"},
+            "STORAGE_LOCAL_URL_BASE",
+        ),
+        (
+            {
+                "STORAGE_PROVIDER": "s3",
+                "STORAGE_S3_BUCKET": "fictional-bucket",
+                "STORAGE_S3_ENDPOINT_URL": "javascript:alert(1)",
+            },
+            "STORAGE_S3_ENDPOINT_URL",
+        ),
+        (
+            {
+                "STORAGE_PROVIDER": "s3",
+                "STORAGE_S3_BUCKET": "fictional-bucket",
+                "STORAGE_S3_PUBLIC_BASE_URL": "https://cdn.example/images?x=1",
+            },
+            "STORAGE_S3_PUBLIC_BASE_URL",
+        ),
     ],
 )
 def test_invalid_storage_configuration(environ, message):
@@ -408,6 +432,24 @@ def test_storage_configuration_defaults_and_s3_settings():
     assert s3.s3_region == "us-east-1"
     assert s3.s3_endpoint_url == "https://s3.example"
     assert s3.s3_key_prefix == "service/images"
+
+
+def test_invalid_s3_url_configuration_does_not_echo_userinfo():
+    with pytest.raises(
+        ConfiguracaoStorageError,
+        match="STORAGE_S3_ENDPOINT_URL",
+    ) as error:
+        ConfiguracaoStorage.from_environment(
+            {
+                "STORAGE_PROVIDER": "s3",
+                "STORAGE_S3_BUCKET": "fictional-bucket",
+                "STORAGE_S3_ENDPOINT_URL": (
+                    "https://user:fictional-secret@s3.example"
+                ),
+            }
+        )
+
+    assert "fictional-secret" not in str(error.value)
 
 
 def test_local_factory_does_not_import_boto3(monkeypatch, tmp_path):
@@ -552,6 +594,22 @@ def test_app_config_overrides_environment_storage_values(
 def test_invalid_storage_configuration_fails_app_initialization(config):
     with pytest.raises(ConfiguracaoStorageError):
         create_app(config=config)
+
+
+def test_invalid_storage_configuration_fails_before_creating_database(
+    tmp_path,
+):
+    database_path = tmp_path / "not-created.sqlite3"
+
+    with pytest.raises(ConfiguracaoStorageError):
+        create_app(
+            config={
+                "DATABASE_URL": f"sqlite:///{database_path}",
+                "STORAGE_PROVIDER": "unknown",
+            }
+        )
+
+    assert not database_path.exists()
 
 
 @pytest.mark.parametrize(

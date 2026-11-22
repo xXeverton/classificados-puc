@@ -151,16 +151,17 @@ def create_app(
     if config is not None:
         app.config.update(config)
 
-    engine = create_database_engine(app.config["DATABASE_URL"])
-    initialize_database(engine)
-    session_factory = create_session_factory(engine)
-    app.extensions["database_engine"] = engine
-    app.extensions["session_factory"] = session_factory
     storage = init_storage(app, image_storage)
     app.config["MAX_CONTENT_LENGTH"] = max(
         TAMANHO_MAXIMO_REQUISICAO_BYTES,
         storage.config.max_image_bytes + 1024 * 1024,
     )
+
+    engine = create_database_engine(app.config["DATABASE_URL"])
+    initialize_database(engine)
+    session_factory = create_session_factory(engine)
+    app.extensions["database_engine"] = engine
+    app.extensions["session_factory"] = session_factory
     anunciante_repository = AnuncianteRepositorySQLAlchemy(session_factory)
     relogio = app.config.get("RELOGIO") or RelogioSistema()
     ad_repository = AdRepositorySQLAlchemy(session_factory, storage)

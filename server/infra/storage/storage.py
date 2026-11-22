@@ -7,6 +7,7 @@ import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 from typing import BinaryIO, Mapping, Protocol
+from urllib.parse import urlsplit
 from uuid import uuid4
 
 _DEFAULT_MAX_IMAGE_BYTES = 5 * 1024 * 1024
@@ -21,6 +22,9 @@ _IMAGE_SIGNATURES = (
     (b"\x89PNG\r\n\x1a\n", "png", "image/png"),
 )
 _NAMESPACE_PATTERN = re.compile(r"[a-z0-9_-]+")
+_LOCAL_URL_BASE_PATTERN = re.compile(
+    r"/(?:[A-Za-z0-9._~-]+/)*[A-Za-z0-9._~-]+"
+)
 _KEY_PATTERN = re.compile(
     r"([a-z0-9_-]+)/([0-9a-f]{32})\.(jpg|png|webp)"
 )
@@ -97,10 +101,8 @@ class ConfiguracaoStorage:
             "/"
         )
         if (
-            not local_url_base.startswith("/")
-            or "?" in local_url_base
-            or "#" in local_url_base
-            or ".." in local_url_base.split("/")
+            not _LOCAL_URL_BASE_PATTERN.fullmatch(local_url_base)
+            or any(part in {".", ".."} for part in local_url_base.split("/"))
         ):
             raise ConfiguracaoStorageError(
                 "STORAGE_LOCAL_URL_BASE deve ser um caminho local absoluto."
@@ -120,6 +122,23 @@ class ConfiguracaoStorage:
                 "STORAGE_S3_BUCKET é obrigatória quando STORAGE_PROVIDER=s3."
             )
 
+        s3_endpoint_url = values.get("STORAGE_S3_ENDPOINT_URL") or None
+        s3_public_base_url = (
+            values.get("STORAGE_S3_PUBLIC_BASE_URL", "").rstrip("/")
+            or None
+        )
+        if provider == "s3":
+            if s3_endpoint_url:
+                _validar_url_http(
+                    s3_endpoint_url,
+                    "STORAGE_S3_ENDPOINT_URL",
+                )
+            if s3_public_base_url:
+                _validar_url_http(
+                    s3_public_base_url,
+                    "STORAGE_S3_PUBLIC_BASE_URL",
+                )
+
         prefix = values.get("STORAGE_S3_KEY_PREFIX", "").strip("/")
         if prefix and any(
             not _NAMESPACE_PATTERN.fullmatch(part)
@@ -136,15 +155,35 @@ class ConfiguracaoStorage:
             local_url_base=local_url_base,
             s3_bucket=bucket,
             s3_region=values.get("STORAGE_S3_REGION") or None,
-            s3_endpoint_url=values.get("STORAGE_S3_ENDPOINT_URL") or None,
+            s3_endpoint_url=s3_endpoint_url,
             s3_access_key_id=access_key,
             s3_secret_access_key=secret_key,
-            s3_public_base_url=(
-                values.get("STORAGE_S3_PUBLIC_BASE_URL", "").rstrip("/")
-                or None
-            ),
+            s3_public_base_url=s3_public_base_url,
             s3_presign_expires_seconds=expires,
             s3_key_prefix=prefix,
+        )
+
+
+def _validar_url_http(valor: str, variavel: str) -> None:
+    try:
+        url = urlsplit(valor)
+        porta = url.port
+    except ValueError:
+        raise ConfiguracaoStorageError(
+            f"{variavel} deve ser uma URL HTTP ou HTTPS válida."
+        ) from None
+    if (
+        url.scheme not in {"http", "https"}
+        or not url.hostname
+        or url.username is not None
+        or url.password is not None
+        or url.query
+        or url.fragment
+        or porta is not None and not 1 <= porta <= 65535
+        or any(caractere.isspace() for caractere in valor)
+    ):
+        raise ConfiguracaoStorageError(
+            f"{variavel} deve ser uma URL HTTP ou HTTPS válida."
         )
 
 

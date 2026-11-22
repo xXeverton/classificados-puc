@@ -448,6 +448,10 @@ def test_publish_stores_an_image_and_exposes_it_from_local_storage(tmp_path):
     assert image.status_code == 200
     assert image.mimetype == "image/png"
     assert image.data == b"\x89PNG\r\n\x1a\nconteudo"
+    with app.extensions["session_factory"]() as session:
+        stored = session.get(AdModel, response.json["id"])
+        assert stored.image_key
+        assert stored.image_url is None
     app.extensions["database_engine"].dispose()
 
 

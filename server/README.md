@@ -161,13 +161,105 @@ Validações retornam `422` com `campos`; perfil incompleto retorna `403` com
 retorna `400`; tipo de conteúdo não aceito retorna `415`. Erros inesperados em
 `/api/` são JSON genérico e não expõem detalhes internos.
 
-O storage de anúncio é independente do storage das fotos de perfil. Por padrão,
-as imagens ficam em `media/` e são servidas em `/media/<chave>`. Para configurar
-storage compatível com S3, use `STORAGE_PROVIDER=s3` e `STORAGE_S3_BUCKET`;
-região, endpoint, credenciais, URL pública, expiração de URL assinada e prefixo
-podem ser configurados por `STORAGE_S3_REGION`,
-`STORAGE_S3_ENDPOINT_URL`, `STORAGE_S3_ACCESS_KEY_ID`,
-`STORAGE_S3_SECRET_ACCESS_KEY`, `STORAGE_S3_PUBLIC_BASE_URL`,
-`STORAGE_S3_PRESIGN_EXPIRES_SECONDS` e `STORAGE_S3_KEY_PREFIX`.
-`STORAGE_MAX_IMAGE_BYTES`, `STORAGE_LOCAL_ROOT` e
-`STORAGE_LOCAL_URL_BASE` configuram limite, pasta e caminho local.
+## Storage de imagens
+
+O módulo `server/infra/storage/storage.py` oferece uma interface única para
+armazenamento local e buckets compatíveis com S3. Não há outro provedor de
+hospedagem nem infraestrutura como código configurada neste repositório;
+`boto3` já faz parte de `server/requirements.txt`. O endpoint atual de anúncios
+já usa essa camada para uma foto opcional; não é necessário criar outro endpoint
+para configurar o storage.
+
+As imagens são aceitas somente quando a assinatura do conteúdo corresponde a
+JPEG, PNG ou WebP, independentemente do nome ou do `Content-Type` informado.
+O limite padrão é 5 MiB. A chave é aleatória e imutável, no formato
+`namespace/uuid.ext`; persista `image_key`, nunca a URL, pois ela é gerada
+quando o anúncio é lido. As respostas enviam `Cache-Control` imutável.
+
+### Variáveis de ambiente
+
+| Variável | Padrão | Uso |
+|---|---|---|
+| `STORAGE_PROVIDER` | `local` | `local` para desenvolvimento/testes ou `s3` |
+| `STORAGE_MAX_IMAGE_BYTES` | `5242880` | Limite de bytes por imagem |
+| `STORAGE_LOCAL_ROOT` | `media` | Diretório raiz do provedor local |
+| `STORAGE_LOCAL_URL_BASE` | `/media` | Prefixo da rota local |
+| `STORAGE_S3_BUCKET` | — | Obrigatória com `s3` |
+| `STORAGE_S3_REGION` | — | Região do bucket, se necessária |
+| `STORAGE_S3_ENDPOINT_URL` | — | Endpoint de MinIO, R2 ou serviço compatível |
+| `STORAGE_S3_ACCESS_KEY_ID` | — | Credencial explícita opcional |
+| `STORAGE_S3_SECRET_ACCESS_KEY` | — | Deve ser definida junto com a access key |
+| `STORAGE_S3_PUBLIC_BASE_URL` | — | Base pública/CDN; vazia usa URL pré-assinada |
+| `STORAGE_S3_PRESIGN_EXPIRES_SECONDS` | `3600` | Validade da URL pré-assinada |
+| `STORAGE_S3_KEY_PREFIX` | — | Prefixo opcional dentro do bucket |
+
+As mesmas variáveis estão listadas em [`.env.example`](../.env.example).
+O app lê variáveis do ambiente e `app.config`; o arquivo `.env.example` é um
+modelo, não é carregado automaticamente. Não salve credenciais reais no
+repositório. Quando as chaves explícitas não forem configuradas, `boto3` usa
+sua cadeia padrão de credenciais (por exemplo, uma role da aplicação).
+
+### Desenvolvimento local
+
+Não é necessária nenhuma credencial ou conexão externa:
+
+```bash
+export STORAGE_PROVIDER=local
+export STORAGE_LOCAL_ROOT=media
+export STORAGE_LOCAL_URL_BASE=/media
+flask --app server.app:create_app run
+```
+
+O diretório é criado quando necessário e está coberto pelo `.gitignore`.
+`GET /media/<chave>` só é registrado no provedor local, não lista diretórios,
+valida a chave e responde com o tipo detectado, `X-Content-Type-Options:
+nosniff` e cache imutável. Disco local não é adequado a deploys com filesystem
+efêmero ou contêineres recriados; em produção use S3 compatível ou sirva a
+pasta por um servidor web/proxy persistente.
+
+### Configurar um bucket S3 compatível
+
+1. Crie o bucket na região escolhida e mantenha o bloqueio de acesso público
+   ativado. Não habilite ACL pública nos objetos.
+2. Crie uma role/identidade de serviço para a aplicação com acesso somente aos
+   objetos do prefixo que ela usa. Exemplo para `STORAGE_S3_KEY_PREFIX=classificados`
+   e o namespace de anúncios `anuncios`:
+
+   ```json
+   {
+     "Version": "2012-10-17",
+     "Statement": [
+       {
+         "Effect": "Allow",
+         "Action": [
+           "s3:PutObject",
+           "s3:GetObject",
+           "s3:DeleteObject"
+         ],
+         "Resource": "arn:aws:s3:::example-classificados/classificados/anuncios/*"
+       }
+     ]
+   }
+   ```
+
+   Troque `example-classificados` pelo nome do bucket. A política não permite
+   listar nem administrar o bucket. Para outros namespaces, conceda somente os
+   caminhos de objeto necessários.
+3. Configure `STORAGE_PROVIDER=s3`, `STORAGE_S3_BUCKET` e, quando aplicável,
+   `STORAGE_S3_REGION`, `STORAGE_S3_ENDPOINT_URL` e
+   `STORAGE_S3_KEY_PREFIX`. Para credenciais estáticas, defina
+   `STORAGE_S3_ACCESS_KEY_ID` e `STORAGE_S3_SECRET_ACCESS_KEY` juntas em um
+   gerenciador seguro de segredos; prefira a role/credencial de ambiente.
+4. Por padrão, não defina `STORAGE_S3_PUBLIC_BASE_URL`: a API gera URLs
+   pré-assinadas de leitura, válidas por `STORAGE_S3_PRESIGN_EXPIRES_SECONDS`
+   (3600 segundos por padrão). Configure a base pública somente se as imagens
+   devam ser publicamente acessíveis por um CDN/domínio dedicado. Se o bucket
+   continuar privado atrás do CDN, configure também o acesso de origem do CDN
+   fora da aplicação, mantendo o bloqueio público do bucket.
+5. Os testes usam cliente S3 falso; não exigem bucket, credenciais ou rede.
+   Para validar a integração real, use um bucket de teste e credenciais
+   temporárias com a mesma política mínima.
+
+A configuração é validada na inicialização; provedor desconhecido, bucket S3
+ausente, credenciais explícitas incompletas, URL inválida e valores numéricos
+fora do formato/limite geram `ConfiguracaoStorageError` sem imprimir segredos.
