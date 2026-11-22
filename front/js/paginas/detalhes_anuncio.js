@@ -1,0 +1,125 @@
+import {
+  idDoAnuncio,
+  formatarPrecoDetalhes,
+  rotuloConservacao,
+  rotuloContato,
+  resolverUrlRecurso,
+} from "../dominio/detalhes_anuncio.js";
+import { detalharAnuncio } from "../fluxos/detalhar_anuncio.js";
+import { criarCarregadorDeFoto } from "../fluxos/carregar_foto.js";
+import { API_BASE_URL } from "../config.js";
+import {
+  criar,
+  irPara,
+  ligarBotaoSair,
+  mostrarAlerta,
+  montarDependencias,
+  limparAlerta,
+} from "./comum.js";
+
+const deps = montarDependencias();
+ligarBotaoSair(document.querySelector("#sair"), deps);
+
+const alerta = document.querySelector("#alerta");
+const carregando = document.querySelector("#carregando");
+const conteudo = document.querySelector("#conteudo");
+const fotoAnuncio = document.querySelector("#foto-anuncio");
+const semFoto = document.querySelector("#sem-foto");
+const fotoAnunciante = document.querySelector("#foto-anunciante");
+const contatos = document.querySelector("#contatos");
+const carregadorFoto = criarCarregadorDeFoto(deps);
+
+function mostrarEstado(mensagem) {
+  carregando.hidden = true;
+  conteudo.hidden = true;
+  mostrarAlerta(alerta, "erro", mensagem);
+}
+
+function hrefContato(contato) {
+  if (contato.tipo === "whatsapp") return contato.link_de_conversa;
+  if (contato.tipo === "telefone") return `tel:${contato.codigo_pais}${contato.valor}`;
+  if (contato.tipo === "email") return `mailto:${contato.valor}`;
+  return contato.valor;
+}
+
+function renderizarContatos(lista) {
+  contatos.replaceChildren();
+  for (const contato of lista) {
+    const link = criar("a", "botao botao--contorno detalhes__contato", rotuloContato(contato));
+    link.href = hrefContato(contato);
+    link.target = contato.tipo === "email" ? "_self" : "_blank";
+    if (link.target === "_blank") link.rel = "noopener noreferrer";
+    link.setAttribute("aria-label", `${rotuloContato(contato)}: ${contato.valor}`);
+    contatos.append(link);
+  }
+}
+
+async function carregar() {
+  limparAlerta(alerta);
+  const id = idDoAnuncio(window.location.search);
+  if (id === null) {
+    mostrarEstado("Anúncio não encontrado.");
+    return;
+  }
+
+  const estado = await detalharAnuncio(deps, id);
+  if (estado.tipo === "sem_sessao") {
+    irPara("/entrar/", "sessao_expirada");
+    return;
+  }
+  if (estado.tipo === "conexao") {
+    mostrarEstado("Não foi possível carregar o anúncio. Tente novamente.");
+    return;
+  }
+  if (estado.tipo !== "detalhes") {
+    mostrarEstado(estado.mensagem);
+    return;
+  }
+
+  const dados = estado.detalhes;
+  const ad = dados.ad;
+  document.querySelector("#categoria").textContent = ad.category;
+  document.querySelector("#titulo").textContent = ad.title;
+  document.querySelector("#preco").textContent =
+    formatarPrecoDetalhes(ad.price, ad.preco_a_combinar);
+  document.querySelector("#descricao").textContent = ad.description || "";
+
+  const conservacao = rotuloConservacao(ad.estado_conservacao);
+  const linhaConservacao = document.querySelector("#linha-conservacao");
+  if (conservacao) {
+    document.querySelector("#conservacao").textContent = conservacao;
+    linhaConservacao.hidden = false;
+  } else {
+    linhaConservacao.hidden = true;
+  }
+
+  if (ad.image_url) {
+    fotoAnuncio.src = resolverUrlRecurso(ad.image_url, API_BASE_URL);
+    fotoAnuncio.alt = ad.title;
+    fotoAnuncio.hidden = false;
+    semFoto.hidden = true;
+  } else {
+    fotoAnuncio.hidden = true;
+    semFoto.hidden = false;
+  }
+
+  const advertiser = dados.advertiser;
+  document.querySelector("#nome-anunciante").textContent =
+    advertiser.display_name;
+  document.querySelector("#vinculo").textContent =
+    advertiser.affiliation === "aluno" ? "Aluno" : "Funcionário";
+  const blobFoto = await carregadorFoto.carregar(advertiser.photo_url);
+  if (blobFoto) {
+    fotoAnunciante.src = blobFoto;
+    fotoAnunciante.alt = `Foto de ${advertiser.display_name}`;
+    fotoAnunciante.hidden = false;
+  } else {
+    fotoAnunciante.hidden = true;
+  }
+  renderizarContatos(advertiser.contacts);
+
+  carregando.hidden = true;
+  conteudo.hidden = false;
+}
+
+await carregar();

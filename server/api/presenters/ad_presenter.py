@@ -5,6 +5,7 @@ from datetime import datetime
 from pydantic import BaseModel
 
 from server.core.entities.ad import Ad
+from server.core.entities.ad_details import AdDetails
 
 
 class AdViewSchema(BaseModel):
@@ -32,6 +33,18 @@ class AdsFeedViewSchema(BaseModel):
     total_pages: int
     total_items: int
     message: str | None = None
+
+
+class AdvertiserDetailsViewSchema(BaseModel):
+    display_name: str
+    affiliation: str
+    photo_url: str | None
+    contacts: list[dict[str, object]]
+
+
+class AdDetailsViewSchema(BaseModel):
+    ad: AdViewSchema
+    advertiser: AdvertiserDetailsViewSchema
 
 
 def apresenta_ad(ad: Ad) -> AdViewSchema:
@@ -63,4 +76,33 @@ def apresenta_feed(result: dict[str, object]) -> AdsFeedViewSchema:
         total_pages=result["total_pages"],
         total_items=result["total_items"],
         message=result.get("message"),
+    )
+
+
+def apresenta_detalhes(details: AdDetails) -> AdDetailsViewSchema:
+    """Convert advertisement details into the protected API contract."""
+    advertiser = details.advertiser
+    contacts: list[dict[str, object]] = [
+        {
+            "tipo": contato.tipo.value,
+            "codigo_pais": contato.codigo_pais,
+            "valor": contato.valor,
+            "rotulo": contato.rotulo,
+            "link_de_conversa": (
+                contato.link_de_conversa()
+                if contato.tipo.value == "whatsapp"
+                else None
+            ),
+        }
+        for contato in advertiser.contatos
+    ]
+    ad = apresenta_ad(details.ad)
+    return AdDetailsViewSchema(
+        ad=ad,
+        advertiser=AdvertiserDetailsViewSchema(
+            display_name=advertiser.nome_exibicao,
+            affiliation=advertiser.vinculo,
+            photo_url=advertiser.foto_url,
+            contacts=contacts,
+        ),
     )

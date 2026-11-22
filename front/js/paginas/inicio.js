@@ -1,4 +1,6 @@
 import { dadosDoCard, paginasNumeradas } from "../dominio/feed.js";
+import { API_BASE_URL } from "../config.js";
+import { resolverUrlRecurso } from "../dominio/detalhes_anuncio.js";
 import { listarAnuncios } from "../fluxos/listar_anuncios.js";
 import { sair } from "../fluxos/sessao_atual.js";
 import { ROTAS, irPara, mostrarAlerta, montarDependencias, criar, limparAlerta } from "./comum.js";
@@ -45,7 +47,7 @@ function criarCard(anuncio) {
 
   if (dados.imagem) {
     const imagem = criar("img", "anuncio__imagem");
-    imagem.src = dados.imagem;
+    imagem.src = resolverUrlRecurso(dados.imagem, API_BASE_URL);
     imagem.alt = dados.titulo;
     card.append(imagem);
   } else {

@@ -26,6 +26,7 @@ class Ad:
     nome_anunciante: str | None = None
     estado_conservacao: str | None = None
     preco_a_combinar: bool = False
+    usuario_id: int | None = None
 
     def publication_ends_at(self) -> datetime:
         """End of the publication period.

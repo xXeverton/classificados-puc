@@ -67,3 +67,31 @@ class PerfilIncompleto(ErroDeCasoDeUso):
 
 class FotoInvalida(ErroDeCasoDeUso):
     mensagem_padrao = "Foto inválida."
+
+
+class UsuarioNaoAutenticado(ErroDeCasoDeUso):
+    mensagem_padrao = "Faça login para ver os detalhes do anúncio."
+
+
+class AnuncioNaoEncontrado(ErroDeCasoDeUso):
+    mensagem_padrao = "Anúncio não encontrado."
+
+
+class AnuncioExcluido(ErroDeCasoDeUso):
+    mensagem_padrao = "Este anúncio foi excluído ou não está mais disponível."
+
+
+class AnuncioVendido(ErroDeCasoDeUso):
+    mensagem_padrao = (
+        "Este anúncio já foi vendido e não está mais disponível para contato."
+    )
+
+
+class AnuncioExpirado(ErroDeCasoDeUso):
+    mensagem_padrao = (
+        "Este anúncio expirou e não está mais disponível para contato."
+    )
+
+
+class AnuncioNaoPublicado(ErroDeCasoDeUso):
+    mensagem_padrao = "Este anúncio não está publicado."

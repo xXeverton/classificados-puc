@@ -45,6 +45,9 @@ from server.core.usecases.obter_usuario_da_sessao import (
 from server.core.usecases.obter_perfil_anunciante import (
     ObterPerfilAnunciante,
 )
+from server.core.usecases.obter_detalhes_anuncio import (
+    ObterDetalhesAnuncio,
+)
 from server.core.usecases.publicar_anuncio import PublicarAnuncio
 from server.core.usecases.reenviar_confirmacao import ReenviarConfirmacao
 from server.core.usecases.salvar_perfil_anunciante import (
@@ -177,6 +180,11 @@ def create_app(
 
     casos_de_uso = _montar_casos_de_uso(app, session_factory, relogio)
     app.extensions["casos_de_uso_autenticacao"] = casos_de_uso
+    app.extensions["obter_detalhes_anuncio"] = ObterDetalhesAnuncio(
+        anuncios=ad_repository,
+        anunciantes=anunciante_repository,
+        usuarios=app.extensions["usuario_repository"],
+    )
     casos_de_uso_perfil = _montar_casos_de_uso_de_perfil(
         app,
         session_factory,

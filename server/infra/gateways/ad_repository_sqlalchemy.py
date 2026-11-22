@@ -26,6 +26,15 @@ class AdRepositorySQLAlchemy(AdRepository, ExpirableAdRepository):
         self._session_factory = session_factory
         self._image_storage = image_storage
 
+    def buscar_por_id(self, anuncio_id: int) -> Ad | None:
+        with self._session_factory() as session:
+            model = session.scalars(
+                select(AdModel).where(AdModel.id == anuncio_id)
+            ).one_or_none()
+            if model is None:
+                return None
+            return self._to_entity(model)
+
     def list_published(
         self,
         page: int,
@@ -164,4 +173,5 @@ class AdRepositorySQLAlchemy(AdRepository, ExpirableAdRepository):
             nome_anunciante=nome_anunciante,
             estado_conservacao=model.estado_conservacao,
             preco_a_combinar=model.preco_a_combinar,
+            usuario_id=model.usuario_id,
         )

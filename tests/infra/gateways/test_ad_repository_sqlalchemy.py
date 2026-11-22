@@ -309,3 +309,25 @@ def test_repository_marks_nothing_for_empty_list(database_engine):
 
     assert changed == 0
     assert ads_by_title(database_engine)["Em dia"][1] == "published"
+
+
+def test_repository_finds_ad_by_id_with_optional_photo_and_owner(
+    database_engine,
+):
+    model = make_ad_model(
+        "Bicicleta",
+        datetime(2026, 11, 21, tzinfo=timezone.utc),
+    )
+    model.image_url = "/uploads/anuncios/bicicleta.jpg"
+    model.usuario_id = None
+    add_ads(database_engine, [model])
+    session_factory = create_session_factory(database_engine)
+    with session_factory() as session:
+        ad_id = session.query(AdModel).filter_by(title="Bicicleta").one().id
+
+    found = make_repository(database_engine).buscar_por_id(ad_id)
+
+    assert found is not None
+    assert found.title == "Bicicleta"
+    assert found.image_url == "/uploads/anuncios/bicicleta.jpg"
+    assert found.usuario_id is None
