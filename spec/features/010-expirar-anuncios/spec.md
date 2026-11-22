@@ -1,6 +1,6 @@
 # Spec: Expirar anúncios não renovados
 
-- **ID**: 004
+- **ID**: 010
 - **Status**: Rascunho
 - **Data**: 2026-11-21
 - **Jira**: história [PROJ-15](https://matheuscomputacaopuc.atlassian.net/browse/PROJ-15)

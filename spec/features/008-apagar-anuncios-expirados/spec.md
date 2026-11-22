@@ -8,7 +8,7 @@
   [PROJ-41](https://matheuscomputacaopuc.atlassian.net/browse/PROJ-41)
   (excluir anúncios expirados 30 dias atrás)
 - **Decisões gerais aplicadas**: nenhuma
-- **Relacionada**: [004-expirar-anuncios](../004-expirar-anuncios/spec.md),
+- **Relacionada**: [010-expirar-anuncios](../010-expirar-anuncios/spec.md),
   que marca os anúncios como expirados.
 
 ## História de usuário
@@ -35,7 +35,7 @@ abandonados.
 
 - RN1: Só anúncios com situação "expirado" são apagados.
 - RN2: Um anúncio expirado é apagado 30 dias depois do fim do prazo de
-  publicação (o mesmo prazo da spec 004: `expires_at` ou, sem ele, a data de
+  publicação (o mesmo prazo da spec 010: `expires_at` ou, sem ele, a data de
   publicação mais 30 dias). Sem renovação, isso dá 60 dias depois de
   publicado.
 - RN3: Apagar é definitivo: o anúncio sai do banco e a foto sai do
@@ -46,7 +46,7 @@ abandonados.
 ## Fora do escopo
 
 - Avisar o anunciante antes de apagar.
-- Agendar a rotina no servidor de produção (mesma situação da spec 004).
+- Agendar a rotina no servidor de produção (mesma situação da spec 010).
 
 ## Dúvidas em aberto
 

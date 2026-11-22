@@ -20,7 +20,7 @@ Interface (`server/core/interfaces/deletable_ad_repository_interface.py`):
 - `delete_expired(ad_ids) -> list[str | None]`: apaga os que ainda estão
   expirados e devolve a chave da foto de cada um (ou `None`).
 
-Interface separada (ISP), como a `ExpirableAdRepository` da spec 004.
+Interface separada (ISP), como a `ExpirableAdRepository` da spec 010.
 
 ## Infra
 
