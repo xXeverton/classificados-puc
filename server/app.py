@@ -6,8 +6,10 @@ from collections.abc import Mapping
 from datetime import timedelta
 from pathlib import Path
 
+from flask import request
 from flask_cors import CORS
 from flask_openapi3 import Info, OpenAPI
+from werkzeug.exceptions import RequestEntityTooLarge
 
 from server.api.controllers.ads_controller import register_ads_controller
 from server.api.autenticacao import ESQUEMA_DE_SEGURANCA
@@ -43,6 +45,7 @@ from server.core.usecases.obter_usuario_da_sessao import (
 from server.core.usecases.obter_perfil_anunciante import (
     ObterPerfilAnunciante,
 )
+from server.core.usecases.publicar_anuncio import PublicarAnuncio
 from server.core.usecases.reenviar_confirmacao import ReenviarConfirmacao
 from server.core.usecases.salvar_perfil_anunciante import (
     SalvarPerfilAnunciante,
@@ -67,6 +70,8 @@ from server.infra.gateways.usuario_repository_sqlalchemy import (
 from server.infra.gateways.ad_repository_sqlalchemy import (
     AdRepositorySQLAlchemy,
 )
+from server.infra.storage.initialization import init_storage
+from server.infra.storage.storage import ImageStorage
 from server.infra.services import enviador_email_log
 from server.infra.services.armazenamento_foto_local import (
     ArmazenamentoDeFotoLocal,
@@ -96,7 +101,11 @@ _CONFIGURACAO_SMTP_OBRIGATORIA = (
 )
 
 
-def create_app(config: Mapping[str, object] | None = None) -> OpenAPI:
+def create_app(
+    config: Mapping[str, object] | None = None,
+    *,
+    image_storage: ImageStorage | None = None,
+) -> OpenAPI:
     """Create the API and wire its infrastructure dependencies.
 
     Tests may override `RELOGIO`, `ENVIADOR_EMAIL`, and `GERADOR_TOKEN`
@@ -144,18 +153,35 @@ def create_app(config: Mapping[str, object] | None = None) -> OpenAPI:
     if config is not None:
         app.config.update(config)
 
+    storage = init_storage(app, image_storage)
+    app.config["MAX_CONTENT_LENGTH"] = max(
+        TAMANHO_MAXIMO_REQUISICAO_BYTES,
+        storage.config.max_image_bytes + 1024 * 1024,
+    )
+
     engine = create_database_engine(app.config["DATABASE_URL"])
     initialize_database(engine)
     session_factory = create_session_factory(engine)
     app.extensions["database_engine"] = engine
     app.extensions["session_factory"] = session_factory
-    app.extensions["session_factory"] = session_factory
-    app.extensions["ad_repository"] = AdRepositorySQLAlchemy(session_factory)
+    anunciante_repository = AnuncianteRepositorySQLAlchemy(session_factory)
+    relogio = app.config.get("RELOGIO") or RelogioSistema()
+    ad_repository = AdRepositorySQLAlchemy(session_factory, storage)
+    app.extensions["ad_repository"] = ad_repository
+    app.extensions["anunciante_repository"] = anunciante_repository
+    app.extensions["publicar_anuncio"] = PublicarAnuncio(
+        ad_repository,
+        anunciante_repository,
+        relogio,
+    )
 
-    casos_de_uso = _montar_casos_de_uso(app, session_factory)
+    casos_de_uso = _montar_casos_de_uso(app, session_factory, relogio)
     app.extensions["casos_de_uso_autenticacao"] = casos_de_uso
     casos_de_uso_perfil = _montar_casos_de_uso_de_perfil(
-        app, session_factory, casos_de_uso.obter_usuario_da_sessao
+        app,
+        session_factory,
+        casos_de_uso.obter_usuario_da_sessao,
+        anunciante_repository,
     )
 
     cors_origins = app.config["CORS_ORIGINS"]
@@ -174,16 +200,25 @@ def create_app(config: Mapping[str, object] | None = None) -> OpenAPI:
             app.config.get("RELOGIO") or RelogioSistema(),
         ),
     )
+
+    @app.before_request
+    def limitar_requisicoes_fora_da_publicacao():
+        if (
+            request.endpoint != "publicar_ad"
+            and request.content_length is not None
+            and request.content_length > TAMANHO_MAXIMO_REQUISICAO_BYTES
+        ):
+            raise RequestEntityTooLarge()
+
     return app
 
 
-def _montar_casos_de_uso(app: OpenAPI, session_factory):
+def _montar_casos_de_uso(app: OpenAPI, session_factory, relogio):
     usuarios = UsuarioRepositorySQLAlchemy(session_factory)
     tokens = TokenConfirmacaoRepositorySQLAlchemy(session_factory)
     sessoes = SessaoRepositorySQLAlchemy(session_factory)
     app.extensions["usuario_repository"] = usuarios
 
-    relogio = app.config.get("RELOGIO") or RelogioSistema()
     gerador_token = app.config.get("GERADOR_TOKEN") or GeradorDeTokenSecrets()
     enviador_email = app.config.get("ENVIADOR_EMAIL") or _criar_enviador(
         app.config
@@ -217,9 +252,11 @@ def _montar_casos_de_uso(app: OpenAPI, session_factory):
 
 
 def _montar_casos_de_uso_de_perfil(
-    app: OpenAPI, session_factory, obter_usuario_da_sessao
+    app: OpenAPI,
+    session_factory,
+    obter_usuario_da_sessao,
+    anunciantes: AnuncianteRepositorySQLAlchemy,
 ) -> CasosDeUsoDePerfilAnunciante:
-    anunciantes = AnuncianteRepositorySQLAlchemy(session_factory)
     fotos = ArmazenamentoDeFotoLocal(str(app.config["FOTOS_PERFIL_DIR"]))
     return CasosDeUsoDePerfilAnunciante(
         obter_perfil=ObterPerfilAnunciante(anunciantes),

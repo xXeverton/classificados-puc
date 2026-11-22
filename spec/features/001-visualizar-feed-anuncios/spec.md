@@ -9,16 +9,19 @@
 
 **Como** membro da comunidade universitária,
 **quero** visualizar os anúncios publicados,
-**para que** eu possa encontrar produtos/serviços do meu interesse.
+**para que** eu possa encontrar produtos, serviços e eventos do meu interesse.
 
 - A história depende do contrato de publicação de anúncios definido pela PROJ-15.
-- O feed assume que os anúncios publicados respeitam as validações de produto e serviço.
+- Eventos foram incluídos no feed pela decisão do usuário durante a integração
+  das branches PROJ-31 a PROJ-34.
+- O feed assume que os anúncios publicados respeitam as validações de produto,
+  serviço e evento.
 
 ## Critérios de aceitação
 
 - [ ] CA1: Dado que existam anúncios publicados e o usuário esteja autenticado, quando ele acessar o feed, então os anúncios serão exibidos em cards.
 
-- [ ] CA2: Dado que um anúncio possua foto, quando ele for exibido no feed, então o card mostrará a foto, o título, a categoria, o preço e a data de criação.
+- [ ] CA2: Dado que um anúncio possua foto, quando ele for exibido no feed, então o card mostrará a foto, o título, a categoria, o preço, a data de criação e, quando informado, o nome de exibição do anunciante.
 
 - [ ] CA3: Dado que um anúncio não possua foto, quando ele for exibido no feed, então o card manterá sua estrutura sem quebrar o layout.
 
@@ -38,11 +41,12 @@
 
 - [ ] CA11: Dado que existam anúncios correspondentes a um termo, quando o usuário realizar uma busca, então serão exibidos os anúncios cujo título, descrição ou categoria contenha o termo informado.
 
-- [ ] CA12: Dado que o usuário selecione Todos, Produtos ou Serviços, quando o filtro for aplicado, então serão exibidos somente os anúncios do tipo selecionado, exceto quando Todos estiver selecionado.
+- [ ] CA12: Dado que o usuário selecione Todos, Produtos, Serviços ou Eventos, quando o filtro for aplicado, então serão exibidos somente os anúncios do tipo selecionado, exceto quando Todos estiver selecionado.
 
 - [ ] CA13: Dado que o usuário informe uma busca ou selecione um filtro de tipo, quando a busca ou filtro for aplicado, então a listagem retornará à primeira página.
 
 - [ ] CA14: Dado que um anúncio do tipo serviço possua descrição, quando ele for exibido no feed, então o card mostrará uma versão resumida da descrição.
+- [ ] CA15: Dado que um anúncio do tipo evento esteja publicado, quando o usuário filtrar por eventos, então ele será exibido sem exigir estado de conservação de produto.
 
 ## Regras de negócio
 
@@ -55,7 +59,7 @@
 - RN7: A paginação do feed é numerada.
 - RN8: O clique em um card direciona para a página de detalhes do anúncio, conforme a PROJ-17.
 - RN9: A busca considera título, descrição e categoria, sem diferenciar maiúsculas e minúsculas.
-- RN10: Os filtros Todos, Produtos e Serviços podem ser usados junto com a busca.
+- RN10: Os filtros Todos, Produtos, Serviços e Eventos podem ser usados junto com a busca.
 - RN11: Aplicar ou alterar uma busca ou filtro inicia a listagem na primeira página.
 - RN12: Cards de serviços podem exibir uma descrição resumida além dos campos comuns.
 

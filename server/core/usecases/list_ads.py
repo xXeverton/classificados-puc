@@ -11,7 +11,7 @@ class ListAds:
     """List published advertisements for an authenticated user."""
 
     PER_PAGE = 20
-    VALID_TYPES = {"all", "product", "service"}
+    VALID_TYPES = {"all", "product", "service", "event"}
 
     def __init__(self, repository: AdRepository):
         self.repository = repository
@@ -81,7 +81,7 @@ class ListAds:
     def _validate_ad_type(cls, ad_type: str | None) -> None:
         if ad_type is not None and ad_type not in cls.VALID_TYPES:
             raise ValueError(
-                "Tipo deve ser all, product ou service.",
+                "Tipo deve ser all, product, service ou event.",
             )
 
     @staticmethod

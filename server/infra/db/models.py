@@ -264,9 +264,20 @@ class AdModel(Base):
 
     __tablename__ = "ads"
     __table_args__ = (
-        CheckConstraint("length(trim(title)) > 0", name="ck_ads_title"),
         CheckConstraint(
-            "type IN ('product', 'service')",
+            "length(trim(title)) BETWEEN 5 AND 80",
+            name="ck_ads_title",
+        ),
+        CheckConstraint(
+            "(usuario_id IS NULL AND ("
+            "description IS NULL OR length(description) <= 500)) "
+            "OR (usuario_id IS NOT NULL AND description IS NOT NULL "
+            "AND length(trim(description)) > 0 "
+            "AND length(description) <= 500)",
+            name="ck_ads_description",
+        ),
+        CheckConstraint(
+            "type IN ('product', 'service', 'event')",
             name="ck_ads_type",
         ),
         CheckConstraint(
@@ -276,6 +287,15 @@ class AdModel(Base):
         CheckConstraint(
             "status IN ('published', 'sold', 'expired')",
             name="ck_ads_status",
+        ),
+        CheckConstraint(
+            "estado_conservacao IS NULL OR "
+            "estado_conservacao IN ('novo', 'usado_regular')",
+            name="ck_ads_estado_conservacao",
+        ),
+        CheckConstraint(
+            "preco_a_combinar IN (0, 1)",
+            name="ck_ads_preco_a_combinar",
         ),
         {"sqlite_autoincrement": True},
     )
@@ -300,3 +320,18 @@ class AdModel(Base):
         UTCDateTime,
         nullable=True,
     )
+    usuario_id: Mapped[int | None] = mapped_column(
+        Integer,
+        ForeignKey("usuarios.id", ondelete="CASCADE"),
+        nullable=True,
+    )
+    estado_conservacao: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+    )
+    preco_a_combinar: Mapped[bool] = mapped_column(
+        nullable=False,
+        default=False,
+        server_default="0",
+    )
+    image_key: Mapped[str | None] = mapped_column(Text, nullable=True)

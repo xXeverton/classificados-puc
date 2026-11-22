@@ -2,6 +2,7 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
+from server.core.entities.anuncio import Anuncio
 from server.core.entities.ad import Ad
 from server.core.entities.usuario import Usuario
 from server.core.interfaces.ad_repository_interface import AdRepository
@@ -70,6 +71,15 @@ class InMemoryAdRepository(AdRepository):
         start = (page - 1) * per_page
         end = start + per_page
         return available_ads[start:end], len(available_ads)
+
+    def publish(
+        self,
+        anuncio: Anuncio,
+        nome_anunciante: str,
+        criado_em: datetime,
+        expira_em: datetime,
+    ) -> Ad:
+        raise NotImplementedError
 
 
 def make_ad(
@@ -174,12 +184,21 @@ def test_list_ads_searches_title_description_and_category(
 @pytest.mark.parametrize(
     ("ad_type", "expected_titles"),
     [
-        ("all", ["Notebook usado", "Aulas de inglês", "Mesa"]),
+        (
+            "all",
+            [
+                "Notebook usado",
+                "Aulas de inglês",
+                "Mesa",
+                "Feira comunitária",
+            ],
+        ),
         ("product", ["Notebook usado", "Mesa"]),
         ("service", ["Aulas de inglês"]),
+        ("event", ["Feira comunitária"]),
     ],
 )
-def test_list_ads_filters_all_products_and_services(
+def test_list_ads_filters_products_services_and_events(
     ad_type,
     expected_titles,
 ):
@@ -192,6 +211,12 @@ def test_list_ads_filters_all_products_and_services(
             ad_type="service",
         ),
         make_ad("Mesa", "published", category="Casa", ad_type="product"),
+        make_ad(
+            "Feira comunitária",
+            "published",
+            category="Evento",
+            ad_type="event",
+        ),
     ]
     repository = InMemoryAdRepository(ads)
     list_ads = ListAds(repository)
@@ -370,6 +395,19 @@ def test_list_ads_rejects_invalid_parameters(invalid_arguments):
         list_ads.execute(
             usuario=make_authenticated_user(),
             **invalid_arguments,
+        )
+
+
+def test_list_ads_invalid_type_error_lists_event_as_supported():
+    list_ads = ListAds(InMemoryAdRepository([]))
+
+    with pytest.raises(
+        ValueError,
+        match="Tipo deve ser all, product, service ou event.",
+    ):
+        list_ads.execute(
+            usuario=make_authenticated_user(),
+            ad_type="unsupported",
         )
 
 

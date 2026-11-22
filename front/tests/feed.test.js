@@ -62,9 +62,17 @@ test("parametros padrao, validacao e URL da API", () => {
     parametrosDoFeed(new URLSearchParams("page=3&search=livro&type=product")),
     { page: 3, search: "livro", type: "product" },
   );
+  assert.deepEqual(
+    parametrosDoFeed(new URLSearchParams("type=event")),
+    { page: 1, search: "", type: "event" },
+  );
   assert.equal(
     montarUrlApi({ page: 2, search: "cálculo", type: "product" }),
     "/api/ads?"+ "page=2&search=c%C3%A1lculo&type=product",
+  );
+  assert.equal(
+    montarUrlApi({ page: 1, type: "event" }),
+    "/api/ads?page=1&type=event",
   );
 });
 

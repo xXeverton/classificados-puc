@@ -1,3 +1,5 @@
+import sqlite3
+
 import pytest
 from sqlalchemy import inspect, text
 from sqlalchemy.exc import IntegrityError
@@ -162,6 +164,10 @@ def test_initialize_database_creates_ads_table(database_engine):
         "created_at",
         "status",
         "expires_at",
+        "usuario_id",
+        "estado_conservacao",
+        "preco_a_combinar",
+        "image_key",
     ]
     assert {
         column["name"]: str(column["type"]).upper() for column in columns
@@ -176,6 +182,10 @@ def test_initialize_database_creates_ads_table(database_engine):
         "created_at": "DATETIME",
         "status": "TEXT",
         "expires_at": "DATETIME",
+        "usuario_id": "INTEGER",
+        "estado_conservacao": "TEXT",
+        "preco_a_combinar": "BOOLEAN",
+        "image_key": "TEXT",
     }
     assert columns[0]["primary_key"] == 1
     assert all(
@@ -235,7 +245,58 @@ def test_ads_rejects_invalid_constrained_values(
         insert_ad(database_engine, **{column: value})
 
 
-def test_ads_allows_optional_description_and_image(database_engine):
+@pytest.mark.parametrize("title", ["abcd", "a" * 81])
+def test_ads_rejects_title_outside_specified_length(
+    database_engine, title
+):
+    usuario_id = insert_usuario(database_engine)
+    with pytest.raises(IntegrityError):
+        insert_ad(database_engine, title=title, usuario_id=usuario_id)
+
+
+@pytest.mark.parametrize("title", ["a" * 5, "a" * 80])
+def test_ads_accepts_title_at_specified_length_boundaries(
+    database_engine, title
+):
+    usuario_id = insert_usuario(database_engine)
+    insert_ad(database_engine, title=title, usuario_id=usuario_id)
+
+
+def test_ads_rejects_description_over_500_characters(database_engine):
+    usuario_id = insert_usuario(database_engine)
+    with pytest.raises(IntegrityError):
+        insert_ad(
+            database_engine,
+            description="a" * 501,
+            usuario_id=usuario_id,
+        )
+
+
+def test_ads_accepts_description_at_500_character_limit(database_engine):
+    usuario_id = insert_usuario(database_engine)
+    insert_ad(
+        database_engine,
+        description="a" * 500,
+        usuario_id=usuario_id,
+    )
+
+
+@pytest.mark.parametrize("description", [None, "", " "])
+def test_ads_requires_description_for_owned_ads(
+    database_engine, description
+):
+    usuario_id = insert_usuario(database_engine)
+    with pytest.raises(IntegrityError):
+        insert_ad(
+            database_engine,
+            description=description,
+            usuario_id=usuario_id,
+        )
+
+
+def test_ads_allows_legacy_null_description_and_optional_image(
+    database_engine,
+):
     insert_ad(
         database_engine,
         description=None,
@@ -688,3 +749,102 @@ def test_removing_usuario_cascades_to_anunciante_and_contatos(
 
     assert count(database_engine, "anunciantes") == 0
     assert count(database_engine, "contatos_anunciante") == 0
+
+
+def test_initialize_migrates_existing_ads_without_losing_rows():
+    engine = database.create_database_engine("sqlite:///:memory:")
+    with engine.begin() as connection:
+        connection.exec_driver_sql(
+            """
+            CREATE TABLE ads (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                title TEXT NOT NULL,
+                description TEXT,
+                type TEXT NOT NULL
+                    CHECK (type IN ('product', 'service')),
+                category TEXT NOT NULL,
+                price REAL NOT NULL,
+                image_url TEXT,
+                created_at DATETIME NOT NULL,
+                status TEXT NOT NULL,
+                expires_at DATETIME
+            )
+            """
+        )
+        connection.execute(
+            text(
+                "INSERT INTO ads "
+                "(title, type, category, price, created_at, status) "
+                "VALUES ('Livro antigo', 'product', 'Livros', 12.5, "
+                "'2026-11-20 12:00:00', 'published')"
+            )
+        )
+
+    database.initialize_database(engine)
+    database.initialize_database(engine)
+
+    with engine.connect() as connection:
+        row = connection.execute(
+            text(
+                "SELECT title, price, usuario_id, estado_conservacao, "
+                "preco_a_combinar, image_key FROM ads"
+            )
+        ).one()
+        version = connection.exec_driver_sql("PRAGMA user_version").scalar()
+
+    assert row == ("Livro antigo", 12.5, None, None, 0, None)
+    assert version == 3
+    with pytest.raises(IntegrityError):
+        with engine.begin() as connection:
+            connection.execute(
+                text(
+                    "INSERT INTO ads "
+                    "(title, type, category, price, created_at, status) "
+                    "VALUES ('Outro evento', 'invalid', 'evento', 0, "
+                    "'2026-11-20 12:00:00', 'published')"
+                )
+            )
+    engine.dispose()
+
+
+def test_ads_constraint_migration_preserves_invalid_legacy_row_on_failure():
+    engine = database.create_database_engine("sqlite:///:memory:")
+    with engine.begin() as connection:
+        connection.exec_driver_sql(
+            """
+            CREATE TABLE ads (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                title TEXT NOT NULL,
+                description TEXT,
+                type TEXT NOT NULL
+                    CHECK (type IN ('product', 'service')),
+                category TEXT NOT NULL,
+                price REAL NOT NULL,
+                image_url TEXT,
+                created_at DATETIME NOT NULL,
+                status TEXT NOT NULL,
+                expires_at DATETIME
+            )
+            """
+        )
+        connection.execute(
+            text(
+                "INSERT INTO ads "
+                "(title, type, category, price, created_at, status) "
+                "VALUES ('Ruim', 'product', 'Livros', 12.5, "
+                "'2026-11-20 12:00:00', 'published')"
+            )
+        )
+
+    with pytest.raises(sqlite3.IntegrityError):
+        database.initialize_database(engine)
+
+    with engine.connect() as connection:
+        row = connection.execute(
+            text("SELECT title FROM ads")
+        ).scalar_one()
+        version = connection.exec_driver_sql("PRAGMA user_version").scalar()
+
+    assert row == "Ruim"
+    assert version == 2
+    engine.dispose()

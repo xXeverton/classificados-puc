@@ -55,7 +55,7 @@ def test_repository_filters_by_inclusive_price_range(database_engine):
             make_priced_ad_model("Barato", 49.99),
             make_priced_ad_model("No mínimo", 50),
             make_priced_ad_model("No máximo", 100),
-            make_priced_ad_model("Caro", 100.01),
+            make_priced_ad_model("Caro!", 100.01),
         ],
     )
 
@@ -64,7 +64,7 @@ def test_repository_filters_by_inclusive_price_range(database_engine):
         2,
     )
     assert list_titles(database_engine, min_price=100)[0] == [
-        "Caro",
+        "Caro!",
         "No máximo",
     ]
     assert list_titles(database_engine, max_price=50)[0] == [

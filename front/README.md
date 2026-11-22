@@ -1,17 +1,50 @@
 # Interface web (`front/`)
 
-HTML, CSS e JavaScript puros, sem build nem dependências de npm. Com a API
-rodando e `CORS_ORIGINS=http://localhost:5173`:
+HTML, CSS e JavaScript puros, sem build nem dependências de npm. Rode a API e
+o servidor de desenvolvimento do front:
 
 ```bash
-make front        # servidor em http://localhost:5173
+make front        # frontend + proxy da API em http://localhost:5173
 make front-test   # testes do front (Node 18 ou mais novo)
 ```
+
+O servidor do front encaminha as rotas da API para `127.0.0.1:5000`, usando a
+mesma origem do navegador. Assim, login e demais chamadas funcionam também
+quando o Codespaces encaminha apenas a porta 5173 para o navegador.
 
 ## Telas
 
 `/entrar/`, `/cadastro/`, `/confirmar-email/`, `/inicio/`, `/perfil/`,
-`/perfil/anunciante/` e `/anuncios/novo/` (provisória).
+`/perfil/anunciante/` e `/anuncios/novo/`.
+
+## Publicação de anúncios
+
+A tela `/anuncios/novo/` publica em `POST /api/ads`, usando o contrato já
+suportado pela API: título, categoria (`produto`, `servico` ou `evento`),
+descrição, estado de conservação somente para produtos e preço normalizado
+com duas casas decimais ou a opção `preco_a_combinar`. O título aceita de 5 a
+80 caracteres; a descrição, até 500. Os contadores e a validação contam pontos
+de código Unicode, como o backend.
+
+A publicação exige sessão e perfil de anunciante completo. A página verifica
+o perfil antes de exibir o formulário e a API o valida novamente ao publicar.
+Como o front é estático e autentica por Bearer token no navegador, a rota da
+página não tem proteção server-side; a autorização efetiva ocorre na API.
+Erros de validação são associados aos campos e falhas de conexão, sessão
+expirada e perfil incompleto mantêm estados distintos.
+
+O contrato atual aceita no máximo uma foto opcional no campo `imagem`, de até
+5 MiB e nos formatos JPG, PNG ou WebP. A tela mantém esse limite compatível
+com a API; não envia múltiplos arquivos. Não foi adicionada uma rota de backend
+nem uma nova entidade de anunciante.
+
+Roteiro manual: entre com uma conta cujo perfil de anunciante esteja completo;
+publique um produto com estado e preço, um serviço ou evento sem estado, e um
+anúncio com preço `A combinar`; confira a confirmação no feed. Teste também
+título abaixo de 5 e acima de 80 caracteres, descrição acima de 500, preço
+inválido, formatos/tamanho de foto inválidos, perfil incompleto, sessão
+expirada e indisponibilidade da API. Erros de campo devem aparecer junto ao
+controle correspondente e o formulário deve preservar os dados em falhas.
 
 ## Organização
 

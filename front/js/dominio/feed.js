@@ -1,4 +1,4 @@
-const TIPOS = new Set(["all", "product", "service"]);
+const TIPOS = new Set(["all", "product", "service", "event"]);
 
 export function resumirDescricao(descricao, limite = 120) {
   if (!descricao) return null;
@@ -17,6 +17,8 @@ export function dadosDoCard(anuncio) {
     data: anuncio.created_at,
     imagem: anuncio.image_url ?? null,
     tipo: anuncio.type,
+    nomeAnunciante: anuncio.nome_anunciante ?? null,
+    precoACombinar: anuncio.preco_a_combinar ?? false,
     descricaoResumida: anuncio.type === "service"
       ? resumirDescricao(anuncio.description)
       : null,

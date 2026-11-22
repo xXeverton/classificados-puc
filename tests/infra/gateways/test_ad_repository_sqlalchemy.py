@@ -80,6 +80,41 @@ def test_repository_lists_only_available_ads_in_descending_order(
     assert total == 2
 
 
+def test_repository_excludes_ads_past_their_expiration(database_engine):
+    now = datetime.now(timezone.utc)
+    active_ad = make_ad_model(
+        "Anúncio válido",
+        now,
+        expires_at=now + timedelta(days=1),
+    )
+    expired_ad = make_ad_model(
+        "Anúncio vencido",
+        now - timedelta(days=1),
+        expires_at=now - timedelta(seconds=1),
+    )
+    legacy_ad = make_ad_model(
+        "Anúncio sem prazo legado",
+        now - timedelta(days=2),
+    )
+    add_ads(database_engine, [active_ad, expired_ad, legacy_ad])
+    repository = AdRepositorySQLAlchemy(
+        create_session_factory(database_engine),
+    )
+
+    items, total = repository.list_published(
+        page=1,
+        per_page=20,
+        search=None,
+        ad_type=None,
+    )
+
+    assert [ad.title for ad in items] == [
+        "Anúncio válido",
+        "Anúncio sem prazo legado",
+    ]
+    assert total == 2
+
+
 @pytest.mark.parametrize(
     ("search", "expected_title"),
     [

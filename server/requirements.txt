@@ -1,5 +1,6 @@
 # Dependências da aplicação
 Flask==3.0.3
+boto3>=1.34,<2
 Flask-Cors==6.0.5
 Flask-OpenAPI3==4.3.2
 SQLAlchemy==2.0.57

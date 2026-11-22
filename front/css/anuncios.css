@@ -1,0 +1,75 @@
+.pagina {
+  max-width: 720px;
+  padding-top: var(--espaco-7);
+  padding-bottom: var(--espaco-7);
+}
+
+.opcoes-preco {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-3);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.opcoes-preco__itens {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espaco-4);
+}
+
+.opcoes-preco__item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espaco-2);
+}
+
+.preco__entrada {
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-2);
+}
+
+.preco__entrada .campo__entrada {
+  min-width: 0;
+}
+
+.campo__contador {
+  align-self: flex-end;
+  font-size: var(--texto-xs);
+  color: var(--cor-texto-suave);
+}
+
+.foto-previa {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--espaco-3);
+}
+
+.foto-previa img {
+  width: 144px;
+  height: 108px;
+  object-fit: cover;
+  border-radius: var(--raio-cartao);
+  background: var(--cor-primaria-clara);
+}
+
+.acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espaco-3);
+}
+
+@media (max-width: 480px) {
+  .pagina {
+    padding-top: var(--espaco-5);
+    padding-bottom: var(--espaco-5);
+  }
+
+  .acoes .botao {
+    flex: 1 1 100%;
+  }
+}

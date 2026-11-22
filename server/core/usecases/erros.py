@@ -61,5 +61,9 @@ class PerfilNaoEncontrado(ErroDeCasoDeUso):
     mensagem_padrao = "Perfil de anunciante não encontrado."
 
 
+class PerfilIncompleto(ErroDeCasoDeUso):
+    mensagem_padrao = "Complete seu perfil para publicar anúncios."
+
+
 class FotoInvalida(ErroDeCasoDeUso):
     mensagem_padrao = "Foto inválida."
