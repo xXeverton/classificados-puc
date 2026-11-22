@@ -12,5 +12,10 @@ export function criarAdsApi(cliente) {
     editar: (id, dados) => cliente.requisitar("PUT", `/api/ads/${id}`, dados),
     excluir: (id) => cliente.requisitar("DELETE", `/api/ads/${id}`),
     renovar: (id) => cliente.requisitar("POST", `/api/ads/${id}/renovar`),
+    alterarStatus: (id, status) => cliente.requisitar(
+      "PATCH",
+      `/api/ads/${id}/status`,
+      { status },
+    ),
   };
 }

@@ -6,6 +6,7 @@ import {
   montarDependencias,
   ROTAS,
 } from "./comum.js";
+import { SECOES_DO_PAINEL, acoesDoAnuncio } from "../dominio/meus_anuncios.js";
 import { chamarApi } from "../fluxos/conexao.js";
 import { carregarUsuario } from "../fluxos/sessao_atual.js";
 
@@ -19,19 +20,24 @@ if (usuario.tipo !== "logado") {
   irPara(ROTAS.entrar, usuario.mensagem ? "sessao_expirada" : undefined);
 } else {
   conteudo.hidden = false;
-  await carregarStatus("published", "publicados", "paginacao-publicados", "vazio-publicados");
-  await carregarStatus("expired", "expirados", "paginacao-expirados", "vazio-expirados");
+  await carregarTodas();
 }
 
-async function carregarStatus(status, gradeId, paginacaoId, vazioId) {
-  const grade = document.querySelector(`#${gradeId}`);
-  const paginacao = document.querySelector(`#${paginacaoId}`);
-  const vazio = document.querySelector(`#${vazioId}`);
+async function carregarTodas() {
+  for (const secao of SECOES_DO_PAINEL) {
+    await carregarSecao(secao, 1);
+  }
+}
+
+async function carregarSecao(secao, page) {
+  const grade = document.querySelector(`#${secao.lista}`);
+  const paginacao = document.querySelector(`#${secao.paginacao}`);
+  const vazio = document.querySelector(`#${secao.vazio}`);
   grade.replaceChildren();
   paginacao.replaceChildren();
 
   const { resposta, falha } = await chamarApi(
-    () => deps.adsApi.listarMeus(status),
+    () => deps.adsApi.listarMeus(secao.status, page),
   );
   if (falha) {
     mostrarAlerta(alerta, "erro", "Não foi possível carregar seus anúncios.");
@@ -47,14 +53,11 @@ async function carregarStatus(status, gradeId, paginacaoId, vazioId) {
   }
 
   vazio.hidden = resposta.corpo.items.length !== 0;
-  vazio.textContent = status === "published"
-    ? "Você ainda não possui anúncios publicados."
-    : "Você não possui anúncios expirados.";
-
+  vazio.textContent = secao.textoVazio;
   for (const anuncio of resposta.corpo.items) {
-    grade.append(criarCard(anuncio, status));
+    grade.append(criarCard(anuncio, secao.status));
   }
-  renderizarPaginacao(paginacao, status, resposta.corpo.page, resposta.corpo.total_pages);
+  renderizarPaginacao(paginacao, secao, resposta.corpo.page, resposta.corpo.total_pages);
 }
 
 function criarCard(anuncio, status) {
@@ -76,59 +79,42 @@ function criarCard(anuncio, status) {
       : new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(anuncio.price),
   ));
   const acoes = criar("div", "acoes");
-
-  const editar = criar("a", "botao botao--contorno", "Editar");
-  editar.href = `/anuncios/novo/?editar=${anuncio.id}`;
-  acoes.append(editar);
-
-  const excluir = criar("button", "botao botao--contorno", "Excluir");
-  excluir.type = "button";
-  excluir.addEventListener("click", () => excluirAnuncio(anuncio.id));
-  acoes.append(excluir);
-
-  if (status === "expired") {
-    const renovar = criar("button", "botao botao--primario", "Renovar");
-    renovar.type = "button";
-    renovar.addEventListener("click", () => renovarAnuncio(anuncio.id));
-    acoes.append(renovar);
+  for (const acao of acoesDoAnuncio(status)) {
+    acoes.append(criarBotaoDeAcao(acao, anuncio));
   }
-
   corpo.append(acoes);
   card.append(corpo);
   return card;
 }
 
-function renderizarPaginacao(navegacao, status, paginaAtual, totalPaginas) {
+function criarBotaoDeAcao(acao, anuncio) {
+  const classe = `botao botao--${acao.estilo}`;
+  if (acao.tipo === "editar") {
+    const editar = criar("a", classe, acao.rotulo);
+    editar.href = `/anuncios/novo/?editar=${anuncio.id}`;
+    return editar;
+  }
+  const botao = criar("button", classe, acao.rotulo);
+  botao.type = "button";
+  const executar = {
+    excluir: () => excluirAnuncio(anuncio.id),
+    renovar: () => renovarAnuncio(anuncio.id),
+    vender: () => alterarStatus(anuncio.id, acao),
+    reativar: () => alterarStatus(anuncio.id, acao),
+  }[acao.tipo];
+  botao.addEventListener("click", executar);
+  return botao;
+}
+
+function renderizarPaginacao(navegacao, secao, paginaAtual, totalPaginas) {
   if (totalPaginas <= 1) return;
   for (let pagina = 1; pagina <= totalPaginas; pagina += 1) {
     const botao = criar("button", "paginacao__item", String(pagina));
     botao.type = "button";
     botao.disabled = pagina === paginaAtual;
-    botao.addEventListener("click", async () => {
-      const gradeId = status === "published" ? "publicados" : "expirados";
-      const vazioId = status === "published" ? "vazio-publicados" : "vazio-expirados";
-      await carregarPaginaStatus(status, gradeId, navegacao.id, vazioId, pagina);
-    });
+    botao.addEventListener("click", () => carregarSecao(secao, pagina));
     navegacao.append(botao);
   }
-}
-
-async function carregarPaginaStatus(status, gradeId, paginacaoId, vazioId, page) {
-  const grade = document.querySelector(`#${gradeId}`);
-  const paginacao = document.querySelector(`#${paginacaoId}`);
-  const vazio = document.querySelector(`#${vazioId}`);
-  grade.replaceChildren();
-  paginacao.replaceChildren();
-  const { resposta, falha } = await chamarApi(
-    () => deps.adsApi.listarMeus(status, page),
-  );
-  if (falha || resposta.status !== 200) {
-    mostrarAlerta(alerta, "erro", "Não foi possível carregar seus anúncios.");
-    return;
-  }
-  vazio.hidden = resposta.corpo.items.length !== 0;
-  for (const anuncio of resposta.corpo.items) grade.append(criarCard(anuncio, status));
-  renderizarPaginacao(paginacao, status, resposta.corpo.page, resposta.corpo.total_pages);
 }
 
 async function excluirAnuncio(id) {
@@ -141,8 +127,7 @@ async function excluirAnuncio(id) {
     return;
   }
   mostrarAlerta(alerta, "sucesso", "Anúncio excluído.");
-  await carregarStatus("published", "publicados", "paginacao-publicados", "vazio-publicados");
-  await carregarStatus("expired", "expirados", "paginacao-expirados", "vazio-expirados");
+  await carregarTodas();
 }
 
 async function renovarAnuncio(id) {
@@ -155,6 +140,18 @@ async function renovarAnuncio(id) {
     return;
   }
   mostrarAlerta(alerta, "sucesso", "Anúncio renovado por 30 dias.");
-  await carregarStatus("published", "publicados", "paginacao-publicados", "vazio-publicados");
-  await carregarStatus("expired", "expirados", "paginacao-expirados", "vazio-expirados");
+  await carregarTodas();
+}
+
+async function alterarStatus(id, acao) {
+  if (!window.confirm(acao.confirmacao)) return;
+  const { resposta, falha } = await chamarApi(
+    () => deps.adsApi.alterarStatus(id, acao.novoStatus),
+  );
+  if (falha || resposta.status !== 200) {
+    mostrarAlerta(alerta, "erro", resposta?.corpo?.message ?? "Não foi possível alterar o anúncio.");
+    return;
+  }
+  mostrarAlerta(alerta, "sucesso", acao.sucesso);
+  await carregarTodas();
 }
