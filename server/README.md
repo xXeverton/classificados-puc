@@ -7,7 +7,7 @@ banco, em [infra/db/README.md](infra/db/README.md).
 ## Executar
 
 ```bash
-flask --app server.app:create_app run --debug
+make backend
 ```
 
 Sobe em http://127.0.0.1:5000. `GET /health` deve responder
@@ -49,6 +49,41 @@ curl -X POST http://127.0.0.1:5000/auth/confirmacao \
   -H "Content-Type: application/json" -d '{"token": "<token>"}'
 ```
 
+### Conta e dados para teste manual
+
+Para testar as telas sem passar pelo fluxo de confirmação de e-mail, gere
+dados de demonstração **somente no banco SQLite padrão local**
+(`server/database/db.sqlite3`). O comando requer duas confirmações explícitas:
+`ALLOW_DEMO_DATA=1` e `DEMO_PASSWORD` (mínimo de 8 caracteres). Ele não aceita
+outros bancos, incluindo bancos em memória, e não envia e-mail.
+
+PowerShell, a partir da raiz do repositório:
+
+```powershell
+$senha = Read-Host "Senha da conta demo" -AsSecureString
+$env:DEMO_PASSWORD = (New-Object System.Net.NetworkCredential("", $senha)).Password
+$env:ALLOW_DEMO_DATA = "1"
+make demo-data
+Remove-Item Env:DEMO_PASSWORD, Env:ALLOW_DEMO_DATA
+```
+
+Git Bash:
+
+```bash
+read -s DEMO_PASSWORD
+export DEMO_PASSWORD
+export ALLOW_DEMO_DATA=1
+make demo-data
+unset DEMO_PASSWORD ALLOW_DEMO_DATA
+```
+
+Entre usando o identificador `demo-classificados` (ou
+`usuario.teste@aluno.puc-rio.br`) e a senha escolhida localmente. O comando
+cria um perfil completo, quatro anúncios publicados, três expirados e um
+vendido. Ele pode ser executado novamente para adicionar exemplos ausentes;
+cada execução redefine a senha da conta reservada para a informada. Não use
+esses dados em ambientes compartilhados ou de produção.
+
 ## Perfil de anunciante e fotos
 
 Rotas protegidas: `GET` e `PUT /perfil-anunciante` e
@@ -65,9 +100,11 @@ backup dela junto com o banco.
 ## Expiração de anúncios
 
 Um anúncio publicado vale por 30 dias, contados da publicação ou da última
-renovação (`expires_at`). Anúncios vencidos não saem do feed sozinhos: o
-comando abaixo os marca como `expired` e informa quantos expirou. Ele pode
-rodar quantas vezes for preciso; vendidos e já expirados não mudam.
+renovação (`expires_at`). Ao salvar uma edição de anúncio expirado, ele também
+é renovado automaticamente por mais 30 dias. Anúncios vencidos não saem do
+feed sozinhos: o comando abaixo os marca como `expired` e informa quantos
+expirou. Ele pode rodar quantas vezes for preciso; vendidos e já expirados não
+mudam.
 
 ```bash
 flask --app server.app:create_app expirar-anuncios

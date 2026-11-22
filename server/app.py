@@ -228,6 +228,8 @@ def create_app(
             app.config.get("RELOGIO") or RelogioSistema(),
         ),
         storage,
+        session_factory,
+        engine,
     )
 
     @app.before_request
