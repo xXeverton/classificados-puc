@@ -46,6 +46,8 @@ from server.core.usecases.obter_perfil_anunciante import (
     ObterPerfilAnunciante,
 )
 from server.core.usecases.publicar_anuncio import PublicarAnuncio
+from server.core.usecases.editar_anuncio import EditarAnuncio
+from server.core.usecases.excluir_anuncio import ExcluirAnuncio
 from server.core.usecases.reenviar_confirmacao import ReenviarConfirmacao
 from server.core.usecases.salvar_perfil_anunciante import (
     SalvarPerfilAnunciante,
@@ -174,6 +176,8 @@ def create_app(
         anunciante_repository,
         relogio,
     )
+    app.extensions["editar_anuncio"] = EditarAnuncio(ad_repository)
+    app.extensions["excluir_anuncio"] = ExcluirAnuncio(ad_repository)
 
     casos_de_uso = _montar_casos_de_uso(app, session_factory, relogio)
     app.extensions["casos_de_uso_autenticacao"] = casos_de_uso

@@ -8,6 +8,9 @@ from sqlalchemy.orm import Session, sessionmaker
 from server.core.entities.ad import Ad
 from server.core.entities.anuncio import Anuncio
 from server.core.interfaces.ad_repository_interface import AdRepository
+from server.core.interfaces.anuncio_editavel_repository_interface import (
+    AnuncioEditavelRepositoryInterface,
+)
 from server.core.interfaces.expirable_ad_repository_interface import (
     ExpirableAdRepository,
 )
@@ -15,8 +18,12 @@ from server.infra.db.models import AdModel, AnuncianteModel
 from server.infra.storage.storage import ImageStorage
 
 
-class AdRepositorySQLAlchemy(AdRepository, ExpirableAdRepository):
-    """Query, publish, and expire advertisements through SQLAlchemy."""
+class AdRepositorySQLAlchemy(
+    AdRepository,
+    ExpirableAdRepository,
+    AnuncioEditavelRepositoryInterface,
+):
+    """Query, publish, edit, delete and expire ads through SQLAlchemy."""
 
     def __init__(
         self,
@@ -143,6 +150,43 @@ class AdRepositorySQLAlchemy(AdRepository, ExpirableAdRepository):
             session.flush()
             return self._to_entity(model, nome_anunciante)
 
+    def buscar_por_id(self, ad_id: int) -> Ad | None:
+        with self._session_factory() as session:
+            return self._buscar_com_anunciante(session, ad_id)
+
+    def atualizar(self, ad_id: int, anuncio: Anuncio) -> Ad:
+        with self._session_factory.begin() as session:
+            model = session.get(AdModel, ad_id)
+            model.title = anuncio.titulo
+            model.description = anuncio.descricao
+            model.price = float(anuncio.preco or 0)
+            model.preco_a_combinar = anuncio.preco is None
+            model.estado_conservacao = anuncio.estado_conservacao
+            session.flush()
+            return self._buscar_com_anunciante(session, ad_id)
+
+    def excluir(self, ad_id: int) -> None:
+        with self._session_factory.begin() as session:
+            model = session.get(AdModel, ad_id)
+            if model is not None:
+                session.delete(model)
+
+    def _buscar_com_anunciante(
+        self, session: Session, ad_id: int
+    ) -> Ad | None:
+        row = session.execute(
+            select(AdModel, AnuncianteModel.nome_exibicao)
+            .outerjoin(
+                AnuncianteModel,
+                AnuncianteModel.usuario_id == AdModel.usuario_id,
+            )
+            .where(AdModel.id == ad_id)
+        ).first()
+        if row is None:
+            return None
+        model, nome_anunciante = row
+        return self._to_entity(model, nome_anunciante)
+
     def _to_entity(
         self, model: AdModel, nome_anunciante: str | None = None
     ) -> Ad:
@@ -168,4 +212,6 @@ class AdRepositorySQLAlchemy(AdRepository, ExpirableAdRepository):
             nome_anunciante=nome_anunciante,
             estado_conservacao=model.estado_conservacao,
             preco_a_combinar=model.preco_a_combinar,
+            usuario_id=model.usuario_id,
+            image_key=model.image_key,
         )

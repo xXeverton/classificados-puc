@@ -26,6 +26,10 @@ class Ad:
     nome_anunciante: str | None = None
     estado_conservacao: str | None = None
     preco_a_combinar: bool = False
+    # Owner and stored photo key: used to manage the ad, never shown in the
+    # public card. Old ads published before owners existed have no owner.
+    usuario_id: int | None = None
+    image_key: str | None = None
 
     def publication_ends_at(self) -> datetime:
         """End of the publication period.
