@@ -153,3 +153,18 @@ def test_exclui_anuncio_do_banco(database_engine):
     assert repositorio.buscar_por_id(outro.id) is not None
     with session_factory() as session:
         assert session.get(AdModel, publicado.id) is None
+
+
+def test_altera_so_o_status_e_mantem_o_resto(database_engine):
+    repositorio, session_factory = preparar(database_engine)
+    publicado = publicar(repositorio)
+
+    vendido = repositorio.alterar_status(publicado.id, "sold")
+
+    assert vendido.status == "sold"
+    assert vendido.title == publicado.title
+    with session_factory() as session:
+        model = session.get(AdModel, publicado.id)
+        assert model.status == "sold"
+        assert model.expires_at == EXPIRA_EM
+        assert model.image_key == "anuncios/livro.webp"

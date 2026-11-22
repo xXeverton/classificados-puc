@@ -35,3 +35,7 @@ class AnuncioEditavelRepositoryInterface(ABC):
     @abstractmethod
     def renovar(self, ad_id: int, expires_at: datetime) -> Ad:
         """Publish the ad again with a new expiration deadline."""
+
+    @abstractmethod
+    def alterar_status(self, ad_id: int, status: str) -> Ad:
+        """Set only the status (sold, published or expired) of the ad."""

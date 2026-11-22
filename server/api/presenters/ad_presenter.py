@@ -22,6 +22,8 @@ class AdViewSchema(BaseModel):
     nome_anunciante: str | None = None
     estado_conservacao: str | None = None
     preco_a_combinar: bool = False
+    status: str | None = None
+    expires_at: datetime | None = None
 
 
 class AdsFeedViewSchema(BaseModel):
@@ -61,6 +63,8 @@ def apresenta_ad(ad: Ad) -> AdViewSchema:
         nome_anunciante=ad.nome_anunciante,
         estado_conservacao=ad.estado_conservacao,
         preco_a_combinar=ad.preco_a_combinar,
+        status=ad.status,
+        expires_at=ad.expires_at,
     )
 
 

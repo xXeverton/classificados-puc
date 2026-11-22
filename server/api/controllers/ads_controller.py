@@ -14,7 +14,6 @@ from pydantic import BaseModel
 from werkzeug.exceptions import RequestEntityTooLarge
 
 from werkzeug.datastructures import FileStorage
-from pydantic import BaseModel
 
 from server.api.autenticacao import SEGURANCA_BEARER, exige_sessao
 from server.api.presenters.ad_presenter import (
@@ -42,6 +41,8 @@ from server.core.usecases.erros import (
     AnuncioDeOutroUsuario,
     AnuncioNaoEncontrado,
     AnuncioNaoExpirado,
+    MudancaDeStatusInvalida,
+    StatusInvalido,
     CategoriaNaoEditavel,
     ErroDeCasoDeUso,
     PerfilIncompleto,
@@ -72,6 +73,8 @@ class ErroPublicacaoSchema(ErrorSchema):
 
 class AnuncioIdPath(BaseModel):
     anuncio_id: str
+
+
 class AnuncioPath(BaseModel):
     ad_id: int
 
@@ -308,9 +311,15 @@ def register_ads_controller(app: OpenAPI, obter_usuario_da_sessao) -> None:
                 "Owner deve ser me.",
                 HTTPStatus.BAD_REQUEST,
             )
-        if ad_status not in ("published", "expired"):
+        if ad_status not in ("published", "expired", "sold"):
             return _erro(
-                "Status deve ser published ou expired.",
+                "Status deve ser published, expired ou sold.",
+                HTTPStatus.BAD_REQUEST,
+            )
+        if ad_status == "sold" and owner != "me":
+            # Sold ads are only shown to their owner (spec 011, RN6).
+            return _erro(
+                "Anúncios vendidos só podem ser listados com owner=me.",
                 HTTPStatus.BAD_REQUEST,
             )
         try:
@@ -615,6 +624,52 @@ def register_ads_controller(app: OpenAPI, obter_usuario_da_sessao) -> None:
                 codigo="anuncio_nao_expirado",
             )
         return apresenta_ad(renovado).model_dump(mode="json"), 200
+
+    @app.patch(
+        "/api/ads/<int:ad_id>/status",
+        security=SEGURANCA_BEARER,
+        responses={
+            200: AdViewSchema,
+            400: ErrorSchema,
+            401: ErrorSchema,
+            403: ErrorSchema,
+            404: ErrorSchema,
+            415: ErrorSchema,
+            422: ErrorSchema,
+        },
+    )
+    @protegida
+    def alterar_status_ad(path: AnuncioPath):
+        if request.mimetype != "application/json":
+            return _erro(
+                "Envie o novo status em JSON.",
+                HTTPStatus.UNSUPPORTED_MEDIA_TYPE,
+            )
+        dados, _ = _ler_entrada()
+        if dados is None:
+            return _erro(
+                "O corpo enviado não é um objeto válido.",
+                HTTPStatus.BAD_REQUEST,
+            )
+        try:
+            alterado = app.extensions["alterar_status_anuncio"].executar(
+                path.ad_id, g.usuario.id, dados.get("status")
+            )
+        except (AnuncioNaoEncontrado, AnuncioDeOutroUsuario) as error:
+            return _erro_de_dono(error)
+        except StatusInvalido as error:
+            return _erro(
+                str(error),
+                HTTPStatus.UNPROCESSABLE_ENTITY,
+                codigo="status_invalido",
+            )
+        except MudancaDeStatusInvalida as error:
+            return _erro(
+                str(error),
+                HTTPStatus.UNPROCESSABLE_ENTITY,
+                codigo="mudanca_de_status_invalida",
+            )
+        return apresenta_ad(alterado).model_dump(mode="json"), 200
 
 
 def _parse_price(value: str | None) -> float | None:
