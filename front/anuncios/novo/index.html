@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rethink+Sans:wght@400;600;700&display=swap">
   <link rel="stylesheet" href="../../css/tema.css">
-  <link rel="stylesheet" href="../../css/perfil.css">
+  <link rel="stylesheet" href="../../css/anuncios.css">
 </head>
 <body>
   <header class="cabecalho">
@@ -24,22 +24,31 @@
       <button class="botao botao--contorno" id="sair" type="button">Sair</button>
     </div>
   </header>
+  <noscript>
+    <div class="container pagina">
+      <p role="alert">Ative o JavaScript para publicar um anúncio.</p>
+    </div>
+  </noscript>
   <main class="container pagina" id="conteudo" hidden>
-    <div id="alerta" role="alert"></div>
+    <div id="alerta" class="alerta" role="alert" aria-live="assertive"
+      aria-atomic="true"></div>
     <h1>Novo anúncio</h1>
     <p>Compartilhe um produto, serviço ou evento com a comunidade PUC.</p>
     <form class="formulario" id="form-anuncio" novalidate>
       <div class="campo">
         <label class="campo__rotulo" for="titulo">Título</label>
-        <input class="campo__entrada" id="titulo" name="titulo"
-          minlength="5" maxlength="80" required>
-        <span class="campo__ajuda">De 5 a 80 caracteres.</span>
+        <input class="campo__entrada" id="titulo" name="titulo" required
+          aria-describedby="titulo-ajuda titulo-contador">
+        <span class="campo__ajuda" id="titulo-ajuda">
+          De 5 a 80 caracteres, sem contar espaços nas pontas.
+        </span>
+        <span class="campo__contador" id="titulo-contador">0/80</span>
         <span class="campo__erro" id="titulo-erro"></span>
       </div>
       <div class="campo">
         <label class="campo__rotulo" for="categoria">Categoria</label>
         <select class="campo__entrada" id="categoria" name="categoria" required>
-          <option value="">Selecione</option>
+          <option value="" selected disabled>Selecione a categoria</option>
           <option value="produto">Produto</option>
           <option value="servico">Serviço</option>
           <option value="evento">Evento</option>
@@ -52,7 +61,7 @@
         </label>
         <select class="campo__entrada" id="estado_conservacao"
           name="estado_conservacao">
-          <option value="">Selecione</option>
+          <option value="" selected disabled>Selecione o estado</option>
           <option value="novo">Novo</option>
           <option value="usado_regular">Usado - regular</option>
         </select>
@@ -61,34 +70,58 @@
       <div class="campo">
         <label class="campo__rotulo" for="descricao">Descrição</label>
         <textarea class="campo__entrada" id="descricao" name="descricao"
-          rows="5" maxlength="500" required></textarea>
-        <span class="campo__ajuda">Até 500 caracteres.</span>
+          rows="5" required aria-describedby="descricao-ajuda descricao-contador"></textarea>
+        <span class="campo__ajuda" id="descricao-ajuda">
+          Até 500 caracteres, sem contar espaços nas pontas.
+        </span>
+        <span class="campo__contador" id="descricao-contador">0/500</span>
         <span class="campo__erro" id="descricao-erro"></span>
       </div>
-      <fieldset class="campo">
+      <fieldset class="opcoes-preco">
         <legend class="campo__rotulo">Preço</legend>
-        <label>
-          <input type="checkbox" id="preco_a_combinar"
-            name="preco_a_combinar" value="true">
-          A combinar
-        </label>
-        <label class="campo__rotulo" for="preco">Valor (R$)</label>
-        <input class="campo__entrada" id="preco" name="preco"
-          inputmode="decimal" autocomplete="off">
-        <span class="campo__ajuda">Use até duas casas decimais.</span>
-        <span class="campo__erro" id="preco-erro"></span>
-        <span class="campo__erro" id="preco_a_combinar-erro"></span>
+        <div class="opcoes-preco__itens">
+          <label class="opcoes-preco__item">
+            <input type="radio" name="tipo_preco" value="informar" checked>
+            Informar preço
+          </label>
+          <label class="opcoes-preco__item">
+            <input type="radio" name="tipo_preco" value="combinar">
+            A combinar
+          </label>
+        </div>
+        <span class="campo__erro" id="campo-tipo_preco-erro"></span>
+        <div class="campo" id="campo-preco">
+          <label class="campo__rotulo" for="preco">Valor</label>
+          <div class="preco__entrada">
+            <span aria-hidden="true">R$</span>
+            <input class="campo__entrada" id="preco" name="preco"
+              inputmode="decimal" autocomplete="off" required
+              aria-describedby="preco-ajuda">
+          </div>
+          <span class="campo__ajuda" id="preco-ajuda">
+            Use vírgula ou ponto e até duas casas decimais.
+          </span>
+          <span class="campo__erro" id="preco-erro"></span>
+        </div>
       </fieldset>
       <div class="campo">
         <label class="campo__rotulo" for="imagem">Foto (opcional)</label>
         <input class="campo__entrada" id="imagem" name="imagem" type="file"
-          accept="image/jpeg,image/png,image/webp">
-        <span class="campo__ajuda">JPG, PNG ou WEBP, até 5 MiB.</span>
+          accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
+          aria-describedby="imagem-ajuda">
+        <span class="campo__ajuda" id="imagem-ajuda">
+          Uma foto JPG, PNG ou WebP, de até 5 MB.
+        </span>
         <span class="campo__erro" id="imagem-erro"></span>
+        <div class="foto-previa" id="foto-previa" hidden>
+          <img id="foto-previa-imagem" alt="Prévia da foto do anúncio">
+          <button class="botao botao--texto" id="remover-foto" type="button"
+            aria-label="Remover foto 1">Remover foto</button>
+        </div>
       </div>
       <div class="acoes">
         <button class="botao botao--primario" id="publicar" type="submit">
-          Publicar anúncio
+          Publicar
         </button>
         <a class="botao botao--contorno" href="../../inicio/">Cancelar</a>
       </div>

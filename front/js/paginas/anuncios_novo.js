@@ -1,3 +1,8 @@
+import {
+  contarCaracteres,
+  montarPayloadAnuncio,
+  validarAnuncio,
+} from "../dominio/anuncio.js";
 import { exigirPerfilAnunciante } from "../fluxos/exigir_perfil_anunciante.js";
 import { publicarAnuncio } from "../fluxos/publicar_anuncio.js";
 import {
@@ -5,8 +10,11 @@ import {
   aoEnviar,
   irPara,
   ligarBotaoSair,
+  limparAlerta,
+  limparErroDeCampo,
   limparErros,
   mostrarAlerta,
+  mostrarErroDeCampo,
   mostrarErrosDeCampo,
   montarDependencias,
 } from "./comum.js";
@@ -16,104 +24,216 @@ const alerta = document.querySelector("#alerta");
 const conteudo = document.querySelector("#conteudo");
 const formulario = document.querySelector("#form-anuncio");
 const botaoPublicar = document.querySelector("#publicar");
+const titulo = formulario.elements.titulo;
 const categoria = formulario.elements.categoria;
 const campoEstado = document.querySelector("#campo-estado");
 const estadoConservacao = formulario.elements.estado_conservacao;
-const precoACombinar = formulario.elements.preco_a_combinar;
+const descricao = formulario.elements.descricao;
+const tipoPreco = formulario.elements.tipo_preco;
+const campoPreco = document.querySelector("#campo-preco");
 const preco = formulario.elements.preco;
+const imagem = formulario.elements.imagem;
+const previa = document.querySelector("#foto-previa");
+const previaImagem = document.querySelector("#foto-previa-imagem");
+const removerFoto = document.querySelector("#remover-foto");
+let imagemSelecionada = null;
+let urlPrevia = null;
 
 ligarBotaoSair(document.querySelector("#sair"), deps);
+
+function coletarDados() {
+  return {
+    titulo: titulo.value,
+    categoria: categoria.value,
+    estado_conservacao: estadoConservacao.value,
+    descricao: descricao.value,
+    tipo_preco: tipoPreco.value,
+    preco: preco.value,
+    imagem: imagemSelecionada,
+  };
+}
+
+function atualizarContadores() {
+  document.querySelector("#titulo-contador").textContent =
+    `${contarCaracteres(titulo.value)}/80`;
+  document.querySelector("#descricao-contador").textContent =
+    `${contarCaracteres(descricao.value)}/500`;
+}
 
 function atualizarCamposCondicionais() {
   const ehProduto = categoria.value === "produto";
   campoEstado.hidden = !ehProduto;
   estadoConservacao.required = ehProduto;
   estadoConservacao.disabled = !ehProduto;
-  if (!ehProduto) estadoConservacao.value = "";
+  if (!ehProduto) {
+    estadoConservacao.value = "";
+    limparErroDeCampo(formulario, "estado_conservacao");
+  }
 
-  preco.disabled = precoACombinar.checked;
-  preco.required = !precoACombinar.checked;
-  if (precoACombinar.checked) preco.value = "";
+  const combinar = tipoPreco.value === "combinar";
+  campoPreco.hidden = combinar;
+  preco.disabled = combinar;
+  preco.required = !combinar;
+  if (combinar) {
+    preco.value = "";
+    limparErroDeCampo(formulario, "preco");
+  }
 }
 
-function validar() {
-  const erros = {};
-  const titulo = formulario.elements.titulo.value.trim();
-  const descricao = formulario.elements.descricao.value.trim();
-  if (titulo.length < 5 || titulo.length > 80) {
-    erros.titulo = "O título deve ter entre 5 e 80 caracteres.";
+function validarCampo(nome) {
+  const { erros } = validarAnuncio(coletarDados());
+  if (erros[nome]) {
+    mostrarErroDeCampo(formulario, nome, erros[nome]);
+  } else {
+    limparErroDeCampo(formulario, nome);
   }
-  if (!categoria.value) erros.categoria = "Escolha uma categoria.";
-  if (
-    categoria.value === "produto"
-    && !["novo", "usado_regular"].includes(estadoConservacao.value)
-  ) {
-    erros.estado_conservacao = "Informe o estado do produto.";
+}
+
+function ligarValidacaoDeCampo(campo, nome) {
+  campo.addEventListener("blur", () => validarCampo(nome));
+  campo.addEventListener("input", () => {
+    if (campo.hasAttribute("aria-invalid")) validarCampo(nome);
+  });
+  campo.addEventListener("change", () => {
+    if (campo.hasAttribute("aria-invalid")) validarCampo(nome);
+  });
+}
+
+function liberarPrevia() {
+  if (urlPrevia) URL.revokeObjectURL(urlPrevia);
+  urlPrevia = null;
+  previaImagem.removeAttribute("src");
+  previa.hidden = true;
+}
+
+function selecionarImagem() {
+  imagemSelecionada = imagem.files[0] ?? null;
+  const erro = validarAnuncio(coletarDados()).erros.imagem;
+  if (erro) {
+    liberarPrevia();
+    mostrarErroDeCampo(formulario, "imagem", erro);
+    return;
   }
-  if (!descricao || descricao.length > 500) {
-    erros.descricao = "Informe uma descrição de até 500 caracteres.";
+
+  limparErroDeCampo(formulario, "imagem");
+  liberarPrevia();
+  if (!imagemSelecionada) return;
+  urlPrevia = URL.createObjectURL(imagemSelecionada);
+  previaImagem.src = urlPrevia;
+  previa.hidden = false;
+}
+
+function removerImagem() {
+  liberarPrevia();
+  imagemSelecionada = null;
+  imagem.value = "";
+  limparErroDeCampo(formulario, "imagem");
+  imagem.focus();
+}
+
+function criarCorpo(payload) {
+  const dados = new FormData();
+  for (const [campo, valor] of Object.entries(payload)) {
+    dados.set(campo, String(valor));
   }
-  if (
-    !precoACombinar.checked
-    && !/^[0-9]+(?:[,.][0-9]{1,2})?$/.test(preco.value.trim())
-  ) {
-    erros.preco = "Informe um preço válido ou selecione “A combinar”.";
+  if (imagemSelecionada) {
+    dados.set("imagem", imagemSelecionada, imagemSelecionada.name);
   }
-  const imagem = formulario.elements.imagem.files[0];
-  if (
-    imagem
-    && !["image/jpeg", "image/png", "image/webp"].includes(imagem.type)
-  ) {
-    erros.imagem = "Use uma imagem JPG, PNG ou WEBP.";
-  }
-  if (imagem && imagem.size > 5 * 1024 * 1024) {
-    erros.imagem = "A imagem deve ter no máximo 5 MiB.";
-  }
-  return erros;
+  return dados;
+}
+
+function mostrarPerfilIncompleto(mensagem) {
+  mostrarAlerta(alerta, "aviso", `${mensagem} `);
+  const link = document.createElement("a");
+  link.href = `${ROTAS.editarPerfilAnunciante}?depois=anunciar`;
+  link.textContent = "Completar perfil";
+  alerta.append(link);
+}
+
+function limparFormularioPublicado() {
+  liberarPrevia();
+  imagemSelecionada = null;
+  formulario.reset();
+  atualizarCamposCondicionais();
+  atualizarContadores();
+  limparErros(formulario);
+  limparAlerta(alerta);
 }
 
 async function enviar() {
   limparErros(formulario);
-  const erros = validar();
-  if (Object.keys(erros).length) {
-    mostrarErrosDeCampo(formulario, erros);
+  limparAlerta(alerta);
+
+  const dados = coletarDados();
+  const validacao = validarAnuncio(dados);
+  if (Object.keys(validacao.erros).length) {
+    mostrarErrosDeCampo(formulario, validacao.erros);
     return;
   }
 
-  const dados = new FormData(formulario);
-  if (precoACombinar.checked) {
-    dados.set("preco_a_combinar", "true");
-    dados.delete("preco");
-  }
-  const estado = await publicarAnuncio(deps, dados);
+  const payload = montarPayloadAnuncio(dados);
+  const estado = await publicarAnuncio(deps, criarCorpo(payload));
   if (estado.tipo === "publicado") {
+    limparFormularioPublicado();
     irPara(ROTAS.inicio);
   } else if (estado.tipo === "sem_sessao") {
     irPara(ROTAS.entrar, "sessao_expirada");
-  } else if (estado.tipo === "completar_perfil") {
-    window.location.replace(estado.destino);
+  } else if (estado.tipo === "perfil_incompleto") {
+    mostrarPerfilIncompleto(estado.mensagem);
   } else if (estado.tipo === "dados_invalidos") {
     mostrarErrosDeCampo(formulario, estado.campos);
-    mostrarAlerta(alerta, "erro", estado.mensagem ?? "Dados inválidos.");
+    if (
+      estado.temCampoDesconhecido
+      || !Object.keys(estado.campos).length
+    ) {
+      mostrarAlerta(
+        alerta,
+        "erro",
+        estado.mensagem ?? "Não foi possível validar os dados enviados.",
+      );
+    }
   } else {
     mostrarAlerta(alerta, "erro", estado.mensagem);
   }
 }
 
-categoria.addEventListener("change", atualizarCamposCondicionais);
-precoACombinar.addEventListener("change", atualizarCamposCondicionais);
+titulo.addEventListener("input", atualizarContadores);
+descricao.addEventListener("input", atualizarContadores);
+ligarValidacaoDeCampo(titulo, "titulo");
+ligarValidacaoDeCampo(categoria, "categoria");
+ligarValidacaoDeCampo(estadoConservacao, "estado_conservacao");
+ligarValidacaoDeCampo(descricao, "descricao");
+ligarValidacaoDeCampo(preco, "preco");
+
+categoria.addEventListener("change", () => {
+  atualizarCamposCondicionais();
+  if (categoria.hasAttribute("aria-invalid")) validarCampo("categoria");
+});
+for (const opcao of tipoPreco) {
+  opcao.addEventListener("blur", () => validarCampo("tipo_preco"));
+  opcao.addEventListener("change", () => {
+    atualizarCamposCondicionais();
+    if (tipoPreco[0].hasAttribute("aria-invalid")) {
+      validarCampo("tipo_preco");
+    }
+  });
+}
+imagem.addEventListener("change", selecionarImagem);
+removerFoto.addEventListener("click", removerImagem);
 atualizarCamposCondicionais();
+atualizarContadores();
 
 const acesso = await exigirPerfilAnunciante(deps);
 if (acesso.tipo === "sem_sessao") {
-  irPara(ROTAS.entrar, acesso.mensagem ? "sessao_expirada" : undefined);
+  irPara(ROTAS.entrar, "sessao_expirada");
 } else if (acesso.tipo === "completar_perfil") {
   window.location.replace(acesso.destino);
 } else {
   conteudo.hidden = false;
   if (acesso.tipo !== "segue") {
+    for (const controle of formulario.elements) controle.disabled = true;
     mostrarAlerta(alerta, "erro", acesso.mensagem);
   } else {
-    aoEnviar(formulario, botaoPublicar, "Publicando…", enviar);
+    aoEnviar(formulario, botaoPublicar, "Publicando...", enviar);
   }
 }

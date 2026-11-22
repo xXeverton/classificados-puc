@@ -18,6 +18,11 @@ export const MENSAGENS = {
   linkIncompleto: "O link de confirmação está incompleto.",
   informeEmail: "Informe o e-mail do seu cadastro.",
   sessaoExpirada: "Sua sessão expirou. Entre de novo.",
+  publicacaoFalhou: "Não foi possível publicar o anúncio. Tente novamente.",
+  publicacaoSemConexao:
+    "Sem conexão. Verifique sua internet e tente novamente.",
+  perfilIncompletoParaAnunciar:
+    "Complete seu perfil para publicar anúncios.",
   // Perfil de anunciante
   nomeExibicaoObrigatorio: "Informe o nome de exibição.",
   nenhumContato: "Adicione ao menos um contato.",

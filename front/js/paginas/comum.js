@@ -66,18 +66,54 @@ export function limparAlerta(regiao) {
 function campoDe(formulario, nome) {
   const campo = formulario.elements[nome];
   // Grupo de radios (RadioNodeList): o erro fica ligado ao primeiro radio.
-  const entrada = campo instanceof RadioNodeList ? campo[0] : campo;
-  const idBase = campo instanceof RadioNodeList ? `campo-${nome}` : entrada.id;
+  const ehGrupo = campo instanceof RadioNodeList;
+  const entrada = ehGrupo ? campo[0] : campo;
+  if (!entrada) return { entrada: null, erro: null };
+  const idBase = ehGrupo ? `campo-${nome}` : entrada.id;
   return { entrada, erro: formulario.querySelector(`#${idBase}-erro`) };
 }
 
 export function limparErros(formulario) {
-  for (const erro of formulario.querySelectorAll(".campo__erro")) {
+  const erros = [...formulario.querySelectorAll(".campo__erro")];
+  const idsDeErro = new Set(erros.map((erro) => erro.id));
+  for (const erro of erros) {
     erro.textContent = "";
+  }
+  for (const entrada of formulario.querySelectorAll("[aria-describedby]")) {
+    const ids = entrada.getAttribute("aria-describedby")
+      .split(/\s+/)
+      .filter((id) => !idsDeErro.has(id));
+    if (ids.length) entrada.setAttribute("aria-describedby", ids.join(" "));
+    else entrada.removeAttribute("aria-describedby");
   }
   for (const entrada of formulario.querySelectorAll("[aria-invalid]")) {
     entrada.removeAttribute("aria-invalid");
   }
+}
+
+export function mostrarErroDeCampo(formulario, nome, mensagem) {
+  const { entrada, erro } = campoDe(formulario, nome);
+  if (!entrada || !erro) return false;
+  erro.textContent = mensagem;
+  entrada.setAttribute("aria-invalid", "true");
+  const ids = (entrada.getAttribute("aria-describedby") ?? "")
+    .split(/\s+/)
+    .filter(Boolean);
+  if (!ids.includes(erro.id)) ids.push(erro.id);
+  entrada.setAttribute("aria-describedby", ids.join(" "));
+  return true;
+}
+
+export function limparErroDeCampo(formulario, nome) {
+  const { entrada, erro } = campoDe(formulario, nome);
+  if (!entrada || !erro) return;
+  erro.textContent = "";
+  entrada.removeAttribute("aria-invalid");
+  const ids = (entrada.getAttribute("aria-describedby") ?? "")
+    .split(/\s+/)
+    .filter((id) => id && id !== erro.id);
+  if (ids.length) entrada.setAttribute("aria-describedby", ids.join(" "));
+  else entrada.removeAttribute("aria-describedby");
 }
 
 // Mostra os erros junto a cada campo e foca o primeiro com erro.
@@ -85,11 +121,10 @@ export function mostrarErrosDeCampo(formulario, erros) {
   limparErros(formulario);
   let primeiro = null;
   for (const [nome, mensagem] of Object.entries(erros)) {
-    const { entrada, erro } = campoDe(formulario, nome);
-    erro.textContent = mensagem;
-    entrada.setAttribute("aria-invalid", "true");
-    entrada.setAttribute("aria-describedby", erro.id);
-    primeiro ??= entrada;
+    const { entrada } = campoDe(formulario, nome);
+    if (mostrarErroDeCampo(formulario, nome, mensagem)) {
+      primeiro ??= entrada;
+    }
   }
   if (primeiro) primeiro.focus();
 }

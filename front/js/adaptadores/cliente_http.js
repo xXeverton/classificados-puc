@@ -3,7 +3,11 @@ import { ErroDeConexao } from "../dominio/erros.js";
 export function criarClienteHttp({ fetchFn, baseUrl, obterToken = () => null }) {
   async function requisitar(metodo, caminho, corpo) {
     const cabecalhos = { Accept: "application/json" };
-    const opcoes = { method: metodo, headers: cabecalhos };
+    const opcoes = {
+      method: metodo,
+      headers: cabecalhos,
+      credentials: "same-origin",
+    };
     if (corpo instanceof FormData) {
       // O navegador define o Content-Type do multipart, com o boundary.
       opcoes.body = corpo;
@@ -12,7 +16,11 @@ export function criarClienteHttp({ fetchFn, baseUrl, obterToken = () => null }) 
       opcoes.body = JSON.stringify(corpo);
     }
     const resposta = await enviar(caminho, opcoes, cabecalhos);
-    return { status: resposta.status, corpo: await lerCorpo(resposta) };
+    return {
+      status: resposta.status,
+      corpo: await lerCorpo(resposta),
+      redirecionada: resposta.redirected === true,
+    };
   }
 
   // Arquivos (fotos): devolve o conteúdo só quando a resposta é 200.
