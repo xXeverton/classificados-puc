@@ -179,7 +179,7 @@ Mapeamento com os nomes da subtarefa PROJ-25 do Jira (decisão D-041):
 | `image_url` | TEXT | Não | Pode ser nulo | URL da foto do anúncio |
 | `created_at` | DATETIME | Sim | Data de criação | Momento de criação do anúncio |
 | `status` | TEXT | Sim | `published`, `sold` ou `expired` | Estado de disponibilidade |
-| `expires_at` | DATETIME | Não | Pode ser nulo | Momento de expiração, quando aplicável |
+| `expires_at` | DATETIME | Não | Pode ser nulo | Fim do prazo de publicação, definido na publicação ou na última renovação; nulo vale `created_at` + 30 dias (spec 004) |
 
 Os anúncios sem foto usam `image_url` nulo. O feed considera disponíveis apenas
 os anúncios publicados; anúncios vendidos ou expirados não devem ser retornados.

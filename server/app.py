@@ -11,6 +11,7 @@ from flask_openapi3 import Info, OpenAPI
 
 from server.api.controllers.ads_controller import register_ads_controller
 from server.api.autenticacao import ESQUEMA_DE_SEGURANCA
+from server.api.comandos import register_commands
 from server.api.controllers.auth_controller import (
     CasosDeUsoDeAutenticacao,
     register_auth_controller,
@@ -35,6 +36,7 @@ from server.core.usecases.cadastrar_usuario import CadastrarUsuario
 from server.core.usecases.confirmar_email import ConfirmarEmail
 from server.core.usecases.emissor_de_confirmacao import EmissorDeConfirmacao
 from server.core.usecases.encerrar_sessao import EncerrarSessao
+from server.core.usecases.expire_ads import ExpireAds
 from server.core.usecases.obter_usuario_da_sessao import (
     ObterUsuarioDaSessao,
 )
@@ -165,6 +167,13 @@ def create_app(config: Mapping[str, object] | None = None) -> OpenAPI:
     register_auth_controller(app, casos_de_uso)
     register_ads_controller(app, casos_de_uso.obter_usuario_da_sessao)
     register_perfil_anunciante_controller(app, casos_de_uso_perfil)
+    register_commands(
+        app,
+        ExpireAds(
+            app.extensions["ad_repository"],
+            app.config.get("RELOGIO") or RelogioSistema(),
+        ),
+    )
     return app
 
 
