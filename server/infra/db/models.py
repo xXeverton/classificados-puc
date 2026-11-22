@@ -264,7 +264,18 @@ class AdModel(Base):
 
     __tablename__ = "ads"
     __table_args__ = (
-        CheckConstraint("length(trim(title)) > 0", name="ck_ads_title"),
+        CheckConstraint(
+            "length(trim(title)) BETWEEN 5 AND 80",
+            name="ck_ads_title",
+        ),
+        CheckConstraint(
+            "(usuario_id IS NULL AND ("
+            "description IS NULL OR length(description) <= 500)) "
+            "OR (usuario_id IS NOT NULL AND description IS NOT NULL "
+            "AND length(trim(description)) > 0 "
+            "AND length(description) <= 500)",
+            name="ck_ads_description",
+        ),
         CheckConstraint(
             "type IN ('product', 'service', 'event')",
             name="ck_ads_type",

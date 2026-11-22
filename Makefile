@@ -30,7 +30,7 @@ test:
 check: lint test
 
 front:
-	$(PYTHON) -m http.server 5173 --directory front
+	node front/dev_server.js
 
 front-test:
 	cd front && node --test

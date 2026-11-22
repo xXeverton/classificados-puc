@@ -1,12 +1,16 @@
 # Interface web (`front/`)
 
-HTML, CSS e JavaScript puros, sem build nem dependências de npm. Com a API
-rodando e `CORS_ORIGINS=http://localhost:5173`:
+HTML, CSS e JavaScript puros, sem build nem dependências de npm. Rode a API e
+o servidor de desenvolvimento do front:
 
 ```bash
-make front        # servidor em http://localhost:5173
+make front        # frontend + proxy da API em http://localhost:5173
 make front-test   # testes do front (Node 18 ou mais novo)
 ```
+
+O servidor do front encaminha as rotas da API para `127.0.0.1:5000`, usando a
+mesma origem do navegador. Assim, login e demais chamadas funcionam também
+quando o Codespaces encaminha apenas a porta 5173 para o navegador.
 
 ## Telas
 

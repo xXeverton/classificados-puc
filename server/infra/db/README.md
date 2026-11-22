@@ -176,8 +176,8 @@ Mapeamento com os nomes da subtarefa PROJ-25 do Jira (decisão D-041):
 | Coluna | Tipo | Obrigatória | Restrições | Descrição |
 |---|---|---:|---|---|
 | `id` | INTEGER | Sim | Chave primária, autoincremento | Identificador interno do anúncio |
-| `title` | TEXT | Sim | Não pode ser vazio ou conter somente espaços ASCII | Título do anúncio |
-| `description` | TEXT | Não | — | Descrição opcional do anúncio |
+| `title` | TEXT | Sim | Entre 5 e 80 caracteres, sem espaços nas extremidades | Título do anúncio |
+| `description` | TEXT | Sim para publicações; nulo só em anúncios legados | Até 500 caracteres e não vazia para publicações | Descrição do anúncio |
 | `type` | TEXT | Sim | `product`, `service` ou `event` | Tipo do anúncio |
 | `category` | TEXT | Sim | Não pode ser vazia ou conter somente espaços ASCII | Categoria do anúncio |
 | `price` | REAL | Sim | Valor numérico | Preço do anúncio |
@@ -238,9 +238,13 @@ As tabelas `anunciantes` e `contatos_anunciante` (feature 003) são novas e não
 alteram `usuarios`: são criadas tanto em bancos novos quanto em bancos locais já
 existentes, sem apagar nada nem exigir migração. A migração
 `migrations/0002_ads_publication.sql` estende `ads` para autoria, eventos,
-conservação, preço negociável e chave da imagem. Ela copia os anúncios
-existentes antes de substituir a tabela e é executada uma única vez por
-`initialize_database`; um teste verifica a preservação das linhas.
+conservação, preço negociável e chave da imagem. A migration
+`migrations/0003_ads_field_constraints.sql` aplica os limites de título e
+descrição, preservando anúncios existentes. Se um registro legado exceder os
+limites, a inicialização falha sem apagar o registro; os dados precisam ser
+corrigidos antes da atualização. As migrations são controladas por
+`PRAGMA user_version`; os testes verificam preservação de dados, repetição e
+rejeição segura de registros incompatíveis.
 
 A feature 001 (cadastro, login e verificação de e-mail) mudou a tabela
 `usuarios` de forma incompatível. Por decisão do time (2026-11-20), não há

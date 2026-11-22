@@ -322,8 +322,13 @@ def test_publish_is_visible_in_feed_with_real_profile_name():
     assert response.json["category"] == "produto"
     assert response.json["price"] == 850.25
     assert response.json["preco_a_combinar"] is False
+    assert response.json["created_at"]
     assert feed.status_code == 200
     assert feed.json["items"][0]["title"] == "Bicicleta urbana"
+    assert (
+        feed.json["items"][0]["created_at"].removesuffix("Z")
+        == response.json["created_at"].removesuffix("Z")
+    )
     with app.extensions["session_factory"]() as session:
         published = (
             session.query(AdModel)
