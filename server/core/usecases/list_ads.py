@@ -32,9 +32,10 @@ class ListAds:
         self._validate_search(search)
         self._validate_ad_type(ad_type)
 
-        if search is not None or ad_type not in (None, "all"):
-            page = 1
-
+        # The requested page is kept even with a search or filter, so the
+        # user can page through results. Going back to the first page when
+        # a search or filter changes (RN11) is the client's job: only it
+        # knows whether the filter changed or the user just turned a page.
         items, total_items = self.repository.list_published(
             page=page,
             per_page=self.PER_PAGE,
