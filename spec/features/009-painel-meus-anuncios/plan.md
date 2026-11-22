@@ -5,9 +5,10 @@ Referência: `spec.md` desta pasta.
 Dependências:
 
 - Usuário autenticado pela sessão existente.
-- Contrato `GET /api/ads?owner=me&page={page}` definido para esta feature.
+- Contratos `GET /api/ads?owner=me&status={status}&page={page}` e
+  `POST /api/ads/<id>/renovar`.
 - Contratos de edição e exclusão definidos pela PROJ-38/spec 007.
-- Contrato de renovação da PROJ-40 ainda pendente.
+- Renovar só aceita anúncios expirados próprios.
 
 ## Domínio (`server/core/entities/`)
 
@@ -40,13 +41,15 @@ feito pelo controller; pertence à consulta do caso de uso/repositório.
 
 | Método | Rota | Use case chamado | Resposta |
 |--------|------|-----------------|----------|
-| GET | `/api/ads?owner=me&page={page}` | `ListAds` | Lista paginada dos anúncios publicados do usuário; 400 para página inválida; 401 sem sessão; 500 em falha |
+| GET | `/api/ads?owner=me&status=published&page={page}` | `ListAds` | Lista paginada dos anúncios publicados do usuário |
+| GET | `/api/ads?owner=me&status=expired&page={page}` | `ListAds` | Lista paginada dos anúncios expirados do usuário |
+| POST | `/api/ads/<id>/renovar` | `RenovarAnuncio` | 200 com o anúncio renovado; 403 para outro dono; 404 se inexistente; 422 se não estiver expirado |
 
 - `owner=me` é interpretado pelo controller como o usuário autenticado;
   o valor não é usado como id recebido do cliente.
-- O endpoint reaproveita `ListAds` com um filtro de proprietário.
+- O endpoint reaproveita `ListAds` com filtros de proprietário e estado.
 - Editar usa `PUT /api/ads/<id>`, excluir usa `DELETE /api/ads/<id>` e renovar
-  aguarda o contrato da PROJ-40.
+  usa `POST /api/ads/<id>/renovar`.
 
 ## Interface visual (`front/`)
 
@@ -60,6 +63,9 @@ feito pelo controller; pertence à consulta do caso de uso/repositório.
 - Módulos separados em `front/js/paginas/`, `front/js/fluxos/`,
   `front/js/dominio/` e `front/js/adaptadores/`, sem `innerHTML`.
 - Card sem foto deve manter um estado visual válido.
+- O formulário aberto por Editar carrega os valores atuais do anúncio.
+- A lista usa uma coluna no painel e adapta o card a telas estreitas sem
+  overflow horizontal.
 - Estados de carregamento, lista vazia, sessão expirada e erro de API devem ser
   explícitos.
 - Visuais e componentes existentes em `front/css/tema.css` e no guia de estilo.

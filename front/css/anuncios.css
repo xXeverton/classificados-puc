@@ -63,6 +63,55 @@
   gap: var(--espaco-3);
 }
 
+.meus-anuncios__card {
+  display: grid;
+  grid-template-columns: 160px minmax(0, 1fr);
+  min-width: 0;
+  gap: var(--espaco-4);
+  padding: var(--espaco-4);
+  background: var(--cor-superficie);
+  border: 1px solid var(--cor-borda-suave);
+  border-radius: var(--raio-cartao);
+}
+
+.meus-anuncios__imagem {
+  width: 160px;
+  height: 120px;
+  object-fit: cover;
+  border-radius: var(--raio-cartao);
+  background: var(--cor-primaria-clara);
+}
+
+.meus-anuncios__imagem--vazia {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--cor-texto-suave);
+  font-size: var(--texto-sm);
+}
+
+.meus-anuncios__corpo {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--espaco-2);
+}
+
+.meus-anuncios__titulo,
+.meus-anuncios__preco {
+  margin: 0;
+}
+
+.grade-anuncios {
+  display: grid;
+  gap: var(--espaco-4);
+}
+
+.meus-anuncios__lista {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 @media (max-width: 480px) {
   .pagina {
     padding-top: var(--espaco-5);
@@ -71,5 +120,11 @@
 
   .acoes .botao {
     flex: 1 1 100%;
+  }
+  .meus-anuncios__card {
+    grid-template-columns: 1fr;
+  }
+  .meus-anuncios__imagem {
+    width: 100%;
   }
 }
