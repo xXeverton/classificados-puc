@@ -4,6 +4,8 @@ import {
   rotuloConservacao,
   rotuloContato,
   resolverUrlRecurso,
+  hrefContato,
+  classificarContatosPrincipais,
 } from "../dominio/detalhes_anuncio.js";
 import { detalharAnuncio } from "../fluxos/detalhar_anuncio.js";
 import { criarCarregadorDeFoto } from "../fluxos/carregar_foto.js";
@@ -35,20 +37,57 @@ function mostrarEstado(mensagem) {
   mostrarAlerta(alerta, "erro", mensagem);
 }
 
-function hrefContato(contato) {
-  if (contato.tipo === "whatsapp") return contato.link_de_conversa;
-  if (contato.tipo === "telefone") return `tel:${contato.codigo_pais}${contato.valor}`;
-  if (contato.tipo === "email") return `mailto:${contato.valor}`;
-  return contato.valor;
-}
-
-function renderizarContatos(lista) {
+function renderizarContatos(lista, titulo) {
   contatos.replaceChildren();
+
+  const principais = classificarContatosPrincipais(lista, titulo);
+
+  if (principais.whatsapp) {
+    const link = criar("a", "botao botao--contorno detalhes__contato", "Chamar no WhatsApp");
+    link.href = principais.whatsapp;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    link.setAttribute("aria-label", "Chamar no WhatsApp");
+    contatos.append(link);
+  }
+
+  if (principais.email) {
+    const link = criar("a", "botao botao--contorno detalhes__contato", "Enviar E-mail");
+    link.href = principais.email;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    link.setAttribute("aria-label", "Enviar E-mail");
+    contatos.append(link);
+  }
+
+  if (!principais.whatsapp && !principais.email) {
+    const whatsappDesabilitado = criar(
+      "button",
+      "botao botao--contorno detalhes__contato",
+      "Chamar no WhatsApp",
+    );
+    whatsappDesabilitado.type = "button";
+    whatsappDesabilitado.disabled = true;
+    whatsappDesabilitado.setAttribute("aria-label", "Chamar no WhatsApp indisponível");
+    contatos.append(whatsappDesabilitado);
+
+    const emailDesabilitado = criar(
+      "button",
+      "botao botao--contorno detalhes__contato",
+      "Enviar E-mail",
+    );
+    emailDesabilitado.type = "button";
+    emailDesabilitado.disabled = true;
+    emailDesabilitado.setAttribute("aria-label", "Enviar E-mail indisponível");
+    contatos.append(emailDesabilitado);
+  }
+
   for (const contato of lista) {
+    if (contato.tipo === "whatsapp" || contato.tipo === "email") continue;
     const link = criar("a", "botao botao--contorno detalhes__contato", rotuloContato(contato));
-    link.href = hrefContato(contato);
-    link.target = contato.tipo === "email" ? "_self" : "_blank";
-    if (link.target === "_blank") link.rel = "noopener noreferrer";
+    link.href = hrefContato(contato, titulo);
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
     link.setAttribute("aria-label", `${rotuloContato(contato)}: ${contato.valor}`);
     contatos.append(link);
   }
@@ -116,7 +155,7 @@ async function carregar() {
   } else {
     fotoAnunciante.hidden = true;
   }
-  renderizarContatos(advertiser.contacts);
+  renderizarContatos(advertiser.contacts, ad.title);
 
   carregando.hidden = true;
   conteudo.hidden = false;
