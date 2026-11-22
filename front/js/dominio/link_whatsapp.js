@@ -7,6 +7,14 @@ const MENSAGEM_COM_TITULO =
 const MENSAGEM_SEM_TITULO =
   "Olá! Vi seu anúncio no PUC pra Rolo e tenho interesse.";
 
+export function gerarMensagemWhatsapp(titulo) {
+  const tituloLimpo =
+    typeof titulo === "string" ? titulo.trim() : "";
+  return tituloLimpo
+    ? MENSAGEM_COM_TITULO.replace("{titulo}", tituloLimpo)
+    : MENSAGEM_SEM_TITULO;
+}
+
 export function normalizarNumeroWhatsapp(numero) {
   if (typeof numero !== "string") return null;
 
@@ -45,12 +53,7 @@ export function normalizarNumeroWhatsapp(numero) {
 export function gerarLinkWhatsapp(numero, titulo) {
   const numeroNormalizado = normalizarNumeroWhatsapp(numero);
   if (!numeroNormalizado) return null;
-
-  const tituloLimpo =
-    typeof titulo === "string" ? titulo.trim() : "";
-  const mensagem = tituloLimpo
-    ? MENSAGEM_COM_TITULO.replace("{titulo}", tituloLimpo)
-    : MENSAGEM_SEM_TITULO;
+  const mensagem = gerarMensagemWhatsapp(titulo);
 
   return `https://wa.me/${numeroNormalizado}?text=${encodeURIComponent(mensagem)}`;
 }

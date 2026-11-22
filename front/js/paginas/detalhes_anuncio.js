@@ -4,6 +4,7 @@ import {
   rotuloConservacao,
   rotuloContato,
   resolverUrlRecurso,
+  hrefContato,
 } from "../dominio/detalhes_anuncio.js";
 import { detalharAnuncio } from "../fluxos/detalhar_anuncio.js";
 import { criarCarregadorDeFoto } from "../fluxos/carregar_foto.js";
@@ -35,20 +36,13 @@ function mostrarEstado(mensagem) {
   mostrarAlerta(alerta, "erro", mensagem);
 }
 
-function hrefContato(contato) {
-  if (contato.tipo === "whatsapp") return contato.link_de_conversa;
-  if (contato.tipo === "telefone") return `tel:${contato.codigo_pais}${contato.valor}`;
-  if (contato.tipo === "email") return `mailto:${contato.valor}`;
-  return contato.valor;
-}
-
-function renderizarContatos(lista) {
+function renderizarContatos(lista, titulo) {
   contatos.replaceChildren();
   for (const contato of lista) {
     const link = criar("a", "botao botao--contorno detalhes__contato", rotuloContato(contato));
-    link.href = hrefContato(contato);
-    link.target = contato.tipo === "email" ? "_self" : "_blank";
-    if (link.target === "_blank") link.rel = "noopener noreferrer";
+    link.href = hrefContato(contato, titulo);
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
     link.setAttribute("aria-label", `${rotuloContato(contato)}: ${contato.valor}`);
     contatos.append(link);
   }
@@ -116,7 +110,7 @@ async function carregar() {
   } else {
     fotoAnunciante.hidden = true;
   }
-  renderizarContatos(advertiser.contacts);
+  renderizarContatos(advertiser.contacts, ad.title);
 
   carregando.hidden = true;
   conteudo.hidden = false;
