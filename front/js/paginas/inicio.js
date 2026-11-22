@@ -1,4 +1,13 @@
-import { dadosDoCard, paginasNumeradas } from "../dominio/feed.js";
+import {
+  contarFiltrosAtivos,
+  dadosDoCard,
+  lerFaixaDePreco,
+  mensagemDeFeedVazio,
+  montarParametrosFeed,
+  paginasNumeradas,
+  paramsSemFiltros,
+  parametrosDoFeed,
+} from "../dominio/feed.js";
 import { listarAnuncios } from "../fluxos/listar_anuncios.js";
 import { sair } from "../fluxos/sessao_atual.js";
 import { ROTAS, irPara, mostrarAlerta, montarDependencias, criar, limparAlerta } from "./comum.js";
@@ -13,6 +22,13 @@ const paginacao = document.querySelector("#paginacao");
 const busca = document.querySelector("#busca-feed");
 const termoBusca = document.querySelector("#termo-busca");
 const filtros = document.querySelector("#filtros-feed");
+const alternarFiltros = document.querySelector("#alternar-filtros");
+const contadorFiltros = document.querySelector("#contador-filtros");
+const painelFiltros = document.querySelector("#painel-filtros");
+const precoMinimo = document.querySelector("#preco-minimo");
+const precoMaximo = document.querySelector("#preco-maximo");
+const erroFiltros = document.querySelector("#erro-filtros");
+const limparFiltros = document.querySelector("#limpar-filtros");
 
 botaoSair.addEventListener("click", async () => {
   botaoSair.disabled = true;
@@ -74,10 +90,7 @@ function criarCard(anuncio) {
 
 function atualizarUrl(params) {
   const url = new URL(window.location.href);
-  url.search = "";
-  url.searchParams.set("page", String(params.page));
-  if (params.search) url.searchParams.set("search", params.search);
-  if (params.type !== "all") url.searchParams.set("type", params.type);
+  url.search = montarParametrosFeed(params).toString();
   window.history.replaceState({}, "", url);
 }
 
@@ -91,11 +104,7 @@ function renderizarPaginacao(params, totalPaginas) {
     botao.setAttribute("aria-label", `Página ${numero}`);
     botao.setAttribute("aria-current", numero === params.page ? "page" : "false");
     if (numero === params.page) botao.disabled = true;
-    botao.addEventListener("click", () => {
-      const novosParams = { ...params, page: numero };
-      atualizarUrl(novosParams);
-      carregar(novosParams);
-    });
+    botao.addEventListener("click", () => aplicar({ ...params, page: numero }));
     paginacao.append(botao);
   }
 }
@@ -106,11 +115,7 @@ async function carregar(params) {
   estadoVazio.hidden = true;
   paginacao.replaceChildren();
 
-  const estado = await listarAnuncios(deps, new URLSearchParams({
-    page: String(params.page),
-    ...(params.search ? { search: params.search } : {}),
-    ...(params.type !== "all" ? { type: params.type } : {}),
-  }));
+  const estado = await listarAnuncios(deps, montarParametrosFeed(params));
 
   if (estado.tipo === "sem_sessao") {
     irPara(ROTAS.entrar, estado.mensagem ? "sessao_expirada" : undefined);
@@ -118,7 +123,7 @@ async function carregar(params) {
     conteudo.hidden = false;
     for (const anuncio of estado.feed.items) grade.append(criarCard(anuncio));
     if (!estado.feed.items.length) {
-      estadoVazio.textContent = estado.feed.message || "Nenhum anúncio publicado encontrado.";
+      estadoVazio.textContent = mensagemDeFeedVazio(params, estado.feed.message);
       estadoVazio.hidden = false;
     }
     renderizarPaginacao(params, estado.feed.total_pages);
@@ -128,39 +133,91 @@ async function carregar(params) {
   }
 }
 
-const parametrosIniciais = new URLSearchParams(window.location.search);
-const params = {
-  page: Math.max(1, Number(parametrosIniciais.get("page") || 1)),
-  search: parametrosIniciais.get("search") || "",
-  type: ["all", "product", "service", "event"].includes(parametrosIniciais.get("type"))
-    ? parametrosIniciais.get("type")
-    : "all",
-};
-termoBusca.value = params.search;
-for (const botao of filtros.querySelectorAll("[data-type]")) {
-  botao.setAttribute("aria-pressed", String(botao.dataset.type === params.type));
+let params = parametrosDoFeed(new URLSearchParams(window.location.search));
+
+function formatarPrecoDoCampo(valor) {
+  return valor === null ? "" : String(valor).replace(".", ",");
 }
 
-busca.addEventListener("submit", (evento) => {
-  evento.preventDefault();
-  const novosParams = { ...params, page: 1, search: termoBusca.value.trim() };
-  params.page = novosParams.page;
-  params.search = novosParams.search;
-  atualizarUrl(novosParams);
-  carregar(novosParams);
+function tipoSelecionado() {
+  return filtros.querySelector('[aria-pressed="true"]')?.dataset.type ?? "all";
+}
+
+function marcarTipo(tipo) {
+  for (const botao of filtros.querySelectorAll("[data-type]")) {
+    botao.setAttribute("aria-pressed", String(botao.dataset.type === tipo));
+  }
+}
+
+function mostrarErroFiltros(mensagem) {
+  erroFiltros.textContent = mensagem;
+  for (const campo of [precoMinimo, precoMaximo]) {
+    campo.setAttribute("aria-invalid", String(Boolean(mensagem)));
+  }
+}
+
+// Puts the applied state back into the controls, so the menu and the
+// counter always show what the feed is filtered by.
+function sincronizarControles() {
+  termoBusca.value = params.search;
+  marcarTipo(params.type);
+  precoMinimo.value = formatarPrecoDoCampo(params.minPrice);
+  precoMaximo.value = formatarPrecoDoCampo(params.maxPrice);
+  mostrarErroFiltros("");
+
+  const ativos = contarFiltrosAtivos(params);
+  contadorFiltros.textContent = String(ativos);
+  contadorFiltros.hidden = ativos === 0;
+  alternarFiltros.setAttribute(
+    "aria-label",
+    ativos ? `Filtros (${ativos} ativos)` : "Filtros",
+  );
+  limparFiltros.hidden = !params.search && ativos === 0;
+}
+
+function aplicar(novosParams) {
+  params = novosParams;
+  sincronizarControles();
+  atualizarUrl(params);
+  carregar(params);
+}
+
+function abrirFiltros(aberto) {
+  painelFiltros.hidden = !aberto;
+  alternarFiltros.setAttribute("aria-expanded", String(aberto));
+  if (aberto) filtros.querySelector('[aria-pressed="true"]')?.focus();
+}
+
+alternarFiltros.addEventListener("click", () => {
+  abrirFiltros(painelFiltros.hidden);
 });
 
 for (const botao of filtros.querySelectorAll("[data-type]")) {
-  botao.addEventListener("click", () => {
-    const novosParams = { ...params, page: 1, type: botao.dataset.type };
-    params.page = novosParams.page;
-    params.type = novosParams.type;
-    for (const opcao of filtros.querySelectorAll("[data-type]")) {
-      opcao.setAttribute("aria-pressed", String(opcao === botao));
-    }
-    atualizarUrl(novosParams);
-    carregar(novosParams);
-  });
+  botao.addEventListener("click", () => marcarTipo(botao.dataset.type));
 }
 
+painelFiltros.addEventListener("submit", (evento) => {
+  evento.preventDefault();
+  const faixa = lerFaixaDePreco(precoMinimo.value, precoMaximo.value);
+  if (faixa.erro) {
+    mostrarErroFiltros(faixa.erro);
+    precoMinimo.focus();
+    return;
+  }
+  aplicar({ ...params, ...faixa, page: 1, type: tipoSelecionado() });
+  abrirFiltros(false);
+  alternarFiltros.focus();
+});
+
+busca.addEventListener("submit", (evento) => {
+  evento.preventDefault();
+  aplicar({ ...params, page: 1, search: termoBusca.value.trim() });
+});
+
+limparFiltros.addEventListener("click", () => {
+  aplicar(paramsSemFiltros());
+  termoBusca.focus();
+});
+
+sincronizarControles();
 await carregar(params);
