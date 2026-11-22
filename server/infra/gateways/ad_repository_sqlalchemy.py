@@ -52,6 +52,10 @@ class AdRepositorySQLAlchemy(AdRepository, ExpirableAdRepository):
             filters.append(AdModel.price >= min_price)
         if max_price is not None:
             filters.append(AdModel.price <= max_price)
+        if min_price is not None or max_price is not None:
+            # "A combinar" ads are stored with price 0 but have no price,
+            # so a price filter leaves them out (spec 006, RN4).
+            filters.append(AdModel.preco_a_combinar.is_(False))
         if ad_type not in (None, "all"):
             filters.append(AdModel.type == ad_type)
         if search is not None:

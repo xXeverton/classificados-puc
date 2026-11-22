@@ -19,6 +19,11 @@
         <label class="visualmente-oculto" for="termo-busca">Buscar anúncios</label>
         <input class="campo__entrada" id="termo-busca" name="search" type="search" placeholder="Buscar...">
       </form>
+      <button class="botao botao--contorno botao-filtros" id="alternar-filtros" type="button"
+              aria-expanded="false" aria-controls="painel-filtros">
+        Filtros
+        <span class="contador-filtros" id="contador-filtros" hidden></span>
+      </button>
       <nav class="navegacao" aria-label="Principal">
         <a class="navegacao__item" href="./" aria-current="page">Início</a>
         <a class="navegacao__item" href="../perfil/">Meu perfil</a>
@@ -29,12 +34,44 @@
   </header>
   <main class="container pagina-feed" id="conteudo" hidden>
     <div id="alerta" role="alert"></div>
-    <h1>Feed de anúncios</h1>
-    <div class="filtros" id="filtros-feed" aria-label="Filtrar anúncios">
-      <button class="filtro" type="button" data-type="all" aria-pressed="true">Todos</button>
-      <button class="filtro" type="button" data-type="product" aria-pressed="false">Produtos</button>
-      <button class="filtro" type="button" data-type="service" aria-pressed="false">Serviços</button>
-      <button class="filtro" type="button" data-type="event" aria-pressed="false">Eventos</button>
+    <form class="painel-filtros" id="painel-filtros" aria-label="Filtros do feed" novalidate hidden>
+      <fieldset class="painel-filtros__grupo">
+        <legend class="campo__rotulo">Tipo</legend>
+        <div class="filtros" id="filtros-feed">
+          <button class="filtro" type="button" data-type="all" aria-pressed="true">Todos</button>
+          <button class="filtro" type="button" data-type="product" aria-pressed="false">Produtos</button>
+          <button class="filtro" type="button" data-type="service" aria-pressed="false">Serviços</button>
+          <button class="filtro" type="button" data-type="event" aria-pressed="false">Eventos</button>
+        </div>
+      </fieldset>
+      <fieldset class="painel-filtros__grupo">
+        <legend class="campo__rotulo">Faixa de preço (R$)</legend>
+        <div class="painel-filtros__precos">
+          <div class="campo">
+            <label class="campo__ajuda" for="preco-minimo">Mínimo</label>
+            <input class="campo__entrada" id="preco-minimo" name="min_price" type="text"
+                   inputmode="decimal" autocomplete="off" placeholder="0,00"
+                   aria-describedby="erro-filtros">
+          </div>
+          <div class="campo">
+            <label class="campo__ajuda" for="preco-maximo">Máximo</label>
+            <input class="campo__entrada" id="preco-maximo" name="max_price" type="text"
+                   inputmode="decimal" autocomplete="off" placeholder="sem limite"
+                   aria-describedby="erro-filtros">
+          </div>
+        </div>
+        <span class="campo__ajuda">Anúncios com preço a combinar não aparecem quando há filtro de preço.</span>
+      </fieldset>
+      <span class="campo__erro" id="erro-filtros" role="alert"></span>
+      <div class="painel-filtros__acoes">
+        <button class="botao botao--primario" type="submit">Aplicar filtros</button>
+      </div>
+    </form>
+    <div class="feed-cabecalho">
+      <h1>Feed de anúncios</h1>
+      <button class="botao botao--texto" id="limpar-filtros" type="button" hidden>
+        Limpar filtros e busca
+      </button>
     </div>
     <div class="estado-vazio" id="estado-vazio" hidden></div>
     <div class="grade-anuncios" id="grade-anuncios"></div>
