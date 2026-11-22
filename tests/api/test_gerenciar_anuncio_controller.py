@@ -1,6 +1,6 @@
 """PUT and DELETE /api/ads/<id> (spec 007, PROJ-38)."""
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from io import BytesIO
 
 import pytest
@@ -80,6 +80,28 @@ def test_dono_edita_preco_e_o_feed_mostra_o_novo_valor(app):
     assert resposta.json["nome_anunciante"] == "Ana Vendas"
     assert "usuario_id" not in resposta.json
     assert precos_no_feed(app)["Livro de Cálculo 1"] == 35.5
+
+
+def test_editar_anuncio_expirado_renova_apos_salvar(app):
+    ad_id = publicar(app)
+    agora = datetime.now(timezone.utc)
+    with app.extensions["session_factory"].begin() as session:
+        anuncio_expirado = session.get(AdModel, ad_id)
+        anuncio_expirado.status = "expired"
+        anuncio_expirado.expires_at = agora - timedelta(days=1)
+
+    resposta = app.test_client().put(
+        f"/api/ads/{ad_id}",
+        json={**LIVRO, "titulo": "Livro revisado"},
+        headers=app.extensions["test_auth_headers"],
+    )
+
+    assert resposta.status_code == 200
+    with app.extensions["session_factory"]() as session:
+        anuncio_salvo = session.get(AdModel, ad_id)
+        assert anuncio_salvo.status == "published"
+        assert anuncio_salvo.expires_at > agora + timedelta(days=29)
+        assert anuncio_salvo.expires_at < agora + timedelta(days=31)
 
 
 def test_dono_troca_para_a_combinar(app):

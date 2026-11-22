@@ -184,7 +184,7 @@ Mapeamento com os nomes da subtarefa PROJ-25 do Jira (decisão D-041):
 | `image_url` | TEXT | Não | Pode ser nulo | URL da foto do anúncio |
 | `created_at` | DATETIME | Sim | Data de criação | Momento de criação do anúncio |
 | `status` | TEXT | Sim | `published`, `sold` ou `expired` | Estado de disponibilidade |
-| `expires_at` | DATETIME | Não | Nulo permitido para anúncios legados; publicações novas recebem prazo; nulo vale `created_at` + 30 dias | Fim do prazo de publicação, definido na publicação ou na última renovação (spec 004) |
+| `expires_at` | DATETIME | Não | Nulo permitido para anúncios legados; publicações novas recebem prazo; nulo vale `created_at` + 30 dias | Fim do prazo de publicação, definido na publicação ou na última renovação manual ou automática |
 | `usuario_id` | INTEGER | Não | FK → `usuarios.id`, `ON DELETE CASCADE`; nulo apenas para anúncios anteriores à integração | Usuário que publicou |
 | `estado_conservacao` | TEXT | Não | `novo` ou `usado_regular`; nulo para serviço/evento e anúncios antigos | Conservação do produto |
 | `preco_a_combinar` | BOOLEAN | Sim | `0` ou `1`; padrão `0` | Indica preço negociável |
@@ -194,8 +194,10 @@ Mapeamento com os nomes da subtarefa PROJ-25 do Jira (decisão D-041):
 é resolvida pelo adaptador de storage. Sem foto, ambos ficam nulos. O feed
 considera disponíveis apenas os anúncios publicados; anúncios vendidos ou
 expirados não devem ser retornados. Publicações novas recebem expiração em
-30 dias, calculada pelo caso de uso; o feed também oculta anúncios publicados
-cujo prazo já passou. O banco não atualiza automaticamente o estado do anúncio.
+30 dias, calculada pelo caso de uso. Renovar manualmente ou editar um anúncio
+expirado define novo prazo de 30 dias e o publica novamente. O feed também
+oculta anúncios publicados cujo prazo já passou. O banco não atualiza
+automaticamente o estado do anúncio.
 
 O banco garante as constraints estruturais acima, mas não valida o formato ou
 o domínio do e-mail. A entidade `Usuario` valida o endereço (apenas

@@ -41,6 +41,7 @@ from server.core.entities.anuncio import (
 from server.core.usecases.erros import (
     AnuncioDeOutroUsuario,
     AnuncioNaoEncontrado,
+    AnuncioNaoExpirado,
     CategoriaNaoEditavel,
     ErroDeCasoDeUso,
     PerfilIncompleto,
@@ -300,6 +301,18 @@ def register_ads_controller(app: OpenAPI, obter_usuario_da_sessao) -> None:
         search = request.args.get("search")
         ad_type = request.args.get("type")
         category = request.args.get("category")
+        owner = request.args.get("owner")
+        ad_status = request.args.get("status", "published")
+        if owner not in (None, "me"):
+            return _erro(
+                "Owner deve ser me.",
+                HTTPStatus.BAD_REQUEST,
+            )
+        if ad_status not in ("published", "expired"):
+            return _erro(
+                "Status deve ser published ou expired.",
+                HTTPStatus.BAD_REQUEST,
+            )
         try:
             min_price = _parse_price(request.args.get("min_price"))
         except ValueError:
@@ -329,6 +342,8 @@ def register_ads_controller(app: OpenAPI, obter_usuario_da_sessao) -> None:
                 category=category,
                 min_price=min_price,
                 max_price=max_price,
+                owner_id=g.usuario.id if owner == "me" else None,
+                ad_status=ad_status,
             )
         except ErroDeCasoDeUso as error:
             return _erro(str(error), HTTPStatus.UNAUTHORIZED)
@@ -573,6 +588,33 @@ def register_ads_controller(app: OpenAPI, obter_usuario_da_sessao) -> None:
         # logged, so the user still gets the deletion they asked for.
         _limpar_imagem(app.extensions["image_storage"], image_key)
         return "", HTTPStatus.NO_CONTENT
+
+    @app.post(
+        "/api/ads/<int:ad_id>/renovar",
+        security=SEGURANCA_BEARER,
+        responses={
+            200: AdViewSchema,
+            401: ErrorSchema,
+            403: ErrorSchema,
+            404: ErrorSchema,
+            422: ErrorSchema,
+        },
+    )
+    @protegida
+    def renovar_ad(path: AnuncioPath):
+        try:
+            renovado = app.extensions["renovar_anuncio"].executar(
+                path.ad_id, g.usuario.id
+            )
+        except (AnuncioNaoEncontrado, AnuncioDeOutroUsuario) as error:
+            return _erro_de_dono(error)
+        except AnuncioNaoExpirado as error:
+            return _erro(
+                str(error),
+                HTTPStatus.UNPROCESSABLE_ENTITY,
+                codigo="anuncio_nao_expirado",
+            )
+        return apresenta_ad(renovado).model_dump(mode="json"), 200
 
 
 def _parse_price(value: str | None) -> float | None:

@@ -16,11 +16,19 @@ from server.core.usecases.erros import (
     CategoriaNaoEditavel,
 )
 from server.core.usecases.excluir_anuncio import ExcluirAnuncio
+from server.core.usecases.renovar_anuncio import RenovarAnuncio
+from server.core.usecases.erros import AnuncioNaoExpirado
 
 DONO = 7
 OUTRA_PESSOA = 8
 CRIADO_EM = datetime(2026, 11, 20, 12, 0, tzinfo=UTC)
 EXPIRA_EM = CRIADO_EM + timedelta(days=30)
+AGORA = datetime(2026, 11, 22, 12, 0, tzinfo=UTC)
+
+
+class RelogioFixo:
+    def agora(self):
+        return AGORA
 
 
 class AnuncioEditavelRepositoryEmMemoria(AnuncioEditavelRepositoryInterface):
@@ -31,7 +39,7 @@ class AnuncioEditavelRepositoryEmMemoria(AnuncioEditavelRepositoryInterface):
     def buscar_por_id(self, ad_id):
         return self.anuncios.get(ad_id)
 
-    def atualizar(self, ad_id, anuncio):
+    def atualizar(self, ad_id, anuncio, expires_at=None):
         atual = self.anuncios[ad_id]
         self.anuncios[ad_id] = replace(
             atual,
@@ -40,12 +48,25 @@ class AnuncioEditavelRepositoryEmMemoria(AnuncioEditavelRepositoryInterface):
             price=None if anuncio.preco is None else float(anuncio.preco),
             preco_a_combinar=anuncio.preco is None,
             estado_conservacao=anuncio.estado_conservacao,
+            status="published" if expires_at is not None else atual.status,
+            expires_at=(
+                expires_at if expires_at is not None else atual.expires_at
+            ),
         )
         return self.anuncios[ad_id]
 
     def excluir(self, ad_id):
         self.excluidos.append(ad_id)
         del self.anuncios[ad_id]
+
+    def renovar(self, ad_id, expires_at):
+        atual = self.anuncios[ad_id]
+        self.anuncios[ad_id] = replace(
+            atual,
+            status="published",
+            expires_at=expires_at,
+        )
+        return self.anuncios[ad_id]
 
 
 def anuncio_salvo(ad_id=1, usuario_id=DONO, category="produto", **extras):
@@ -85,7 +106,9 @@ def edicao(usuario_id=DONO, categoria="produto", **extras):
 def test_dono_edita_campos_e_mantem_datas_situacao_e_foto():
     repositorio = AnuncioEditavelRepositoryEmMemoria([anuncio_salvo()])
 
-    editado = EditarAnuncio(repositorio).executar(1, edicao())
+    editado = EditarAnuncio(repositorio, RelogioFixo()).executar(
+        1, edicao()
+    )
 
     assert editado.title == "Livro de Cálculo 1"
     assert editado.description == "Livro com poucas anotações."
@@ -102,7 +125,7 @@ def test_dono_troca_preco_para_a_combinar():
         [anuncio_salvo(category="servico")]
     )
 
-    editado = EditarAnuncio(repositorio).executar(
+    editado = EditarAnuncio(repositorio, RelogioFixo()).executar(
         1, edicao(categoria="servico", preco=None)
     )
 
@@ -110,15 +133,19 @@ def test_dono_troca_preco_para_a_combinar():
     assert editado.price is None
 
 
-def test_dono_edita_anuncio_expirado():
+def test_editar_anuncio_expirado_publica_e_define_novo_prazo():
     repositorio = AnuncioEditavelRepositoryEmMemoria(
         [anuncio_salvo(status="expired")]
     )
 
-    editado = EditarAnuncio(repositorio).executar(1, edicao())
+    editado = EditarAnuncio(repositorio, RelogioFixo()).executar(
+        1, edicao()
+    )
 
-    assert editado.status == "expired"
+    assert editado.status == "published"
     assert editado.title == "Livro de Cálculo 1"
+    assert editado.created_at == CRIADO_EM
+    assert editado.expires_at == AGORA + timedelta(days=30)
 
 
 def test_editar_recusa_troca_de_categoria():
@@ -126,7 +153,9 @@ def test_editar_recusa_troca_de_categoria():
     repositorio = AnuncioEditavelRepositoryEmMemoria([original])
 
     with pytest.raises(CategoriaNaoEditavel):
-        EditarAnuncio(repositorio).executar(1, edicao(categoria="servico"))
+        EditarAnuncio(repositorio, RelogioFixo()).executar(
+            1, edicao(categoria="servico")
+        )
 
     assert repositorio.buscar_por_id(1) == original
 
@@ -137,7 +166,7 @@ def test_editar_recusa_quem_nao_e_dono(usuario_id_do_anuncio):
     repositorio = AnuncioEditavelRepositoryEmMemoria([original])
 
     with pytest.raises(AnuncioDeOutroUsuario):
-        EditarAnuncio(repositorio).executar(1, edicao())
+        EditarAnuncio(repositorio, RelogioFixo()).executar(1, edicao())
 
     assert repositorio.buscar_por_id(1) == original
 
@@ -146,7 +175,7 @@ def test_editar_anuncio_inexistente():
     repositorio = AnuncioEditavelRepositoryEmMemoria([])
 
     with pytest.raises(AnuncioNaoEncontrado):
-        EditarAnuncio(repositorio).executar(99, edicao())
+        EditarAnuncio(repositorio, RelogioFixo()).executar(99, edicao())
 
 
 def test_dono_exclui_e_recebe_a_chave_da_foto():
@@ -185,3 +214,44 @@ def test_excluir_anuncio_inexistente():
 
     with pytest.raises(AnuncioNaoEncontrado):
         ExcluirAnuncio(repositorio).executar(99, DONO)
+
+
+def test_dono_renova_anuncio_expirado_por_30_dias():
+    original = anuncio_salvo(status="expired")
+    repositorio = AnuncioEditavelRepositoryEmMemoria([original])
+
+    class Relogio:
+        def agora(self):
+            return CRIADO_EM
+
+    renovado = RenovarAnuncio(repositorio, Relogio()).executar(1, DONO)
+
+    assert renovado.status == "published"
+    assert renovado.expires_at == CRIADO_EM + timedelta(days=30)
+
+
+def test_renovacao_recusa_anuncio_publicado():
+    repositorio = AnuncioEditavelRepositoryEmMemoria(
+        [anuncio_salvo(status="published")]
+    )
+
+    class Relogio:
+        def agora(self):
+            return CRIADO_EM
+
+    with pytest.raises(AnuncioNaoExpirado):
+        RenovarAnuncio(repositorio, Relogio()).executar(1, DONO)
+
+
+@pytest.mark.parametrize("usuario_id_do_anuncio", [OUTRA_PESSOA, None])
+def test_renovacao_recusa_quem_nao_e_dono(usuario_id_do_anuncio):
+    repositorio = AnuncioEditavelRepositoryEmMemoria(
+        [anuncio_salvo(status="expired", usuario_id=usuario_id_do_anuncio)]
+    )
+
+    class Relogio:
+        def agora(self):
+            return CRIADO_EM
+
+    with pytest.raises(AnuncioDeOutroUsuario):
+        RenovarAnuncio(repositorio, Relogio()).executar(1, DONO)

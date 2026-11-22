@@ -36,6 +36,8 @@ PROJ-37 e a renovação é a PROJ-40.
   então a ação é recusada e o anúncio não muda.
 - [ ] CA6: Dado um anúncio que não existe, quando tento editar ou excluir,
   então recebo a resposta de anúncio não encontrado.
+- [ ] CA7: Dado um anúncio expirado meu, quando salvo uma edição válida, então
+  ele volta a publicado com novo prazo de 30 dias.
 
 ## Regras de negócio
 
@@ -46,8 +48,9 @@ PROJ-37 e a renovação é a PROJ-40.
   "a combinar").
 - RN3: A categoria (produto, serviço ou evento) não pode ser trocada, porque
   ela define o tipo do anúncio e quais campos valem.
-- RN4: Editar não muda a data de publicação nem o prazo de expiração;
-  estender o prazo é a renovação (PROJ-40).
+- RN4: Editar um anúncio publicado não muda a data de publicação nem o prazo.
+  Ao salvar com sucesso a edição de um anúncio expirado, ele é publicado
+  novamente com prazo de 30 dias a partir do momento da edição.
 - RN5: A exclusão é definitiva: o anúncio sai do banco e a foto é apagada do
   armazenamento.
 
@@ -56,11 +59,12 @@ PROJ-37 e a renovação é a PROJ-40.
 - Trocar ou remover a foto na edição: fica para um segundo passo, porque
   envolve o armazenamento de imagens.
 - Confirmação de exclusão na tela e painel "Meus Anúncios" (PROJ-37).
-- Renovar o prazo (PROJ-40).
+- Renovação manual pela ação do painel (PROJ-40); editar um anúncio expirado
+  renova automaticamente conforme RN4.
 
 ## Dúvidas em aberto
 
 - O PO precisa confirmar se título e categoria podem ser editados. Esta spec
   permite título e bloqueia categoria (RN3).
-- Confirmar se anúncios vendidos ou expirados podem ser editados. Esta spec
-  permite editar em qualquer situação.
+- Confirmar se anúncios vendidos podem ser editados. Anúncios expirados podem
+  ser editados e são renovados automaticamente (RN4).

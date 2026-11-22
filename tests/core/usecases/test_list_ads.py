@@ -25,14 +25,21 @@ class InMemoryAdRepository(AdRepository):
         category=None,
         min_price=None,
         max_price=None,
+        owner_id=None,
+        ad_status="published",
     ):
         self.calls.append((page, per_page, search, ad_type))
         self.price_and_category_filters.append(
             (category, min_price, max_price)
         )
         available_ads = [
-            ad for ad in self.ads if ad.status == "published"
+            ad for ad in self.ads if ad.status == ad_status
         ]
+        if owner_id is not None:
+            available_ads = [
+                ad for ad in available_ads
+                if ad.usuario_id == owner_id
+            ]
         if category is not None:
             available_ads = [
                 ad
@@ -96,6 +103,7 @@ def make_ad(
     ad_type="product",
     created_at=None,
     price=100.0,
+    usuario_id=None,
 ):
     if created_at is None:
         created_at = datetime(
@@ -115,6 +123,7 @@ def make_ad(
         image_url=None,
         created_at=created_at,
         status=status,
+        usuario_id=usuario_id,
     )
 
 
