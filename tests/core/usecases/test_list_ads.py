@@ -266,7 +266,7 @@ def test_list_ads_returns_items_for_requested_page():
     assert repository.calls == [(2, 20, None, None)]
 
 
-def test_list_ads_returns_to_first_page_when_search_is_applied():
+def test_list_ads_keeps_requested_page_when_search_and_type_are_applied():
     ads = [
         make_ad(
             f"Anúncio {index:02d}",
@@ -287,10 +287,15 @@ def test_list_ads_returns_to_first_page_when_search_is_applied():
         usuario=make_authenticated_user(),
         page=2,
         search="Anúncio",
+        ad_type="product",
     )
 
-    assert result["page"] == 1
-    assert repository.calls == [(1, 20, "Anúncio", None)]
+    assert [ad.title for ad in result["items"]] == [
+        f"Anúncio {index:02d}" for index in range(4, -1, -1)
+    ]
+    assert result["page"] == 2
+    assert result["total_pages"] == 2
+    assert repository.calls == [(2, 20, "Anúncio", "product")]
 
 
 def test_list_ads_uses_first_page_when_page_is_not_provided():
