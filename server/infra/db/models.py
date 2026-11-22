@@ -292,11 +292,11 @@ class AdModel(Base):
     price: Mapped[float] = mapped_column(Float, nullable=False)
     image_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
+        UTCDateTime,
         nullable=False,
     )
     status: Mapped[str] = mapped_column(Text, nullable=False)
     expires_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True),
+        UTCDateTime,
         nullable=True,
     )

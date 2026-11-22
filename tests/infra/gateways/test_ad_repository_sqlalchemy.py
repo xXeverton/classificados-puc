@@ -22,6 +22,7 @@ def make_ad_model(
     ad_type="product",
     description="Descrição do anúncio.",
     category="Esportes",
+    expires_at=None,
 ):
     return AdModel(
         title=title,
@@ -32,7 +33,7 @@ def make_ad_model(
         image_url=None,
         created_at=created_at,
         status=status,
-        expires_at=None,
+        expires_at=expires_at,
     )
 
 
@@ -188,3 +189,88 @@ def test_repository_applies_limit_offset_and_returns_total(
     ]
     assert len(items) == 5
     assert total == 25
+
+
+def make_repository(database_engine):
+    return AdRepositorySQLAlchemy(create_session_factory(database_engine))
+
+
+def ads_by_title(database_engine):
+    session_factory = create_session_factory(database_engine)
+    with session_factory() as session:
+        return {
+            model.title: (model.id, model.status)
+            for model in session.query(AdModel).all()
+        }
+
+
+def test_repository_lists_every_published_ad_with_its_end_date(
+    database_engine,
+):
+    renewed_until = datetime(2026, 12, 30, tzinfo=timezone.utc)
+    add_ads(
+        database_engine,
+        [
+            make_ad_model(
+                "Publicado",
+                datetime(2026, 11, 1, tzinfo=timezone.utc),
+                expires_at=renewed_until,
+            ),
+            make_ad_model(
+                "Vendido",
+                datetime(2026, 11, 2, tzinfo=timezone.utc),
+                status="sold",
+            ),
+            make_ad_model(
+                "Expirado",
+                datetime(2026, 11, 3, tzinfo=timezone.utc),
+                status="expired",
+            ),
+        ],
+    )
+
+    ads = make_repository(database_engine).list_published_ads()
+
+    assert [ad.title for ad in ads] == ["Publicado"]
+    assert ads[0].expires_at == renewed_until
+
+
+def test_repository_marks_only_published_ads_as_expired(database_engine):
+    created_at = datetime(2026, 11, 1, tzinfo=timezone.utc)
+    add_ads(
+        database_engine,
+        [
+            make_ad_model("Vencido", created_at),
+            make_ad_model("Em dia", created_at),
+            make_ad_model("Vendido", created_at, status="sold"),
+        ],
+    )
+    ids = {title: ad_id for title, (ad_id, _) in
+           ads_by_title(database_engine).items()}
+
+    changed = make_repository(database_engine).mark_as_expired(
+        [ids["Vencido"], ids["Vendido"]]
+    )
+
+    assert changed == 1
+    statuses = {
+        title: status
+        for title, (_, status) in ads_by_title(database_engine).items()
+    }
+    assert statuses == {
+        "Vencido": "expired",
+        "Em dia": "published",
+        "Vendido": "sold",
+    }
+
+
+def test_repository_marks_nothing_for_empty_list(database_engine):
+    add_ads(
+        database_engine,
+        [make_ad_model("Em dia", datetime(2026, 11, 1, tzinfo=timezone.utc))],
+    )
+
+    changed = make_repository(database_engine).mark_as_expired([])
+
+    assert changed == 0
+    assert ads_by_title(database_engine)["Em dia"][1] == "published"

@@ -1,15 +1,18 @@
 """SQLAlchemy adapter for the advertisement repository interface."""
 
-from sqlalchemy import func, or_, select
+from sqlalchemy import func, or_, select, update
 from sqlalchemy.orm import Session, sessionmaker
 
 from server.core.entities.ad import Ad
 from server.core.interfaces.ad_repository_interface import AdRepository
+from server.core.interfaces.expirable_ad_repository_interface import (
+    ExpirableAdRepository,
+)
 from server.infra.db.models import AdModel
 
 
-class AdRepositorySQLAlchemy(AdRepository):
-    """Query available advertisements through SQLAlchemy."""
+class AdRepositorySQLAlchemy(AdRepository, ExpirableAdRepository):
+    """Query and expire advertisements through SQLAlchemy."""
 
     def __init__(self, session_factory: sessionmaker[Session]) -> None:
         self._session_factory = session_factory
@@ -48,6 +51,27 @@ class AdRepositorySQLAlchemy(AdRepository):
                 .limit(per_page)
             ).all()
             return [self._to_entity(model) for model in models], total
+
+    def list_published_ads(self) -> list[Ad]:
+        with self._session_factory() as session:
+            models = session.scalars(
+                select(AdModel).where(AdModel.status == "published")
+            ).all()
+            return [self._to_entity(model) for model in models]
+
+    def mark_as_expired(self, ad_ids: list[int]) -> int:
+        if not ad_ids:
+            return 0
+        with self._session_factory.begin() as session:
+            result = session.execute(
+                update(AdModel)
+                .where(
+                    AdModel.id.in_(ad_ids),
+                    AdModel.status == "published",
+                )
+                .values(status="expired")
+            )
+            return result.rowcount
 
     @staticmethod
     def _to_entity(model: AdModel) -> Ad:

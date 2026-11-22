@@ -59,3 +59,23 @@ em disco com nome aleatório; requisições acima de 3 MB recebem `413`.
 
 `server/uploads/` está no `.gitignore` e é criada na primeira foto. Faça
 backup dela junto com o banco.
+
+## Expiração de anúncios
+
+Um anúncio publicado vale por 30 dias, contados da publicação ou da última
+renovação (`expires_at`). Anúncios vencidos não saem do feed sozinhos: o
+comando abaixo os marca como `expired` e informa quantos expirou. Ele pode
+rodar quantas vezes for preciso; vendidos e já expirados não mudam.
+
+```bash
+flask --app server.app:create_app expirar-anuncios
+```
+
+Agende o comando para rodar periodicamente, por exemplo uma vez por hora:
+
+- Linux/macOS (cron): `0 * * * * cd /caminho/do/projeto && .venv/bin/flask --app server.app:create_app expirar-anuncios`
+- Windows: crie uma tarefa no Agendador de Tarefas que rode
+  `.venv\Scripts\flask.exe --app server.app:create_app expirar-anuncios`
+  com a pasta do projeto como diretório inicial.
+
+Regras e critérios: [spec 004](../spec/features/004-expirar-anuncios/spec.md).
