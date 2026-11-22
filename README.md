@@ -74,8 +74,8 @@ make install
 ## Executar
 
 ```bash
-flask --app server.app:create_app run --debug   # API em http://127.0.0.1:5000
-make front                                       # front em http://localhost:5173
+make backend   # API em http://127.0.0.1:5000
+make front     # front em http://localhost:5173
 ```
 
 Variáveis de ambiente, autenticação, e-mail e fotos estão em
@@ -87,6 +87,7 @@ Variáveis de ambiente, autenticação, e-mail e fotos estão em
 ```bash
 make test         # API (pytest)
 make front-test   # front (Node 18 ou mais novo)
+make check        # lint + testes do backend + testes do front
 ```
 
 ## Qualidade do código
@@ -98,8 +99,8 @@ make lint
 make check
 ```
 
-`make check` é o alvo padrão e executa lint e testes. O Flake8 segue as regras
-em `setup.cfg`. Para gerar cobertura:
+`make check` é o alvo padrão e executa todas as verificações automatizadas.
+O Flake8 segue as regras em `setup.cfg`. Para gerar cobertura:
 
 ```bash
 python -m pytest --cov=server.core --cov-report=term-missing
