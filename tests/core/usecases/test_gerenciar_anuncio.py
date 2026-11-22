@@ -68,6 +68,10 @@ class AnuncioEditavelRepositoryEmMemoria(AnuncioEditavelRepositoryInterface):
         )
         return self.anuncios[ad_id]
 
+    def alterar_status(self, ad_id, status):
+        self.anuncios[ad_id] = replace(self.anuncios[ad_id], status=status)
+        return self.anuncios[ad_id]
+
 
 def anuncio_salvo(ad_id=1, usuario_id=DONO, category="produto", **extras):
     dados = {

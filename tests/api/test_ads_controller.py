@@ -313,11 +313,11 @@ def test_get_ads_owner_me_filters_by_authenticated_owner():
 def test_get_ads_owner_me_rejects_invalid_status():
     app = create_ads_app()
 
-    response = get_ads(app, owner="me", status="sold")
+    response = get_ads(app, owner="me", status="deleted")
 
     assert response.status_code == 400
     assert response.json == {
-        "message": "Status deve ser published ou expired."
+        "message": "Status deve ser published, expired ou sold."
     }
     app.extensions["database_engine"].dispose()
 
@@ -854,7 +854,7 @@ def test_publish_requires_authentication_and_returns_json_401():
 def test_get_ad_details_returns_public_ad_and_advertiser():
     app = create_ads_app()
     complete_advertiser_profile(app)
-    assign_owner(app,1)
+    assign_owner(app, 1)
 
     response = app.test_client().get(
         "/api/ads/1",
@@ -881,7 +881,7 @@ def test_get_ad_details_returns_public_ad_and_advertiser():
 def test_get_ad_details_without_photo_succeeds():
     app = create_ads_app()
     complete_advertiser_profile(app)
-    assign_owner(app,2)
+    assign_owner(app, 2)
 
     response = app.test_client().get(
         "/api/ads/2",

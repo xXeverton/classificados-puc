@@ -107,3 +107,11 @@ class CategoriaNaoEditavel(ErroDeCasoDeUso):
 
 class AnuncioNaoExpirado(ErroDeCasoDeUso):
     mensagem_padrao = "Somente anúncios expirados podem ser renovados."
+
+
+class StatusInvalido(ErroDeCasoDeUso):
+    mensagem_padrao = "Status deve ser sold (vendido) ou published (ativo)."
+
+
+class MudancaDeStatusInvalida(ErroDeCasoDeUso):
+    mensagem_padrao = "Somente anúncios vendidos podem ser reativados."

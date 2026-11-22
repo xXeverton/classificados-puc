@@ -33,7 +33,6 @@ class AdRepositorySQLAlchemy(
         self._session_factory = session_factory
         self._image_storage = image_storage
 
-
     def list_published(
         self,
         page: int,
@@ -192,6 +191,12 @@ class AdRepositorySQLAlchemy(
             model = session.get(AdModel, ad_id)
             model.status = "published"
             model.expires_at = expires_at
+            session.flush()
+            return self._buscar_com_anunciante(session, ad_id)
+
+    def alterar_status(self, ad_id: int, status: str) -> Ad:
+        with self._session_factory.begin() as session:
+            session.get(AdModel, ad_id).status = status
             session.flush()
             return self._buscar_com_anunciante(session, ad_id)
 

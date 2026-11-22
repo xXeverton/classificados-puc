@@ -53,6 +53,9 @@ from server.core.usecases.publicar_anuncio import PublicarAnuncio
 from server.core.usecases.editar_anuncio import EditarAnuncio
 from server.core.usecases.excluir_anuncio import ExcluirAnuncio
 from server.core.usecases.renovar_anuncio import RenovarAnuncio
+from server.core.usecases.alterar_status_anuncio import (
+    AlterarStatusAnuncio,
+)
 from server.core.usecases.reenviar_confirmacao import ReenviarConfirmacao
 from server.core.usecases.salvar_perfil_anunciante import (
     SalvarPerfilAnunciante,
@@ -190,6 +193,10 @@ def create_app(
     )
     app.extensions["excluir_anuncio"] = ExcluirAnuncio(ad_repository)
     app.extensions["renovar_anuncio"] = RenovarAnuncio(
+        ad_repository,
+        relogio,
+    )
+    app.extensions["alterar_status_anuncio"] = AlterarStatusAnuncio(
         ad_repository,
         relogio,
     )
