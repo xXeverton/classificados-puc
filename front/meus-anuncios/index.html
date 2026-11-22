@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Meus anúncios · Classificados PUC</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rethink+Sans:wght@400;600;700&display=swap">
+  <link rel="stylesheet" href="../css/tema.css">
+  <link rel="stylesheet" href="../css/anuncios.css">
+</head>
+<body>
+  <header class="cabecalho">
+    <div class="container cabecalho__conteudo">
+      <a class="marca" href="../inicio/">
+        <span class="marca__sigla">PUC</span>
+        <span class="marca__nome">Classificados</span>
+      </a>
+      <nav class="navegacao" aria-label="Principal">
+        <a class="navegacao__item" href="../inicio/">Início</a>
+        <a class="navegacao__item" href="../perfil/">Meu perfil</a>
+      </nav>
+      <a class="botao botao--primario" href="../anuncios/novo/">Novo anúncio</a>
+      <button class="botao botao--contorno" id="sair" type="button">Sair</button>
+    </div>
+  </header>
+  <main class="container pagina" id="conteudo" hidden>
+    <div id="alerta" role="alert"></div>
+    <h1>Meus anúncios</h1>
+    <section aria-labelledby="titulo-publicados">
+      <h2 id="titulo-publicados">Publicados</h2>
+      <div class="estado-vazio" id="vazio-publicados" hidden></div>
+      <div class="grade-anuncios meus-anuncios__lista" id="publicados"></div>
+      <nav class="paginacao" id="paginacao-publicados" aria-label="Paginação de anúncios publicados"></nav>
+    </section>
+    <section aria-labelledby="titulo-expirados">
+      <h2 id="titulo-expirados">Expirados</h2>
+      <div class="estado-vazio" id="vazio-expirados" hidden></div>
+      <div class="grade-anuncios meus-anuncios__lista" id="expirados"></div>
+      <nav class="paginacao" id="paginacao-expirados" aria-label="Paginação de anúncios expirados"></nav>
+    </section>
+  </main>
+  <script type="module" src="../js/paginas/meus_anuncios.js"></script>
+</body>
+</html>

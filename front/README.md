@@ -1,9 +1,10 @@
 # Interface web (`front/`)
 
-HTML, CSS e JavaScript puros, sem build nem dependências de npm. Rode a API e
-o servidor de desenvolvimento do front:
+HTML, CSS e JavaScript puros, sem build nem dependências de npm. Rode cada
+servidor em um terminal separado:
 
 ```bash
+make backend      # API em http://127.0.0.1:5000
 make front        # frontend + proxy da API em http://localhost:5173
 make front-test   # testes do front (Node 18 ou mais novo)
 ```
@@ -15,7 +16,7 @@ quando o Codespaces encaminha apenas a porta 5173 para o navegador.
 ## Telas
 
 `/entrar/`, `/cadastro/`, `/confirmar-email/`, `/inicio/`, `/perfil/`,
-`/perfil/anunciante/` e `/anuncios/novo/`.
+`/perfil/anunciante/`, `/anuncios/novo/` e `/meus-anuncios/`.
 
 ## Publicação de anúncios
 

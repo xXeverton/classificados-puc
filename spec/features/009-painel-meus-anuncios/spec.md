@@ -1,7 +1,7 @@
 # Spec: Painel "Meus Anúncios"
 
 - **ID**: 009
-- **Status**: Rascunho
+- **Status**: Aprovada
 - **Data**: 2026-11-22
 - **Jira**: história [PROJ-15](https://matheuscomputacaopuc.atlassian.net/browse/PROJ-15)
   (Gerenciar anúncios); subtarefa
@@ -33,9 +33,15 @@
 - [ ] CA6: Dado que a API de anúncios do usuário falhe, quando o painel tenta
   carregar, então o usuário recebe um aviso de erro sem dados fictícios.
 - [ ] CA7: Dado um anúncio próprio publicado, quando ele aparece no painel,
-  então o card oferece ações de editar, excluir e renovar.
+  então o card oferece ações de editar e excluir.
 - [ ] CA8: Dado mais anúncios do que cabem em uma página, quando o usuário
   navega pelas páginas, então o painel mostra a página correspondente.
+- [ ] CA9: Dado um anúncio expirado do usuário, quando ele confirma Renovar,
+  então o anúncio volta ao estado publicado com prazo de 30 dias.
+- [ ] CA10: Dado um anúncio próprio, quando escolho Editar, então o formulário
+  apresenta os valores atuais do anúncio.
+- [ ] CA11: Dado um viewport estreito, quando acesso o painel, então os cards e
+  ações permanecem utilizáveis sem rolagem horizontal.
 
 ## Regras de negócio
 
@@ -50,19 +56,26 @@
   mais antigo.
 - RN8: A listagem usa 20 itens por página e suporta o parâmetro `page`.
 - RN9: Os cards oferecem Editar, Excluir e Renovar.
+- RN10: O conjunto publicado usa `owner=me&status=published`; o conjunto
+  expirado usa `owner=me&status=expired` em uma consulta separada.
+- RN11: Renovar só é exibido para anúncios expirados próprios e só muda para
+  publicado com um novo prazo de 30 dias.
+- RN12: A edição aberta pelo painel começa com os valores persistidos do
+  anúncio selecionado.
+- RN13: A disposição dos cards adapta-se a telas estreitas sem overflow
+  horizontal.
 
 ## Fora do escopo
 
 - Implementar novos contratos de edição ou exclusão nesta feature; os
   contratos existentes estão definidos pela PROJ-38 e pela spec 007.
-- Confirmar ou criar o contrato da renovação nesta feature; ela é parte da
-  interface do painel, mas depende da tarefa PROJ-40.
-- Mostrar anúncios vendidos ou expirados no painel.
+- Renovar anúncios publicados antes da expiração.
+- Renovar anúncios vendidos.
+- Mostrar anúncios vendidos no painel.
 - Criar anúncios nesta feature.
 - Implementar filtros, busca ou seleção em massa não confirmados no Jira.
 - Exibir dados de perfil do anunciante para compradores.
 
 ## Dúvidas em aberto
 
-- Qual contrato HTTP da renovação será usado pela PROJ-40?
-- Como a renovação se comporta para um anúncio publicado antes da expiração?
+- Nenhuma.
