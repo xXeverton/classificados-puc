@@ -17,6 +17,17 @@ class ElementoFalso {
     this.children.push(...elementos);
   }
 
+  prepend(...elementos) {
+    this.children.unshift(...elementos);
+  }
+
+  setAttribute() {}
+
+  querySelector() {
+    this.conteudo ??= new ElementoFalso();
+    return this.conteudo;
+  }
+
   replaceChildren(...elementos) {
     this.children = [...elementos];
   }
@@ -38,7 +49,7 @@ function procurarPorTexto(elemento, texto) {
 const SELETORES = [
   "#alerta",
   "#conteudo",
-  "#sair",
+  "[data-cabecalho]",
   ...SECOES_DO_PAINEL.flatMap((secao) => [
     `#${secao.lista}`,
     `#${secao.paginacao}`,
@@ -73,6 +84,8 @@ async function abrirPainel({ anuncios, confirmar = true }) {
     },
     location: {
       origin: "http://localhost:5173",
+      pathname: "/meus-anuncios/",
+      search: "",
       replace() {},
     },
     fetch: async (url, opcoes = {}) => {

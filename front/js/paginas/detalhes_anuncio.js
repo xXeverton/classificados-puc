@@ -10,17 +10,18 @@ import {
 import { detalharAnuncio } from "../fluxos/detalhar_anuncio.js";
 import { criarCarregadorDeFoto } from "../fluxos/carregar_foto.js";
 import { API_BASE_URL } from "../config.js";
+import { montarCabecalho } from "./cabecalho.js";
 import {
   criar,
   irPara,
-  ligarBotaoSair,
+  
   mostrarAlerta,
   montarDependencias,
   limparAlerta,
 } from "./comum.js";
 
 const deps = montarDependencias();
-ligarBotaoSair(document.querySelector("#sair"), deps);
+montarCabecalho(deps);
 
 const alerta = document.querySelector("#alerta");
 const carregando = document.querySelector("#carregando");

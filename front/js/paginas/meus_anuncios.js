@@ -1,7 +1,8 @@
+import { montarCabecalho } from "./cabecalho.js";
 import {
   criar,
   irPara,
-  ligarBotaoSair,
+  
   mostrarAlerta,
   montarDependencias,
   ROTAS,
@@ -14,7 +15,7 @@ import { chamarApi } from "../fluxos/conexao.js";
 import { carregarUsuario } from "../fluxos/sessao_atual.js";
 
 const deps = montarDependencias();
-ligarBotaoSair(document.querySelector("#sair"), deps);
+montarCabecalho(deps);
 
 const alerta = document.querySelector("#alerta");
 const conteudo = document.querySelector("#conteudo");

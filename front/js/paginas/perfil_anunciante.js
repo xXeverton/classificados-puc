@@ -7,12 +7,13 @@ import {
   ROTULOS_DE_TIPO,
   validarFoto,
 } from "../dominio/regras_perfil.js";
+import { montarCabecalho } from "./cabecalho.js";
 import {
   ROTAS,
   aoEnviar,
   criar,
   irPara,
-  ligarBotaoSair,
+  
   limparAlerta,
   limparErros,
   mostrarAlerta,
@@ -49,7 +50,7 @@ let fotoNova = null;
 let fotoNovaBlob = null;
 let removerFoto = false;
 
-ligarBotaoSair(document.querySelector("#sair"), deps);
+montarCabecalho(deps);
 window.addEventListener("pagehide", () => {
   carregadorDeFoto.revogar();
   revogarPrevia();

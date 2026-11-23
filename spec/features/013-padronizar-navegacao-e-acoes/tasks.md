@@ -19,11 +19,11 @@ separados por subtarefa (D-050).
 
 ## PROJ-57 — [Front-end] Cabeçalho único
 
-- [ ] T7: Testes de `dominio/navegacao.js` (itens, ordem, `itemAtual`).
-- [ ] T8: Implementar `navegacao.js` e `paginas/cabecalho.js`.
-- [ ] T9: Aplicar o cabeçalho nas 7 telas (início mantém busca e Filtros),
+- [x] T7: Testes de `dominio/navegacao.js` (itens, ordem, `itemAtual`).
+- [x] T8: Implementar `navegacao.js` e `paginas/cabecalho.js`.
+- [x] T9: Aplicar o cabeçalho nas 6 telas (início mantém busca e Filtros),
   remover "Anunciar" e adicionar a fonte em detalhes.
-- [ ] T10: Mostrar o cabeçalho completo em `/guia-de-estilo/`.
+- [x] T10: Mostrar o cabeçalho completo em `/guia-de-estilo/`.
 
 ## PROJ-58 — [Front-end] "Ver detalhes" no painel
 

@@ -11,12 +11,11 @@ import {
   parametrosDoFeed,
 } from "../dominio/feed.js";
 import { listarAnuncios } from "../fluxos/listar_anuncios.js";
-import { sair } from "../fluxos/sessao_atual.js";
+import { montarCabecalho } from "./cabecalho.js";
 import { ROTAS, irPara, mostrarAlerta, montarDependencias, criar, limparAlerta } from "./comum.js";
 
 const deps = montarDependencias();
 const alerta = document.querySelector("#alerta");
-const botaoSair = document.querySelector("#sair");
 const conteudo = document.querySelector("#conteudo");
 const grade = document.querySelector("#grade-anuncios");
 const estadoVazio = document.querySelector("#estado-vazio");
@@ -32,11 +31,7 @@ const precoMaximo = document.querySelector("#preco-maximo");
 const erroFiltros = document.querySelector("#erro-filtros");
 const limparFiltros = document.querySelector("#limpar-filtros");
 
-botaoSair.addEventListener("click", async () => {
-  botaoSair.disabled = true;
-  await sair(deps);
-  irPara(ROTAS.entrar);
-});
+montarCabecalho(deps);
 
 function formatarPreco(valor, aCombinar) {
   if (aCombinar) return "A combinar";

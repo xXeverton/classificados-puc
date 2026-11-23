@@ -12,11 +12,12 @@ import {
   mapearAnuncioParaFormulario,
 } from "../fluxos/anuncio_edicao.js";
 import { chamarApi } from "../fluxos/conexao.js";
+import { montarCabecalho } from "./cabecalho.js";
 import {
   ROTAS,
   aoEnviar,
   irPara,
-  ligarBotaoSair,
+  
   limparAlerta,
   limparErroDeCampo,
   limparErros,
@@ -47,7 +48,7 @@ let imagemSelecionada = null;
 let urlPrevia = null;
 const adEditandoId = new URLSearchParams(window.location.search).get("editar");
 
-ligarBotaoSair(document.querySelector("#sair"), deps);
+montarCabecalho(deps);
 
 function coletarDados() {
   return {

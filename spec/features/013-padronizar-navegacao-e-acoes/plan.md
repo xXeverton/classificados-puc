@@ -29,7 +29,7 @@ JS puros, sem build); há uma mudança pequena no backend (RN4).
   `textContent` (D-031): logo, conteúdo extra da página (a busca e o botão
   Filtros do início ficam no HTML, entre o logo e o menu), menu, botão
   "Novo anúncio" e "Sair" (`ligarBotaoSair`). Marca `aria-current="page"`.
-- As 7 telas com login trocam o `<header>` escrito à mão por esse marcador e
+- As 6 telas com login trocam o `<header>` escrito à mão por esse marcador e
   importam `cabecalho.js`; o item "Anunciar" desaparece.
 - Estilo: reaproveita `.cabecalho`, `.navegacao` e `.botao` do `tema.css`; só
   se faltar algo, entra no `tema.css` **e** no `/guia-de-estilo/`, que
