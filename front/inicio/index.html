@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rethink+Sans:wght@400;600;700&display=swap">
   <link rel="stylesheet" href="../css/tema.css">
+  <link rel="stylesheet" href="../css/destaques.css">
 </head>
 <body>
   <header class="cabecalho" data-cabecalho>
@@ -24,6 +25,16 @@
   </header>
   <main class="container pagina-feed" id="conteudo" hidden>
     <div id="alerta" role="alert"></div>
+    <section class="destaques" id="destaques" aria-roledescription="carrossel"
+             aria-label="Eventos em destaque" hidden>
+      <div data-destaques-faixa></div>
+      <button class="destaques__seta destaques__seta--anterior" type="button"
+              aria-label="Evento anterior" data-destaques-anterior hidden>&#8249;</button>
+      <button class="destaques__seta destaques__seta--proxima" type="button"
+              aria-label="Próximo evento" data-destaques-proxima hidden>&#8250;</button>
+      <div class="destaques__pontos" data-destaques-pontos hidden></div>
+      <p class="visualmente-oculto" aria-live="polite" data-destaques-aviso></p>
+    </section>
     <form class="painel-filtros" id="painel-filtros" aria-label="Filtros do feed" novalidate hidden>
       <fieldset class="painel-filtros__grupo">
         <legend class="campo__rotulo">Tipo</legend>

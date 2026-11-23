@@ -59,6 +59,33 @@
           </select>
           <span class="campo__erro" id="estado_conservacao-erro"></span>
         </div>
+        <div id="campos-evento" class="secao-anuncio" hidden>
+          <div class="campo">
+            <label class="campo__rotulo" for="data_evento">Data do evento</label>
+            <input class="campo__entrada" id="data_evento" name="data_evento"
+              type="date" required>
+            <span class="campo__erro" id="data_evento-erro"></span>
+          </div>
+          <div class="campo">
+            <label class="campo__rotulo" for="horario_evento">
+              Horário <span class="campo__opcional">(opcional)</span>
+            </label>
+            <input class="campo__entrada" id="horario_evento"
+              name="horario_evento" type="time">
+            <span class="campo__erro" id="horario_evento-erro"></span>
+          </div>
+          <div class="campo">
+            <label class="campo__rotulo" for="local_evento">
+              Local <span class="campo__opcional">(opcional)</span>
+            </label>
+            <input class="campo__entrada" id="local_evento" name="local_evento"
+              autocomplete="off" aria-describedby="local_evento-ajuda">
+            <span class="campo__ajuda" id="local_evento-ajuda">
+              Até 80 caracteres. Aparece só nos detalhes do evento.
+            </span>
+            <span class="campo__erro" id="local_evento-erro"></span>
+          </div>
+        </div>
         <div class="campo">
           <label class="campo__rotulo" for="descricao">Descrição</label>
           <textarea class="campo__entrada" id="descricao" name="descricao"
@@ -85,6 +112,10 @@
           <label class="opcoes__item">
             <input type="radio" name="tipo_preco" value="combinar">
             A combinar
+          </label>
+          <label class="opcoes__item" id="opcao-sem-preco" hidden>
+            <input type="radio" name="tipo_preco" value="sem_preco" disabled>
+            Sem preço
           </label>
         </fieldset>
         <span class="campo__erro" id="campo-tipo_preco-erro"></span>

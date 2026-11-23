@@ -4,6 +4,7 @@ export const REGRAS_ANUNCIO = Object.freeze({
   tituloMinimo: 5,
   tituloMaximo: 80,
   descricaoMaxima: 500,
+  localEventoMaximo: 80,
   precoMaximoCentavos: 999999999999n,
   fotoMaximaBytes: 5 * 1024 * 1024,
   formatosFoto: Object.freeze({
@@ -18,6 +19,10 @@ const MENSAGENS = Object.freeze({
   categoria: "Escolha uma categoria: produto, serviço ou evento.",
   estado: "Informe o estado de conservação do produto.",
   descricao: "Informe uma descrição de até 500 caracteres.",
+  dataEvento: "Informe a data do evento.",
+  dataEventoInvalida: "Informe uma data válida.",
+  horarioEvento: "Informe um horário válido, como 19:30.",
+  localEvento: "O local deve ter até 80 caracteres.",
   tipoPreco: "Escolha informar o preço ou selecionar 'A combinar'.",
   precoVazio: "Informe o preço ou escolha 'A combinar'.",
   precoInvalido:
@@ -32,11 +37,33 @@ const CAMPOS_PUBLICACAO = new Set([
   "categoria",
   "estado_conservacao",
   "descricao",
+  "data_evento",
+  "horario_evento",
+  "local_evento",
   "tipo_preco",
   "preco",
   "preco_a_combinar",
+  "sem_preco",
   "imagem",
 ]);
+
+const FORMATO_DATA = /^(\d{4})-(\d{2})-(\d{2})$/;
+const FORMATO_HORARIO = /^([01]\d|2[0-3]):[0-5]\d$/;
+
+// Confere só o formato e se o dia existe; "não pode ser passada" é regra do
+// servidor, que sabe o dia de Brasília (D-033).
+export function validarDataDoEvento(texto) {
+  const valor = textoAparado(texto);
+  if (!valor) return MENSAGENS.dataEvento;
+  const partes = FORMATO_DATA.exec(valor);
+  if (!partes) return MENSAGENS.dataEventoInvalida;
+  const [ano, mes, dia] = partes.slice(1).map(Number);
+  const data = new Date(Date.UTC(ano, mes - 1, dia));
+  const existe = data.getUTCFullYear() === ano
+    && data.getUTCMonth() === mes - 1
+    && data.getUTCDate() === dia;
+  return existe ? null : MENSAGENS.dataEventoInvalida;
+}
 
 export function contarCaracteres(texto) {
   return Array.from(texto.trim()).length;
@@ -106,11 +133,29 @@ export function validarAnuncio(dados) {
     erros.descricao = MENSAGENS.descricao;
   }
 
-  const tipoPrecoValido = ["informar", "combinar"].includes(dados.tipo_preco);
+  if (dados.categoria === "evento") {
+    const erroData = validarDataDoEvento(dados.data_evento);
+    if (erroData) erros.data_evento = erroData;
+    const horario = textoAparado(dados.horario_evento);
+    if (horario && !FORMATO_HORARIO.test(horario)) {
+      erros.horario_evento = MENSAGENS.horarioEvento;
+    }
+    if (
+      contarCaracteres(textoAparado(dados.local_evento))
+      > REGRAS_ANUNCIO.localEventoMaximo
+    ) {
+      erros.local_evento = MENSAGENS.localEvento;
+    }
+  }
+
+  const tiposDePreco = dados.categoria === "evento"
+    ? ["informar", "combinar", "sem_preco"]
+    : ["informar", "combinar"];
+  const tipoPrecoValido = tiposDePreco.includes(dados.tipo_preco);
   if (!tipoPrecoValido) erros.tipo_preco = MENSAGENS.tipoPreco;
 
   let precoNormalizado = null;
-  if (dados.tipo_preco !== "combinar") {
+  if (!["combinar", "sem_preco"].includes(dados.tipo_preco)) {
     if (!textoAparado(dados.preco)) {
       erros.preco = MENSAGENS.precoVazio;
     } else {
@@ -135,11 +180,20 @@ export function montarPayloadAnuncio(dados) {
     descricao: textoAparado(dados.descricao),
     preco_a_combinar: precoACombinar,
   };
+  const semPreco = dados.tipo_preco === "sem_preco";
+  if (semPreco) payload.sem_preco = true;
 
   if (dados.categoria === "produto") {
     payload.estado_conservacao = dados.estado_conservacao;
   }
-  if (!precoACombinar) {
+  if (dados.categoria === "evento") {
+    payload.data_evento = textoAparado(dados.data_evento);
+    const horario = textoAparado(dados.horario_evento);
+    if (horario) payload.horario_evento = horario;
+    const local = textoAparado(dados.local_evento);
+    if (local) payload.local_evento = local;
+  }
+  if (!precoACombinar && !semPreco) {
     const preco = normalizarPreco(dados.preco);
     if (preco === null) {
       throw new TypeError("O preço precisa ser validado antes do envio.");

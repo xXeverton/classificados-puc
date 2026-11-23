@@ -1,6 +1,6 @@
 """SQLAlchemy adapter for the advertisement repository interface."""
 
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 
 from sqlalchemy import func, or_, select, update
 from sqlalchemy.orm import Session, sessionmaker
@@ -10,6 +10,9 @@ from server.core.entities.anuncio import Anuncio
 from server.core.interfaces.ad_repository_interface import AdRepository
 from server.core.interfaces.anuncio_editavel_repository_interface import (
     AnuncioEditavelRepositoryInterface,
+)
+from server.core.interfaces.eventos_em_destaque_repository_interface import (
+    EventosEmDestaqueRepository,
 )
 from server.core.interfaces.expirable_ad_repository_interface import (
     ExpirableAdRepository,
@@ -22,6 +25,7 @@ class AdRepositorySQLAlchemy(
     AdRepository,
     ExpirableAdRepository,
     AnuncioEditavelRepositoryInterface,
+    EventosEmDestaqueRepository,
 ):
     """Query, publish, edit, delete and expire ads through SQLAlchemy."""
 
@@ -44,6 +48,7 @@ class AdRepositorySQLAlchemy(
         max_price: float | None = None,
         owner_id: int | None = None,
         ad_status: str = "published",
+        excluir_eventos: bool = False,
     ) -> tuple[list[Ad], int]:
         agora = datetime.now(timezone.utc)
         filters = [
@@ -70,8 +75,11 @@ class AdRepositorySQLAlchemy(
             # "A combinar" ads are stored with price 0 but have no price,
             # so a price filter leaves them out (spec 006, RN4).
             filters.append(AdModel.preco_a_combinar.is_(False))
+            filters.append(AdModel.sem_preco.is_(False))
         if ad_type not in (None, "all"):
             filters.append(AdModel.type == ad_type)
+        if excluir_eventos:
+            filters.append(AdModel.type != "event")
         if search is not None:
             search_term = search.lower()
             filters.append(
@@ -103,6 +111,38 @@ class AdRepositorySQLAlchemy(
                 self._to_entity(model, nome_anunciante)
                 for model, nome_anunciante in rows
             ], total
+
+    def listar_eventos_futuros(
+        self, a_partir_de: date, limite: int
+    ) -> list[Ad]:
+        agora = datetime.now(timezone.utc)
+        with self._session_factory() as session:
+            rows = session.execute(
+                select(AdModel, AnuncianteModel.nome_exibicao)
+                .outerjoin(
+                    AnuncianteModel,
+                    AnuncianteModel.usuario_id == AdModel.usuario_id,
+                )
+                .where(
+                    AdModel.status == "published",
+                    AdModel.type == "event",
+                    AdModel.data_evento >= a_partir_de,
+                    or_(
+                        AdModel.expires_at.is_(None),
+                        AdModel.expires_at > agora,
+                    ),
+                )
+                .order_by(
+                    AdModel.data_evento,
+                    AdModel.created_at,
+                    AdModel.id,
+                )
+                .limit(limite)
+            ).all()
+            return [
+                self._to_entity(model, nome_anunciante)
+                for model, nome_anunciante in rows
+            ]
 
     def list_published_ads(self) -> list[Ad]:
         with self._session_factory() as session:
@@ -149,8 +189,12 @@ class AdRepositorySQLAlchemy(
             expires_at=expira_em,
             usuario_id=anuncio.usuario_id,
             estado_conservacao=anuncio.estado_conservacao,
-            preco_a_combinar=anuncio.preco is None,
+            preco_a_combinar=anuncio.preco is None and not anuncio.sem_preco,
+            sem_preco=anuncio.sem_preco,
             image_key=anuncio.image_key,
+            data_evento=anuncio.data_evento,
+            horario_evento=anuncio.horario_evento,
+            local_evento=anuncio.local_evento,
         )
         with self._session_factory.begin() as session:
             session.add(model)
@@ -172,8 +216,14 @@ class AdRepositorySQLAlchemy(
             model.title = anuncio.titulo
             model.description = anuncio.descricao
             model.price = float(anuncio.preco or 0)
-            model.preco_a_combinar = anuncio.preco is None
+            model.preco_a_combinar = (
+                anuncio.preco is None and not anuncio.sem_preco
+            )
+            model.sem_preco = anuncio.sem_preco
             model.estado_conservacao = anuncio.estado_conservacao
+            model.data_evento = anuncio.data_evento
+            model.horario_evento = anuncio.horario_evento
+            model.local_evento = anuncio.local_evento
             if expires_at is not None:
                 model.status = "published"
                 model.expires_at = expires_at
@@ -233,7 +283,11 @@ class AdRepositorySQLAlchemy(
             description=model.description,
             type=model.type,
             category=model.category,
-            price=None if model.preco_a_combinar else model.price,
+            price=(
+                None
+                if model.preco_a_combinar or model.sem_preco
+                else model.price
+            ),
             image_url=image_url,
             created_at=created_at,
             status=model.status,
@@ -241,6 +295,10 @@ class AdRepositorySQLAlchemy(
             nome_anunciante=nome_anunciante,
             estado_conservacao=model.estado_conservacao,
             preco_a_combinar=model.preco_a_combinar,
+            sem_preco=model.sem_preco,
             usuario_id=model.usuario_id,
             image_key=model.image_key,
+            data_evento=model.data_evento,
+            horario_evento=model.horario_evento,
+            local_evento=model.local_evento,
         )

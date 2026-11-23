@@ -38,8 +38,14 @@ const categoria = formulario.elements.categoria;
 const campoEstado = document.querySelector("#campo-estado");
 const estadoConservacao = formulario.elements.estado_conservacao;
 const descricao = formulario.elements.descricao;
+const camposEvento = document.querySelector("#campos-evento");
+const dataEvento = formulario.elements.data_evento;
+const horarioEvento = formulario.elements.horario_evento;
+const localEvento = formulario.elements.local_evento;
 const tipoPreco = formulario.elements.tipo_preco;
 const campoPreco = document.querySelector("#campo-preco");
+const opcaoSemPreco = document.querySelector("#opcao-sem-preco");
+const radioSemPreco = opcaoSemPreco.querySelector("input");
 const preco = formulario.elements.preco;
 const imagem = formulario.elements.imagem;
 const previa = document.querySelector("#foto-previa");
@@ -59,6 +65,9 @@ function coletarDados() {
     categoria: categoria.value,
     estado_conservacao: estadoConservacao.value,
     descricao: descricao.value,
+    data_evento: dataEvento.value,
+    horario_evento: horarioEvento.value,
+    local_evento: localEvento.value,
     tipo_preco: tipoPreco.value,
     preco: preco.value,
     imagem: imagemSelecionada,
@@ -82,11 +91,31 @@ function atualizarCamposCondicionais() {
     limparErroDeCampo(formulario, "estado_conservacao");
   }
 
-  const combinar = tipoPreco.value === "combinar";
-  campoPreco.hidden = combinar;
-  preco.disabled = combinar;
-  preco.required = !combinar;
-  if (combinar) {
+  const ehEvento = categoria.value === "evento";
+  camposEvento.hidden = !ehEvento;
+  for (const campo of [dataEvento, horarioEvento, localEvento]) {
+    campo.disabled = !ehEvento;
+  }
+  dataEvento.required = ehEvento;
+  if (!ehEvento) {
+    dataEvento.value = "";
+    horarioEvento.value = "";
+    localEvento.value = "";
+    for (const nome of ["data_evento", "horario_evento", "local_evento"]) {
+      limparErroDeCampo(formulario, nome);
+    }
+  }
+
+  // "Sem preço" só existe para evento; ao sair de evento volta a "Informar".
+  opcaoSemPreco.hidden = !ehEvento;
+  radioSemPreco.disabled = !ehEvento;
+  if (!ehEvento && radioSemPreco.checked) tipoPreco[0].checked = true;
+
+  const semValor = ["combinar", "sem_preco"].includes(tipoPreco.value);
+  campoPreco.hidden = semValor;
+  preco.disabled = semValor;
+  preco.required = !semValor;
+  if (semValor) {
     preco.value = "";
     limparErroDeCampo(formulario, "preco");
   }
@@ -250,6 +279,9 @@ ligarValidacaoDeCampo(categoria, "categoria");
 ligarValidacaoDeCampo(estadoConservacao, "estado_conservacao");
 ligarValidacaoDeCampo(descricao, "descricao");
 ligarValidacaoDeCampo(preco, "preco");
+ligarValidacaoDeCampo(dataEvento, "data_evento");
+ligarValidacaoDeCampo(horarioEvento, "horario_evento");
+ligarValidacaoDeCampo(localEvento, "local_evento");
 
 categoria.addEventListener("change", () => {
   atualizarCamposCondicionais();
@@ -266,6 +298,10 @@ for (const opcao of tipoPreco) {
 }
 imagem.addEventListener("change", selecionarImagem);
 removerFoto.addEventListener("click", removerImagem);
+// Dica para o seletor de data; quem confere o dia é o servidor.
+dataEvento.min = new Date(
+  Date.now() - new Date().getTimezoneOffset() * 60000,
+).toISOString().slice(0, 10);
 atualizarCamposCondicionais();
 atualizarContadores();
 
@@ -281,7 +317,12 @@ async function carregarAnuncioParaEdicao() {
   categoria.value = valores.categoria;
   descricao.value = valores.descricao;
   estadoConservacao.value = valores.estadoConservacao;
-  if (valores.precoACombinar) {
+  dataEvento.value = valores.dataEvento;
+  horarioEvento.value = valores.horarioEvento;
+  localEvento.value = valores.localEvento;
+  if (valores.semPreco) {
+    radioSemPreco.checked = true;
+  } else if (valores.precoACombinar) {
     tipoPreco[1].checked = true;
   } else {
     tipoPreco[0].checked = true;

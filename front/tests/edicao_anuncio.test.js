@@ -42,9 +42,41 @@ test("busca anúncio expirado e mapeia seus dados para edição", async () => {
     descricao: "Livro usado em bom estado.",
     estadoConservacao: "usado_regular",
     precoACombinar: false,
+    semPreco: false,
     preco: "42,5",
     imageUrl: "http://localhost:5000/media/livro.webp",
+    dataEvento: "",
+    horarioEvento: "",
+    localEvento: "",
   });
+});
+
+test("mapeia data, horário e local do evento para edição", () => {
+  assert.deepEqual(
+    mapearAnuncioParaFormulario({
+      id: 3,
+      title: "Feira de profissões",
+      type: "event",
+      description: "Venha conhecer.",
+      preco_a_combinar: true,
+      data_evento: "2026-12-05",
+      horario_evento: "19:30",
+      local_evento: "Auditório",
+    }),
+    {
+      titulo: "Feira de profissões",
+      categoria: "evento",
+      descricao: "Venha conhecer.",
+      estadoConservacao: "",
+      precoACombinar: true,
+      semPreco: false,
+      preco: "",
+      imageUrl: undefined,
+      dataEvento: "2026-12-05",
+      horarioEvento: "19:30",
+      localEvento: "Auditório",
+    },
+  );
 });
 
 test("busca anúncio publicado em uma página posterior", async () => {
@@ -74,4 +106,18 @@ test("busca anúncio publicado em uma página posterior", async () => {
 
   assert.deepEqual(chamadas, ["published:1", "published:2"]);
   assert.deepEqual(resultado, { tipo: "carregado", anuncio });
+});
+
+test("evento sem preço volta marcado para edição", () => {
+  const valores = mapearAnuncioParaFormulario({
+    id: 4,
+    title: "Palestra aberta",
+    type: "event",
+    sem_preco: true,
+    preco_a_combinar: false,
+    price: null,
+  });
+  assert.equal(valores.semPreco, true);
+  assert.equal(valores.precoACombinar, false);
+  assert.equal(valores.preco, "");
 });

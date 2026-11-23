@@ -77,13 +77,15 @@ function criarCard(anuncio, status) {
   const corpo = criar("div", "meus-anuncios__corpo");
   corpo.append(criar("span", "etiqueta", anuncio.category));
   corpo.append(criar("h2", "meus-anuncios__titulo", anuncio.title));
-  corpo.append(criar("p", "meus-anuncios__preco",
-    anuncio.preco_a_combinar
-      ? "A combinar"
-      : new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(anuncio.price),
-  ));
+  if (!anuncio.sem_preco) {
+    corpo.append(criar("p", "meus-anuncios__preco",
+      anuncio.preco_a_combinar
+        ? "A combinar"
+        : new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(anuncio.price),
+    ));
+  }
   const acoes = criar("div", "acoes");
-  for (const acao of acoesDoAnuncio(status)) {
+  for (const acao of acoesDoAnuncio(status, anuncio.category)) {
     acoes.append(criarBotaoDeAcao(acao, anuncio));
   }
   corpo.append(acoes);
@@ -106,6 +108,7 @@ function criarBotaoDeAcao(acao, anuncio) {
     excluir: () => excluirAnuncio(anuncio.id),
     renovar: () => renovarAnuncio(anuncio.id),
     vender: () => alterarStatus(anuncio.id, acao),
+    concluir: () => alterarStatus(anuncio.id, acao),
     reativar: () => alterarStatus(anuncio.id, acao),
   }[acao.tipo];
   botao.addEventListener("click", executar);

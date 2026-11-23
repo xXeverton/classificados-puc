@@ -20,7 +20,7 @@ export const SECOES_DO_PAINEL = Object.freeze([
     lista: "vendidos",
     paginacao: "paginacao-vendidos",
     vazio: "vazio-vendidos",
-    textoVazio: "Você não possui anúncios vendidos.",
+    textoVazio: "Você não possui anúncios vendidos ou concluídos.",
   }),
 ]);
 
@@ -34,6 +34,17 @@ const VENDER = {
     + "mas você pode reativá-lo depois.",
   novoStatus: "sold",
   sucesso: "Anúncio marcado como vendido.",
+};
+// Evento não se vende: o dono o encerra como concluído. Guarda o mesmo status
+// "sold" da API, que tira o anúncio do feed e do painel (spec 015).
+const CONCLUIR = {
+  tipo: "concluir",
+  rotulo: "Marcar como concluído",
+  estilo: "contorno",
+  confirmacao: "Marcar este evento como concluído? Ele sai do feed e dos "
+    + "destaques, mas você pode reativá-lo depois.",
+  novoStatus: "sold",
+  sucesso: "Evento marcado como concluído.",
 };
 const RENOVAR = { tipo: "renovar", rotulo: "Renovar", estilo: "primario" };
 const REATIVAR = {
@@ -53,6 +64,14 @@ const ACOES_POR_STATUS = {
   sold: [REATIVAR, EXCLUIR],
 };
 
-export function acoesDoAnuncio(status) {
-  return ACOES_POR_STATUS[status] ?? [];
+// Evento não se renova (passada a data, o dono edita a data para publicá-lo
+// de novo) e, em vez de "vendido", é marcado como concluído (spec 015, CA9).
+export function acoesDoAnuncio(status, categoria) {
+  const acoes = ACOES_POR_STATUS[status] ?? [];
+  if (categoria === "evento") {
+    return acoes
+      .filter((acao) => acao.tipo !== RENOVAR.tipo)
+      .map((acao) => (acao.tipo === VENDER.tipo ? CONCLUIR : acao));
+  }
+  return acoes;
 }

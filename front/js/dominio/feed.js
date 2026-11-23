@@ -37,6 +37,7 @@ export function dadosDoCard(anuncio) {
     tipo: anuncio.type,
     nomeAnunciante: anuncio.nome_anunciante ?? null,
     precoACombinar: anuncio.preco_a_combinar ?? false,
+    semPreco: anuncio.sem_preco ?? false,
     descricaoResumida: anuncio.type === "service"
       ? resumirDescricao(anuncio.description)
       : null,
@@ -114,7 +115,10 @@ export function mensagemDeFeedVazio(params, mensagemDaApi) {
 }
 
 export function montarUrlApi(params) {
-  return `/api/ads?${montarParametrosFeed(params).toString()}`;
+  const parametros = montarParametrosFeed(params);
+  // Sem busca nem filtro, os eventos ficam só no painel de destaques.
+  if (params.excluirEventos) parametros.set("excluir_eventos", "true");
+  return `/api/ads?${parametros.toString()}`;
 }
 
 export function paginasNumeradas(paginaAtual, totalPaginas) {

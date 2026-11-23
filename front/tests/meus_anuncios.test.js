@@ -177,6 +177,29 @@ test("cada situação mostra as ações certas", () => {
   assert.deepEqual(acoesDoAnuncio("desconhecido"), []);
 });
 
+test("evento não tem Renovar nem \"vendido\": ganha \"concluído\" (spec 015)", () => {
+  assert.deepEqual(
+    acoesDoAnuncio("expired", "evento").map((acao) => acao.tipo),
+    ["editar", "concluir", "excluir"],
+  );
+  assert.deepEqual(
+    acoesDoAnuncio("published", "evento").map((acao) => acao.tipo),
+    ["detalhes", "editar", "concluir", "excluir"],
+  );
+  const concluir = acoesDoAnuncio("published", "evento")[2];
+  assert.equal(concluir.rotulo, "Marcar como concluído");
+  assert.equal(concluir.novoStatus, "sold");
+  assert.match(concluir.sucesso, /concluído/);
+  assert.ok(
+    !acoesDoAnuncio("published", "evento").some((acao) => /vendido/i.test(acao.rotulo)),
+  );
+  assert.deepEqual(
+    acoesDoAnuncio("sold", "evento").map((acao) => acao.tipo),
+    ["reativar", "excluir"],
+  );
+  assert.ok(acoesDoAnuncio("expired", "produto").some((acao) => acao.tipo === "renovar"));
+});
+
 test('"Ver detalhes" só aparece em anúncios publicados (RN5)', () => {
   for (const status of ["expired", "sold", "desconhecido"]) {
     assert.ok(

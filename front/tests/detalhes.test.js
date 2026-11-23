@@ -172,3 +172,8 @@ test("quem não é o dono não recebe rota de edição (CA10)", () => {
   assert.equal(rotaEdicaoDoDono({ ad: { id: 5 } }), null);
   assert.equal(rotaEdicaoDoDono(null), null);
 });
+
+test("evento sem preço não mostra texto de preço", () => {
+  assert.equal(formatarPrecoDetalhes(null, false, true), "");
+  assert.equal(formatarPrecoDetalhes(null, true, true), "");
+});

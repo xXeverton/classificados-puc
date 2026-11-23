@@ -11,7 +11,9 @@ export function idDoAnuncio(search) {
   return Number(valor);
 }
 
-export function formatarPrecoDetalhes(valor, aCombinar) {
+// Evento sem preço não mostra nada (spec 015): devolve texto vazio.
+export function formatarPrecoDetalhes(valor, aCombinar, semPreco = false) {
+  if (semPreco) return "";
   if (aCombinar) return "A combinar";
   if (valor === null || valor === undefined) return "A combinar";
   return new Intl.NumberFormat("pt-BR", {

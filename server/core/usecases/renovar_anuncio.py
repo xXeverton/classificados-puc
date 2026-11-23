@@ -7,7 +7,11 @@ from server.core.interfaces.anuncio_editavel_repository_interface import (
     AnuncioEditavelRepositoryInterface,
 )
 from server.core.usecases.anuncio_do_dono import buscar_anuncio_do_dono
-from server.core.usecases.erros import AnuncioNaoExpirado
+from server.core.entities.anuncio import CATEGORIA_EVENTO
+from server.core.usecases.erros import (
+    AnuncioNaoExpirado,
+    EventoNaoRenovavel,
+)
 
 
 class RenovarAnuncio:
@@ -23,6 +27,8 @@ class RenovarAnuncio:
         anuncio = buscar_anuncio_do_dono(
             self._anuncios, ad_id, usuario_id
         )
+        if anuncio.category == CATEGORIA_EVENTO:
+            raise EventoNaoRenovavel()
         if anuncio.status != "expired":
             raise AnuncioNaoExpirado()
 

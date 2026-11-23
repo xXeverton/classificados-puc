@@ -22,8 +22,12 @@ class AdViewSchema(BaseModel):
     nome_anunciante: str | None = None
     estado_conservacao: str | None = None
     preco_a_combinar: bool = False
+    sem_preco: bool = False
     status: str | None = None
     expires_at: datetime | None = None
+    data_evento: str | None = None
+    horario_evento: str | None = None
+    local_evento: str | None = None
 
 
 class AdsFeedViewSchema(BaseModel):
@@ -64,8 +68,32 @@ def apresenta_ad(ad: Ad) -> AdViewSchema:
         nome_anunciante=ad.nome_anunciante,
         estado_conservacao=ad.estado_conservacao,
         preco_a_combinar=ad.preco_a_combinar,
+        sem_preco=ad.sem_preco,
         status=ad.status,
         expires_at=ad.expires_at,
+        data_evento=(
+            ad.data_evento.isoformat() if ad.data_evento else None
+        ),
+        horario_evento=(
+            ad.horario_evento.strftime("%H:%M")
+            if ad.horario_evento
+            else None
+        ),
+        local_evento=ad.local_evento,
+    )
+
+
+class EventosEmDestaqueViewSchema(BaseModel):
+    """Upcoming events shown in the home highlights (0 to 5)."""
+
+    items: list[AdViewSchema]
+
+
+def apresenta_eventos_em_destaque(
+    eventos: list[Ad],
+) -> EventosEmDestaqueViewSchema:
+    return EventosEmDestaqueViewSchema(
+        items=[apresenta_ad(evento) for evento in eventos]
     )
 
 

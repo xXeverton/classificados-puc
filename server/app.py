@@ -53,6 +53,9 @@ from server.core.usecases.publicar_anuncio import PublicarAnuncio
 from server.core.usecases.editar_anuncio import EditarAnuncio
 from server.core.usecases.excluir_anuncio import ExcluirAnuncio
 from server.core.usecases.renovar_anuncio import RenovarAnuncio
+from server.core.usecases.listar_eventos_em_destaque import (
+    ListarEventosEmDestaque,
+)
 from server.core.usecases.alterar_status_anuncio import (
     AlterarStatusAnuncio,
 )
@@ -192,6 +195,10 @@ def create_app(
         relogio,
     )
     app.extensions["excluir_anuncio"] = ExcluirAnuncio(ad_repository)
+    app.extensions["listar_eventos_em_destaque"] = ListarEventosEmDestaque(
+        ad_repository,
+        relogio,
+    )
     app.extensions["renovar_anuncio"] = RenovarAnuncio(
         ad_repository,
         relogio,

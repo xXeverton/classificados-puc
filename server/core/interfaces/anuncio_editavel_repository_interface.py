@@ -23,7 +23,8 @@ class AnuncioEditavelRepositoryInterface(ABC):
     ) -> Ad:
         """Replace the editable fields and return the updated ad.
 
-        Title, description, price, "a combinar" and condition change;
+        Title, description, price, "a combinar", condition and the event
+        day, time and place change;
         dates, status, owner and photo are kept unless a new expiration is
         provided, in which case the ad is republished with that deadline.
         """

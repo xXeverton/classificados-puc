@@ -243,6 +243,7 @@ def test_excluir_apaga_a_foto_do_armazenamento(tmp_path):
         data={
             "titulo": "Cartaz do evento",
             "categoria": "evento",
+            "data_evento": "2099-12-31",
             "descricao": "Evento aberto à comunidade.",
             "preco": "0",
             "imagem": (BytesIO(b"\x89PNG\r\n\x1a\nconteudo"), "cartaz.png"),

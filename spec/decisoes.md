@@ -25,6 +25,9 @@ precisa ser perguntado de novo.
 | D-005 | O **vínculo** é aluno ou funcionário, informado no cadastro e **não editável** depois. Terceirizados e outros vínculos estão fora do escopo. | Spec 001 |
 | D-006 | Senha com **no mínimo 8 caracteres**, guardada só como hash. Após **5 falhas seguidas**, o login da conta fica bloqueado por **10 minutos**. Falhas de login mostram só "Credenciais inválidas". | Spec 001 |
 | D-007 | **Sem papéis, permissões diferenciadas nem moderação** no MVP: todos os membros confirmados têm o mesmo acesso. | Spec 001 |
+| D-008 | **Evento é um anúncio** da categoria "Evento", criado pelo formulário de novo anúncio, com **data obrigatória** (de hoje em diante) e **horário e local opcionais**. Não há outra origem de eventos (nada é importado do site da PUC). Os próximos eventos aparecem em destaque no início; horário e local só nos detalhes. | Spec 015 |
+| D-009 | O **prazo de um evento** termina no início do dia seguinte à data do evento (calendário de Brasília), no lugar dos 30 dias; evento não é renovado, e mudar a data recalcula o prazo. Eventos antigos sem data seguem a regra dos 30 dias. | Spec 015 |
+| D-014 | **Evento pode ficar sem preço**: além de informar o valor ou "a combinar", só a categoria evento tem a opção "Sem preço", e nesse caso nenhum preço é mostrado. Produto e serviço continuam com valor ou "a combinar". | Spec 015 |
 
 ## Perfil e contatos
 

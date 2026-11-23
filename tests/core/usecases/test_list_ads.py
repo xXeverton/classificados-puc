@@ -27,6 +27,7 @@ class InMemoryAdRepository(AdRepository):
         max_price=None,
         owner_id=None,
         ad_status="published",
+        excluir_eventos=False,
     ):
         self.calls.append((page, per_page, search, ad_type))
         self.price_and_category_filters.append(
@@ -57,6 +58,10 @@ class InMemoryAdRepository(AdRepository):
         if ad_type not in (None, "all"):
             available_ads = [
                 ad for ad in available_ads if ad.type == ad_type
+            ]
+        if excluir_eventos:
+            available_ads = [
+                ad for ad in available_ads if ad.type != "event"
             ]
         if search is not None:
             search_term = search.lower()

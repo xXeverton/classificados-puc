@@ -113,7 +113,28 @@ test("feed autenticado entrega dados e feed vazio", async () => {
     type: "all",
     minPrice: null,
     maxPrice: null,
+    excluirEventos: true,
   });
+});
+
+test("feed com busca ou filtro mantém os eventos nos resultados", async () => {
+  for (const consulta of ["search=feira", "type=event", "min_price=5"]) {
+    const deps = {
+      authApi: criarAuthApiFalsa({ me: { status: 200, corpo: { nome: "Ana" } } }),
+      adsApi: criarAdsApiFalsa({ listar: { status: 200, corpo: { items: [] } } }),
+      armazenamentoSessao: criarArmazenamentoFalso(sessao),
+    };
+    await listarAnuncios(deps, new URLSearchParams(consulta));
+    assert.equal(deps.adsApi.chamadas[0].args[0].excluirEventos, false, consulta);
+  }
+});
+
+test("a URL da API pede para excluir eventos só quando indicado", () => {
+  assert.equal(
+    montarUrlApi({ page: 1, excluirEventos: true }),
+    "/api/ads?page=1&excluir_eventos=true",
+  );
+  assert.equal(montarUrlApi({ page: 1 }), "/api/ads?page=1");
 });
 
 test("feed sem sessao ou com falha nao chama listagem", async () => {
@@ -227,4 +248,10 @@ test("feed vazio explica quando a busca ou os filtros nao acharam nada", () => {
       "Nenhum anúncio encontrado com esses filtros.",
     );
   }
+});
+
+test("card de evento sem preço informa semPreco", () => {
+  const base = { id: 1, title: "Palestra", type: "event", category: "evento", price: null, created_at: "2026-11-20T10:00:00Z" };
+  assert.equal(dadosDoCard({ ...base, sem_preco: true }).semPreco, true);
+  assert.equal(dadosDoCard(base).semPreco, false);
 });

@@ -1,0 +1,173 @@
+/*
+ * Painel de eventos em destaque do início (spec 015).
+ * Só serve ao /inicio/, por isso fica fora do tema.css (D-034). Usa apenas as
+ * variáveis de :root do tema.
+ */
+
+.destaques {
+  position: relative;
+  margin-bottom: var(--espaco-6);
+  border-radius: var(--raio-cartao);
+  overflow: hidden;
+  background-color: var(--cor-primaria-escura);
+  box-shadow: var(--sombra-cartao);
+}
+
+.destaque {
+  position: relative;
+  display: block;
+  aspect-ratio: 16 / 7;
+  min-height: 14rem;
+  color: var(--cor-superficie);
+  background-color: var(--cor-primaria);
+}
+
+.destaque:hover { text-decoration: none; }
+
+.destaque--sem-imagem {
+  background-image: linear-gradient(
+    135deg,
+    var(--cor-primaria) 0%,
+    var(--cor-primaria-escura) 100%
+  );
+}
+
+.destaque__imagem {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.destaque__texto {
+  position: absolute;
+  inset: auto 0 0 0;
+  /* O espaço de baixo deixa livre a linha dos pontos. */
+  padding: var(--espaco-7) var(--espaco-6) var(--espaco-7);
+  background-image: linear-gradient(
+    to top,
+    var(--cor-primaria-escura) 15%,
+    transparent 100%
+  );
+}
+
+.destaque__selo {
+  display: inline-block;
+  margin-bottom: var(--espaco-2);
+  padding: var(--espaco-1) var(--espaco-3);
+  border-radius: var(--raio-pilula);
+  font-size: var(--texto-xs);
+  font-weight: var(--peso-forte);
+  text-transform: uppercase;
+  color: var(--cor-selo-texto);
+  background-color: var(--cor-selo);
+}
+
+.destaque__titulo {
+  display: -webkit-box;
+  margin: 0 0 var(--espaco-1);
+  font-size: var(--texto-xl);
+  font-weight: var(--peso-forte);
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+}
+
+.destaque__data {
+  margin: 0;
+  font-size: var(--texto-md);
+  font-weight: var(--peso-semi);
+}
+
+.destaques__seta {
+  position: absolute;
+  top: 50%;
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0;
+  border: 0;
+  border-radius: var(--raio-pilula);
+  font-family: inherit;
+  font-size: var(--texto-lg);
+  line-height: 1;
+  color: var(--cor-primaria);
+  background-color: var(--cor-superficie);
+  box-shadow: var(--sombra-cartao);
+  transform: translateY(-50%);
+  cursor: pointer;
+}
+
+.destaques__seta:hover { box-shadow: var(--sombra-cartao-hover); }
+.destaques__seta--anterior { left: var(--espaco-3); }
+.destaques__seta--proxima { right: var(--espaco-3); }
+
+.destaques__pontos {
+  position: absolute;
+  inset: auto 0 var(--espaco-2) 0;
+  display: flex;
+  justify-content: center;
+  gap: var(--espaco-1);
+}
+
+.destaques__ponto {
+  position: relative;
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+
+.destaques__ponto::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 0.625rem;
+  height: 0.625rem;
+  border: 2px solid var(--cor-superficie);
+  border-radius: var(--raio-pilula);
+}
+
+.destaques__ponto[aria-current="true"]::after {
+  background-color: var(--cor-superficie);
+}
+
+/* Em telas estreitas o texto ocupa a altura toda: as setas vão para o topo
+   para não cobrir o título. */
+@media (max-width: 720px) {
+  .destaques__seta {
+    top: var(--espaco-3);
+    transform: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .destaque {
+    aspect-ratio: 4 / 3;
+  }
+
+  .destaque__texto {
+    padding: var(--espaco-6) var(--espaco-4) var(--espaco-7);
+  }
+
+  .destaque__titulo {
+    font-size: var(--texto-lg);
+  }
+
+  .destaques__seta {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+
+  .destaques__ponto {
+    width: 2.25rem;
+    height: 2.25rem;
+  }
+}
