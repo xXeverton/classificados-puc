@@ -27,20 +27,20 @@ separados por subtarefa (D-050).
 
 ## PROJ-58 — [Front-end] "Ver detalhes" no painel
 
-- [ ] T11: Testes: "Ver detalhes" só em publicados (`acoesDoAnuncio`).
-- [ ] T12: "Ver detalhes" no card do painel.
+- [x] T11: Testes: "Ver detalhes" só em publicados (`acoesDoAnuncio`).
+- [x] T12: "Ver detalhes" no card do painel.
 
 ## PROJ-59 — [Front-end] "Editar anúncio" nos detalhes
 
-- [ ] T13: "Editar anúncio" nos detalhes quando `is_owner` (depende de PROJ-55).
+- [x] T13: "Editar anúncio" nos detalhes quando `is_owner` (depende de PROJ-55).
 
 ## PROJ-60 — [Front-end] "Cancelar" da edição
 
-- [ ] T14: "Cancelar" da edição volta para Meus anúncios.
+- [x] T14: "Cancelar" da edição volta para Meus anúncios.
 
 ## Validação
 
-- [ ] T15: `node --test` e `pytest` passando; `flake8` sem erros.
+- [x] T15: `node --test` e `pytest` passando; `flake8` sem erros.
 - [ ] T16: Roteiro manual no navegador (CA1 a CA16), desktop e celular.
 - [ ] T17: Atualizar `front/README.md` (lista de telas e cabeçalho) e marcar a
   spec como Implementada.

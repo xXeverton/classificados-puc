@@ -2,6 +2,7 @@ import {
   gerarLinkWhatsapp,
   gerarMensagemWhatsapp,
 } from "./link_whatsapp.js";
+import { rotaEditarAnuncio } from "./rotas.js";
 
 export function idDoAnuncio(search) {
   const valor = new URLSearchParams(search).get("id");
@@ -99,4 +100,10 @@ export function classificarContatosPrincipais(lista, titulo) {
   }
 
   return { whatsapp, email };
+}
+
+// Só o dono vê "Editar anúncio"; quem decide é a API (is_owner), não o front.
+export function rotaEdicaoDoDono(detalhes) {
+  if (detalhes?.is_owner !== true) return null;
+  return rotaEditarAnuncio(detalhes.ad.id);
 }

@@ -18,3 +18,8 @@ export function rotaDetalhes(id) {
 export function rotaEditarAnuncio(id) {
   return `${ROTAS.novoAnuncio}?editar=${encodeURIComponent(id)}`;
 }
+
+// Cancelar a edição volta ao painel; cancelar a criação volta ao feed.
+export function rotaAoCancelarAnuncio(idEmEdicao) {
+  return idEmEdicao ? ROTAS.meusAnuncios : ROTAS.inicio;
+}

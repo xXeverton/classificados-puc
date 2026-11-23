@@ -1,5 +1,6 @@
 import { API_BASE_URL } from "../config.js";
 import { resolverUrlRecurso } from "../dominio/detalhes_anuncio.js";
+import { rotaAoCancelarAnuncio } from "../dominio/rotas.js";
 import {
   contarCaracteres,
   montarPayloadAnuncio,
@@ -49,6 +50,7 @@ let urlPrevia = null;
 const adEditandoId = new URLSearchParams(window.location.search).get("editar");
 
 montarCabecalho(deps);
+document.querySelector("#cancelar").href = rotaAoCancelarAnuncio(adEditandoId);
 
 function coletarDados() {
   return {

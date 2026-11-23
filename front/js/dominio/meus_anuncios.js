@@ -24,6 +24,7 @@ export const SECOES_DO_PAINEL = Object.freeze([
   }),
 ]);
 
+const DETALHES = { tipo: "detalhes", rotulo: "Ver detalhes", estilo: "contorno" };
 const EDITAR = { tipo: "editar", rotulo: "Editar", estilo: "contorno" };
 const VENDER = {
   tipo: "vender",
@@ -47,7 +48,7 @@ const REATIVAR = {
 const EXCLUIR = { tipo: "excluir", rotulo: "Excluir", estilo: "contorno" };
 
 const ACOES_POR_STATUS = {
-  published: [EDITAR, VENDER, EXCLUIR],
+  published: [DETALHES, EDITAR, VENDER, EXCLUIR],
   expired: [EDITAR, VENDER, RENOVAR, EXCLUIR],
   sold: [REATIVAR, EXCLUIR],
 };

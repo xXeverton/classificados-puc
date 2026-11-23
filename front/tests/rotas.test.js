@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   ROTAS,
+  rotaAoCancelarAnuncio,
   rotaDetalhes,
   rotaEditarAnuncio,
 } from "../js/dominio/rotas.js";
@@ -33,4 +34,13 @@ test("rotaEditarAnuncio monta o endereço de edição com o id", () => {
 
 test("rotaEditarAnuncio escapa o id", () => {
   assert.equal(rotaEditarAnuncio("1 2"), "/anuncios/novo/?editar=1%202");
+});
+
+test("cancelar a edição volta para Meus anúncios (CA12)", () => {
+  assert.equal(rotaAoCancelarAnuncio("5"), "/meus-anuncios/");
+});
+
+test("cancelar a criação volta para o início (CA13)", () => {
+  assert.equal(rotaAoCancelarAnuncio(null), "/inicio/");
+  assert.equal(rotaAoCancelarAnuncio(undefined), "/inicio/");
 });

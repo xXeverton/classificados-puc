@@ -16,7 +16,18 @@ quando o Codespaces encaminha apenas a porta 5173 para o navegador.
 ## Telas
 
 `/entrar/`, `/cadastro/`, `/confirmar-email/`, `/inicio/`, `/perfil/`,
-`/perfil/anunciante/`, `/anuncios/novo/` e `/meus-anuncios/`.
+`/perfil/anunciante/`, `/anuncios/novo/`, `/anuncios/detalhes/` e
+`/meus-anuncios/`. `/guia-de-estilo/` mostra os componentes do tema.
+
+## Cabeçalho e rotas
+
+As telas com login usam um cabeçalho único (D-035), montado por
+`js/paginas/cabecalho.js` a partir de `js/dominio/navegacao.js`: logo, Início,
+Meus anúncios, Meu perfil, botão **Novo anúncio** e Sair. Cada página só traz
+`<header class="cabecalho" data-cabecalho>` e chama `montarCabecalho(deps)`; o
+início deixa a busca e os filtros dentro do cabeçalho. Os endereços das telas
+ficam em `js/dominio/rotas.js` (`ROTAS`, `rotaDetalhes`, `rotaEditarAnuncio`),
+e as imagens de anúncio passam por `resolverUrlRecurso` (D-036).
 
 ## Publicação de anúncios
 

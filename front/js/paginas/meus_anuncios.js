@@ -9,7 +9,7 @@ import {
 } from "./comum.js";
 import { API_BASE_URL } from "../config.js";
 import { resolverUrlRecurso } from "../dominio/detalhes_anuncio.js";
-import { rotaEditarAnuncio } from "../dominio/rotas.js";
+import { rotaDetalhes, rotaEditarAnuncio } from "../dominio/rotas.js";
 import { SECOES_DO_PAINEL, acoesDoAnuncio } from "../dominio/meus_anuncios.js";
 import { chamarApi } from "../fluxos/conexao.js";
 import { carregarUsuario } from "../fluxos/sessao_atual.js";
@@ -93,10 +93,12 @@ function criarCard(anuncio, status) {
 
 function criarBotaoDeAcao(acao, anuncio) {
   const classe = `botao botao--${acao.estilo}`;
-  if (acao.tipo === "editar") {
-    const editar = criar("a", classe, acao.rotulo);
-    editar.href = rotaEditarAnuncio(anuncio.id);
-    return editar;
+  if (acao.tipo === "editar" || acao.tipo === "detalhes") {
+    const link = criar("a", classe, acao.rotulo);
+    link.href = acao.tipo === "editar"
+      ? rotaEditarAnuncio(anuncio.id)
+      : rotaDetalhes(anuncio.id);
+    return link;
   }
   const botao = criar("button", classe, acao.rotulo);
   botao.type = "button";

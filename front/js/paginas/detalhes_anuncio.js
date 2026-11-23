@@ -4,6 +4,7 @@ import {
   rotuloConservacao,
   rotuloContato,
   resolverUrlRecurso,
+  rotaEdicaoDoDono,
   hrefContato,
   classificarContatosPrincipais,
 } from "../dominio/detalhes_anuncio.js";
@@ -157,6 +158,15 @@ async function carregar() {
     fotoAnunciante.hidden = true;
   }
   renderizarContatos(advertiser.contacts, ad.title);
+
+  const rotaEdicao = rotaEdicaoDoDono(dados);
+  const editarAnuncio = document.querySelector("#editar-anuncio");
+  if (rotaEdicao) {
+    editarAnuncio.href = rotaEdicao;
+    editarAnuncio.hidden = false;
+  } else {
+    editarAnuncio.hidden = true;
+  }
 
   carregando.hidden = true;
   conteudo.hidden = false;

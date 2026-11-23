@@ -164,7 +164,7 @@ const anuncio = (id, title, status) => ({
 test("cada situação mostra as ações certas", () => {
   assert.deepEqual(
     acoesDoAnuncio("published").map((acao) => acao.tipo),
-    ["editar", "vender", "excluir"],
+    ["detalhes", "editar", "vender", "excluir"],
   );
   assert.deepEqual(
     acoesDoAnuncio("expired").map((acao) => acao.tipo),
@@ -175,6 +175,18 @@ test("cada situação mostra as ações certas", () => {
     ["reativar", "excluir"],
   );
   assert.deepEqual(acoesDoAnuncio("desconhecido"), []);
+});
+
+test('"Ver detalhes" só aparece em anúncios publicados (RN5)', () => {
+  for (const status of ["expired", "sold", "desconhecido"]) {
+    assert.ok(
+      !acoesDoAnuncio(status).some((acao) => acao.tipo === "detalhes"),
+      status,
+    );
+  }
+  const detalhes = acoesDoAnuncio("published")[0];
+  assert.equal(detalhes.rotulo, "Ver detalhes");
+  assert.equal(detalhes.estilo, "contorno");
 });
 
 test("o painel tem as seções publicados, expirados e vendidos", () => {
