@@ -44,6 +44,7 @@ const preco = formulario.elements.preco;
 const imagem = formulario.elements.imagem;
 const previa = document.querySelector("#foto-previa");
 const previaImagem = document.querySelector("#foto-previa-imagem");
+const fotoVazia = document.querySelector("#foto-vazia");
 const removerFoto = document.querySelector("#remover-foto");
 let imagemSelecionada = null;
 let urlPrevia = null;
@@ -110,11 +111,17 @@ function ligarValidacaoDeCampo(campo, nome) {
   });
 }
 
+function mostrarPrevia(visivel) {
+  previa.hidden = !visivel;
+  fotoVazia.hidden = visivel;
+  removerFoto.hidden = !visivel;
+}
+
 function liberarPrevia() {
   if (urlPrevia) URL.revokeObjectURL(urlPrevia);
   urlPrevia = null;
   previaImagem.removeAttribute("src");
-  previa.hidden = true;
+  mostrarPrevia(false);
 }
 
 function selecionarImagem() {
@@ -131,7 +138,7 @@ function selecionarImagem() {
   if (!imagemSelecionada) return;
   urlPrevia = URL.createObjectURL(imagemSelecionada);
   previaImagem.src = urlPrevia;
-  previa.hidden = false;
+  mostrarPrevia(true);
 }
 
 function removerImagem() {
@@ -284,7 +291,7 @@ async function carregarAnuncioParaEdicao() {
   atualizarContadores();
   if (valores.imageUrl) {
     previaImagem.src = resolverUrlRecurso(valores.imageUrl, API_BASE_URL);
-    previa.hidden = false;
+    mostrarPrevia(true);
   }
   return true;
 }

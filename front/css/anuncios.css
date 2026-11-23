@@ -4,26 +4,24 @@
   padding-bottom: var(--espaco-7);
 }
 
-.opcoes-preco {
-  display: flex;
-  flex-direction: column;
-  gap: var(--espaco-3);
-  min-width: 0;
-  margin: 0;
-  padding: 0;
-  border: 0;
+.pagina--formulario {
+  max-width: 600px;
 }
 
-.opcoes-preco__itens {
+.secao-anuncio {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: var(--espaco-4);
 }
 
-.opcoes-preco__item {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--espaco-2);
+.formulario > .secao-anuncio + .secao-anuncio {
+  padding-top: var(--espaco-5);
+  border-top: 1px solid var(--cor-borda-suave);
+}
+
+.secao-anuncio > h2 {
+  margin: 0;
+  font-size: var(--texto-lg);
 }
 
 .preco__entrada {
@@ -36,25 +34,59 @@
   min-width: 0;
 }
 
+.campo__rodape {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--espaco-3);
+}
+
 .campo__contador {
-  align-self: flex-end;
+  flex: none;
+  margin-left: auto;
   font-size: var(--texto-xs);
   color: var(--cor-texto-suave);
+}
+
+.foto-edicao {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--espaco-4);
+}
+
+.foto-edicao__controles {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  flex: 1 1 200px;
+  gap: var(--espaco-2);
+  min-width: 0;
 }
 
 .foto-previa {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
-  gap: var(--espaco-3);
+  justify-content: center;
+  flex: none;
+  width: 144px;
+  height: 108px;
+  overflow: hidden;
+  border-radius: var(--raio-cartao);
+  background: var(--cor-primaria-clara);
 }
 
 .foto-previa img {
-  width: 144px;
-  height: 108px;
+  width: 100%;
+  height: 100%;
   object-fit: cover;
-  border-radius: var(--raio-cartao);
-  background: var(--cor-primaria-clara);
+}
+
+.foto-previa--vazia {
+  padding: var(--espaco-2);
+  text-align: center;
+  font-size: var(--texto-xs);
+  color: var(--cor-texto-suave);
 }
 
 .acoes {
@@ -120,6 +152,9 @@
 
   .acoes .botao {
     flex: 1 1 100%;
+  }
+  .foto-previa {
+    width: 100%;
   }
   .meus-anuncios__card {
     grid-template-columns: 1fr;

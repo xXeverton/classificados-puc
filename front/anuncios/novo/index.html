@@ -16,66 +16,77 @@
       <p role="alert">Ative o JavaScript para publicar um anúncio.</p>
     </div>
   </noscript>
-  <main class="container pagina" id="conteudo" hidden>
+  <main class="container pagina pagina--formulario" id="conteudo" hidden>
     <div id="alerta" class="alerta" role="alert" aria-live="assertive"
       aria-atomic="true"></div>
     <h1 id="titulo-pagina">Novo anúncio</h1>
     <p>Compartilhe um produto, serviço ou evento com a comunidade PUC.</p>
+    <div class="painel">
     <form class="formulario" id="form-anuncio" novalidate>
-      <div class="campo">
-        <label class="campo__rotulo" for="titulo">Título</label>
-        <input class="campo__entrada" id="titulo" name="titulo" required
-          aria-describedby="titulo-ajuda titulo-contador">
-        <span class="campo__ajuda" id="titulo-ajuda">
-          De 5 a 80 caracteres, sem contar espaços nas pontas.
-        </span>
-        <span class="campo__contador" id="titulo-contador">0/80</span>
-        <span class="campo__erro" id="titulo-erro"></span>
-      </div>
-      <div class="campo">
-        <label class="campo__rotulo" for="categoria">Categoria</label>
-        <select class="campo__entrada" id="categoria" name="categoria" required>
-          <option value="" selected disabled>Selecione a categoria</option>
-          <option value="produto">Produto</option>
-          <option value="servico">Serviço</option>
-          <option value="evento">Evento</option>
-        </select>
-        <span class="campo__erro" id="categoria-erro"></span>
-      </div>
-      <div class="campo" id="campo-estado">
-        <label class="campo__rotulo" for="estado_conservacao">
-          Estado de conservação
-        </label>
-        <select class="campo__entrada" id="estado_conservacao"
-          name="estado_conservacao">
-          <option value="" selected disabled>Selecione o estado</option>
-          <option value="novo">Novo</option>
-          <option value="usado_regular">Usado - regular</option>
-        </select>
-        <span class="campo__erro" id="estado_conservacao-erro"></span>
-      </div>
-      <div class="campo">
-        <label class="campo__rotulo" for="descricao">Descrição</label>
-        <textarea class="campo__entrada" id="descricao" name="descricao"
-          rows="5" required aria-describedby="descricao-ajuda descricao-contador"></textarea>
-        <span class="campo__ajuda" id="descricao-ajuda">
-          Até 500 caracteres, sem contar espaços nas pontas.
-        </span>
-        <span class="campo__contador" id="descricao-contador">0/500</span>
-        <span class="campo__erro" id="descricao-erro"></span>
-      </div>
-      <fieldset class="opcoes-preco">
-        <legend class="campo__rotulo">Preço</legend>
-        <div class="opcoes-preco__itens">
-          <label class="opcoes-preco__item">
+      <section class="secao-anuncio" aria-labelledby="titulo-sobre">
+        <h2 id="titulo-sobre">Sobre o anúncio</h2>
+        <div class="campo">
+          <label class="campo__rotulo" for="titulo">Título</label>
+          <input class="campo__entrada" id="titulo" name="titulo" required
+            aria-describedby="titulo-ajuda titulo-contador">
+          <div class="campo__rodape">
+            <span class="campo__ajuda" id="titulo-ajuda">
+              De 5 a 80 caracteres, sem contar espaços nas pontas.
+            </span>
+            <span class="campo__contador" id="titulo-contador">0/80</span>
+          </div>
+          <span class="campo__erro" id="titulo-erro"></span>
+        </div>
+        <div class="campo">
+          <label class="campo__rotulo" for="categoria">Categoria</label>
+          <select class="campo__entrada" id="categoria" name="categoria" required>
+            <option value="" selected disabled>Selecione a categoria</option>
+            <option value="produto">Produto</option>
+            <option value="servico">Serviço</option>
+            <option value="evento">Evento</option>
+          </select>
+          <span class="campo__erro" id="categoria-erro"></span>
+        </div>
+        <div class="campo" id="campo-estado">
+          <label class="campo__rotulo" for="estado_conservacao">
+            Estado de conservação
+          </label>
+          <select class="campo__entrada" id="estado_conservacao"
+            name="estado_conservacao">
+            <option value="" selected disabled>Selecione o estado</option>
+            <option value="novo">Novo</option>
+            <option value="usado_regular">Usado - regular</option>
+          </select>
+          <span class="campo__erro" id="estado_conservacao-erro"></span>
+        </div>
+        <div class="campo">
+          <label class="campo__rotulo" for="descricao">Descrição</label>
+          <textarea class="campo__entrada" id="descricao" name="descricao"
+            rows="5" required
+            aria-describedby="descricao-ajuda descricao-contador"></textarea>
+          <div class="campo__rodape">
+            <span class="campo__ajuda" id="descricao-ajuda">
+              Até 500 caracteres, sem contar espaços nas pontas.
+            </span>
+            <span class="campo__contador" id="descricao-contador">0/500</span>
+          </div>
+          <span class="campo__erro" id="descricao-erro"></span>
+        </div>
+      </section>
+
+      <section class="secao-anuncio" aria-labelledby="titulo-preco">
+        <h2 id="titulo-preco">Preço</h2>
+        <fieldset class="opcoes">
+          <legend class="visualmente-oculto">Tipo de preço</legend>
+          <label class="opcoes__item">
             <input type="radio" name="tipo_preco" value="informar" checked>
             Informar preço
           </label>
-          <label class="opcoes-preco__item">
+          <label class="opcoes__item">
             <input type="radio" name="tipo_preco" value="combinar">
             A combinar
           </label>
-        </div>
+        </fieldset>
         <span class="campo__erro" id="campo-tipo_preco-erro"></span>
         <div class="campo" id="campo-preco">
           <label class="campo__rotulo" for="preco">Valor</label>
@@ -90,22 +101,39 @@
           </span>
           <span class="campo__erro" id="preco-erro"></span>
         </div>
-      </fieldset>
-      <div class="campo">
-        <label class="campo__rotulo" for="imagem">Foto (opcional)</label>
-        <input class="campo__entrada" id="imagem" name="imagem" type="file"
-          accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
-          aria-describedby="imagem-ajuda">
-        <span class="campo__ajuda" id="imagem-ajuda">
-          Uma foto JPG, PNG ou WebP, de até 5 MB.
-        </span>
-        <span class="campo__erro" id="imagem-erro"></span>
-        <div class="foto-previa" id="foto-previa" hidden>
-          <img id="foto-previa-imagem" alt="Prévia da foto do anúncio">
-          <button class="botao botao--texto" id="remover-foto" type="button"
-            aria-label="Remover foto 1">Remover foto</button>
+      </section>
+
+      <section class="secao-anuncio" aria-labelledby="titulo-foto">
+        <h2 id="titulo-foto">Foto</h2>
+        <div class="campo">
+          <label class="campo__rotulo" for="imagem">
+            Imagem do anúncio <span class="campo__opcional">(opcional)</span>
+          </label>
+          <div class="foto-edicao">
+            <div class="foto-previa" id="foto-previa" hidden>
+              <img id="foto-previa-imagem" alt="Prévia da foto do anúncio">
+            </div>
+            <div class="foto-previa foto-previa--vazia" id="foto-vazia">
+              Sem foto
+            </div>
+            <div class="foto-edicao__controles">
+              <input class="campo__entrada" id="imagem" name="imagem"
+                type="file"
+                accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
+                aria-describedby="imagem-ajuda">
+              <button class="botao botao--texto" id="remover-foto"
+                type="button" aria-label="Remover foto 1" hidden>
+                Remover foto
+              </button>
+            </div>
+          </div>
+          <span class="campo__ajuda" id="imagem-ajuda">
+            Uma foto JPG, PNG ou WebP, de até 5 MB.
+          </span>
+          <span class="campo__erro" id="imagem-erro"></span>
         </div>
-      </div>
+      </section>
+
       <div class="acoes">
         <button class="botao botao--primario" id="publicar" type="submit">
           Publicar
@@ -113,6 +141,7 @@
         <a class="botao botao--contorno" id="cancelar" href="/inicio/">Cancelar</a>
       </div>
     </form>
+    </div>
   </main>
   <script type="module" src="../../js/paginas/anuncios_novo.js"></script>
 </body>
