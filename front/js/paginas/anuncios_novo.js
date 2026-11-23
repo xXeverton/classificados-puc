@@ -1,3 +1,5 @@
+import { API_BASE_URL } from "../config.js";
+import { resolverUrlRecurso } from "../dominio/detalhes_anuncio.js";
 import {
   contarCaracteres,
   montarPayloadAnuncio,
@@ -278,7 +280,7 @@ async function carregarAnuncioParaEdicao() {
   atualizarCamposCondicionais();
   atualizarContadores();
   if (valores.imageUrl) {
-    previaImagem.src = valores.imageUrl;
+    previaImagem.src = resolverUrlRecurso(valores.imageUrl, API_BASE_URL);
     previa.hidden = false;
   }
   return true;

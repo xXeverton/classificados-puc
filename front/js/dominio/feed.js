@@ -1,3 +1,5 @@
+import { rotaDetalhes } from "./rotas.js";
+
 const TIPOS = new Set(["all", "product", "service", "event"]);
 // Digits with an optional decimal part; comma or dot as separator.
 const FORMATO_PRECO = /^\d+([.,]\d+)?$/;
@@ -38,7 +40,7 @@ export function dadosDoCard(anuncio) {
     descricaoResumida: anuncio.type === "service"
       ? resumirDescricao(anuncio.description)
       : null,
-    detalhesUrl: `/anuncios/detalhes/?id=${encodeURIComponent(anuncio.id)}`,
+    detalhesUrl: rotaDetalhes(anuncio.id),
   };
 }
 

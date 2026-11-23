@@ -12,10 +12,10 @@ separados por subtarefa (D-050).
 
 ## PROJ-56 — [Front-end] Rotas e imagens
 
-- [ ] T4: Testes de `rotas.js` (`rotaDetalhes`, `rotaEditarAnuncio`).
-- [ ] T5: Criar `dominio/rotas.js`, reexportar em `comum.js` e trocar os
+- [x] T4: Testes de `rotas.js` (`rotaDetalhes`, `rotaEditarAnuncio`).
+- [x] T5: Criar `dominio/rotas.js`, reexportar em `comum.js` e trocar os
   endereços soltos (detalhes, meus anúncios, feed).
-- [ ] T6: Passar imagens do painel e da prévia de edição por `resolverUrlRecurso`.
+- [x] T6: Passar imagens do painel e da prévia de edição por `resolverUrlRecurso`.
 
 ## PROJ-57 — [Front-end] Cabeçalho único
 

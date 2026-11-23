@@ -6,6 +6,9 @@ import {
   montarDependencias,
   ROTAS,
 } from "./comum.js";
+import { API_BASE_URL } from "../config.js";
+import { resolverUrlRecurso } from "../dominio/detalhes_anuncio.js";
+import { rotaEditarAnuncio } from "../dominio/rotas.js";
 import { SECOES_DO_PAINEL, acoesDoAnuncio } from "../dominio/meus_anuncios.js";
 import { chamarApi } from "../fluxos/conexao.js";
 import { carregarUsuario } from "../fluxos/sessao_atual.js";
@@ -64,7 +67,7 @@ function criarCard(anuncio, status) {
   const card = criar("article", "meus-anuncios__card");
   if (anuncio.image_url) {
     const imagem = criar("img", "meus-anuncios__imagem");
-    imagem.src = anuncio.image_url;
+    imagem.src = resolverUrlRecurso(anuncio.image_url, API_BASE_URL);
     imagem.alt = anuncio.title;
     card.append(imagem);
   } else {
@@ -91,7 +94,7 @@ function criarBotaoDeAcao(acao, anuncio) {
   const classe = `botao botao--${acao.estilo}`;
   if (acao.tipo === "editar") {
     const editar = criar("a", classe, acao.rotulo);
-    editar.href = `/anuncios/novo/?editar=${anuncio.id}`;
+    editar.href = rotaEditarAnuncio(anuncio.id);
     return editar;
   }
   const botao = criar("button", classe, acao.rotulo);

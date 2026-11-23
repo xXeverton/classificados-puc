@@ -103,7 +103,7 @@ async function carregar() {
 
   const estado = await detalharAnuncio(deps, id);
   if (estado.tipo === "sem_sessao") {
-    irPara("/entrar/", "sessao_expirada");
+    irPara(ROTAS.entrar, "sessao_expirada");
     return;
   }
   if (estado.tipo === "conexao") {
