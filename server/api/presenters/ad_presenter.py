@@ -47,6 +47,7 @@ class AdvertiserDetailsViewSchema(BaseModel):
 class AdDetailsViewSchema(BaseModel):
     ad: AdViewSchema
     advertiser: AdvertiserDetailsViewSchema
+    is_owner: bool = False
 
 
 def apresenta_ad(ad: Ad) -> AdViewSchema:
@@ -109,4 +110,5 @@ def apresenta_detalhes(details: AdDetails) -> AdDetailsViewSchema:
             photo_url=advertiser.foto_url,
             contacts=contacts,
         ),
+        is_owner=details.is_owner,
     )

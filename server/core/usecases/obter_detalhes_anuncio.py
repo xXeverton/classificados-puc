@@ -81,4 +81,8 @@ class ObterDetalhesAnuncio:
             foto_url=advertiser.foto_url,
             contatos=advertiser.contatos,
         )
-        return AdDetails(ad=ad, advertiser=summary)
+        return AdDetails(
+            ad=ad,
+            advertiser=summary,
+            is_owner=ad.usuario_id == usuario.id,
+        )

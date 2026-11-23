@@ -875,6 +875,7 @@ def test_get_ad_details_returns_public_ad_and_advertiser():
             "link_de_conversa": None,
         }
     ]
+    assert response.json["is_owner"] is True
     app.extensions["database_engine"].dispose()
 
 

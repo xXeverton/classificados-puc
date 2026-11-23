@@ -167,6 +167,24 @@ def test_returns_public_details_for_confirmed_authenticated_user():
     assert details.advertiser.contatos[0].valor == "ana@puc-rio.br"
 
 
+def test_marks_details_as_not_owned_when_viewer_is_another_member():
+    details = make_use_case(make_ad()).executar(
+        usuario=make_user(usuario_id=10),
+        anuncio_id=1,
+    )
+
+    assert details.is_owner is False
+
+
+def test_marks_details_as_owned_when_viewer_is_the_advertiser():
+    details = make_use_case(make_ad()).executar(
+        usuario=make_user(usuario_id=20),
+        anuncio_id=1,
+    )
+
+    assert details.is_owner is True
+
+
 def test_rejects_missing_session():
     with pytest.raises(UsuarioNaoAutenticado):
         make_use_case(make_ad()).executar(
