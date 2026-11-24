@@ -22,6 +22,14 @@ _ADS_FIELD_CONSTRAINTS_MIGRATION = (
     / "0003_ads_field_constraints.sql"
 )
 
+_EVENT_COLUMNS = (
+    ("sem_preco", "BOOLEAN NOT NULL DEFAULT 0"),
+    ("data_evento", "DATE"),
+    ("horario_evento", "TIME"),
+    ("local_evento", "TEXT"),
+)
+_ADS_SCHEMA_VERSION = 4
+
 
 def create_database_engine(database_url: str | None = None) -> Engine:
     """Create the engine, defaulting to the project's SQLite file."""
@@ -86,6 +94,28 @@ def _migrate_ads_table(engine: Engine) -> None:
         ).scalar_one()
     if version < 3:
         _execute_sqlite_migration(engine, _ADS_FIELD_CONSTRAINTS_MIGRATION)
+    _add_event_columns(engine)
+
+
+def _add_event_columns(engine: Engine) -> None:
+    """Add the optional event columns (spec 015) to an existing `ads`.
+
+    They are nullable, so existing rows are kept as they are. The table
+    rebuilt by migration 0003 does not have them, hence the check.
+    """
+    with engine.begin() as connection:
+        existentes = {
+            column["name"]
+            for column in inspect(connection).get_columns("ads")
+        }
+        for nome, tipo in _EVENT_COLUMNS:
+            if nome not in existentes:
+                connection.exec_driver_sql(
+                    f"ALTER TABLE ads ADD COLUMN {nome} {tipo}"
+                )
+        connection.exec_driver_sql(
+            f"PRAGMA user_version = {_ADS_SCHEMA_VERSION}"
+        )
 
 
 def _execute_sqlite_migration(engine: Engine, migration: Path) -> None:

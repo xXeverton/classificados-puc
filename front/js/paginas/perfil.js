@@ -2,7 +2,8 @@ import { obterPerfil } from "../fluxos/obter_perfil.js";
 import { criarCarregadorDeFoto } from "../fluxos/carregar_foto.js";
 import { MENSAGENS } from "../dominio/mensagens.js";
 import { criarListaDeContatos } from "./contatos_visao.js";
-import { ROTAS, irPara, ligarBotaoSair, mostrarAlerta, montarDependencias } from "./comum.js";
+import { montarCabecalho } from "./cabecalho.js";
+import { ROTAS, irPara, mostrarAlerta, montarDependencias } from "./comum.js";
 
 const VINCULOS = { aluno: "Aluno", funcionario: "Funcionário" };
 
@@ -12,7 +13,7 @@ const conteudo = document.querySelector("#conteudo");
 const carregadorDeFoto = criarCarregadorDeFoto(deps);
 const texto = (id, valor) => { document.querySelector(id).textContent = valor; };
 
-ligarBotaoSair(document.querySelector("#sair"), deps);
+montarCabecalho(deps);
 window.addEventListener("pagehide", () => carregadorDeFoto.revogar());
 
 function mostrarConta(usuario) {

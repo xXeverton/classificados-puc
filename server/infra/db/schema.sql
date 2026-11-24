@@ -48,7 +48,12 @@ CREATE TABLE IF NOT EXISTS ads (
     ),
     preco_a_combinar BOOLEAN NOT NULL DEFAULT 0
         CHECK (preco_a_combinar IN (0, 1)),
-    image_key TEXT
+    image_key TEXT,
+    sem_preco BOOLEAN NOT NULL DEFAULT 0
+        CHECK (sem_preco IN (0, 1)),
+    data_evento DATE,
+    horario_evento TIME,
+    local_evento TEXT
 );
 
 CREATE INDEX IF NOT EXISTS ix_ads_usuario_id ON ads (usuario_id);

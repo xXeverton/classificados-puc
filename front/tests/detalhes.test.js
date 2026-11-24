@@ -10,6 +10,7 @@ import {
   gerarLinkEmailContato,
   hrefContato,
   classificarContatosPrincipais,
+  rotaEdicaoDoDono,
 } from "../js/dominio/detalhes_anuncio.js";
 
 test("idDoAnuncio accepts only a positive integer", () => {
@@ -157,4 +158,22 @@ test("resource URLs use the API origin for protected and local media", () => {
     resolverUrlRecurso("https://cdn.example.com/foto.png", "http://127.0.0.1:5000"),
     "https://cdn.example.com/foto.png",
   );
+});
+
+test("o dono recebe a rota de edição do anúncio (CA9)", () => {
+  assert.equal(
+    rotaEdicaoDoDono({ ad: { id: 5 }, is_owner: true }),
+    "/anuncios/novo/?editar=5",
+  );
+});
+
+test("quem não é o dono não recebe rota de edição (CA10)", () => {
+  assert.equal(rotaEdicaoDoDono({ ad: { id: 5 }, is_owner: false }), null);
+  assert.equal(rotaEdicaoDoDono({ ad: { id: 5 } }), null);
+  assert.equal(rotaEdicaoDoDono(null), null);
+});
+
+test("evento sem preço não mostra texto de preço", () => {
+  assert.equal(formatarPrecoDetalhes(null, false, true), "");
+  assert.equal(formatarPrecoDetalhes(null, true, true), "");
 });

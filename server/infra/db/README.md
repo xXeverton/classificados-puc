@@ -189,12 +189,17 @@ Mapeamento com os nomes da subtarefa PROJ-25 do Jira (decisão D-041):
 | `estado_conservacao` | TEXT | Não | `novo` ou `usado_regular`; nulo para serviço/evento e anúncios antigos | Conservação do produto |
 | `preco_a_combinar` | BOOLEAN | Sim | `0` ou `1`; padrão `0` | Indica preço negociável |
 | `image_key` | TEXT | Não | Pode ser nulo | Chave da imagem no storage local/S3 |
+| `sem_preco` | BOOLEAN | Sim | `0` ou `1`; padrão `0`; só evento pode ser `1` (validado na entidade) | Evento sem nenhum preço: nem valor nem "a combinar" (`preco_a_combinar` fica `0`) |
+| `data_evento` | DATE | Não | Só eventos (`type = 'event'`) têm valor; a entidade `Anuncio` exige a data em evento | Dia do evento, no calendário de Brasília (spec 015) |
+| `horario_evento` | TIME | Não | Só eventos; opcional | Hora do evento, sem fuso |
+| `local_evento` | TEXT | Não | Só eventos; até 80 caracteres (validado na entidade) | Local do evento |
 
 `image_url` preserva URLs existentes; novas imagens usam `image_key`, e a URL
 é resolvida pelo adaptador de storage. Sem foto, ambos ficam nulos. O feed
 considera disponíveis apenas os anúncios publicados; anúncios vendidos ou
 expirados não devem ser retornados. Publicações novas recebem expiração em
-30 dias, calculada pelo caso de uso. Renovar manualmente ou editar um anúncio
+30 dias, calculada pelo caso de uso; para eventos, o prazo termina no início do
+dia seguinte ao `data_evento`, em Brasília (D-009). Renovar manualmente ou editar um anúncio
 expirado define novo prazo de 30 dias e o publica novamente. O feed também
 oculta anúncios publicados cujo prazo já passou. O banco não atualiza
 automaticamente o estado do anúncio.
@@ -247,6 +252,12 @@ limites, a inicialização falha sem apagar o registro; os dados precisam ser
 corrigidos antes da atualização. As migrations são controladas por
 `PRAGMA user_version`; os testes verificam preservação de dados, repetição e
 rejeição segura de registros incompatíveis.
+
+As colunas `data_evento`, `horario_evento` e `local_evento` (spec 015) são
+anuláveis e entram em bancos existentes sozinhas, na inicialização
+(`_add_event_columns`), sem apagar nada; eventos antigos ficam sem data e fora
+do painel de destaques. Elas não entram na migração 0003, que reconstrói a
+tabela, por isso são adicionadas depois dela (`user_version = 4`).
 
 A feature 001 (cadastro, login e verificação de e-mail) mudou a tabela
 `usuarios` de forma incompatível. Por decisão do time (2026-11-20), não há

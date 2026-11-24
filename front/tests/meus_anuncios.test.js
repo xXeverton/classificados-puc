@@ -17,6 +17,17 @@ class ElementoFalso {
     this.children.push(...elementos);
   }
 
+  prepend(...elementos) {
+    this.children.unshift(...elementos);
+  }
+
+  setAttribute() {}
+
+  querySelector() {
+    this.conteudo ??= new ElementoFalso();
+    return this.conteudo;
+  }
+
   replaceChildren(...elementos) {
     this.children = [...elementos];
   }
@@ -38,7 +49,7 @@ function procurarPorTexto(elemento, texto) {
 const SELETORES = [
   "#alerta",
   "#conteudo",
-  "#sair",
+  "[data-cabecalho]",
   ...SECOES_DO_PAINEL.flatMap((secao) => [
     `#${secao.lista}`,
     `#${secao.paginacao}`,
@@ -73,6 +84,8 @@ async function abrirPainel({ anuncios, confirmar = true }) {
     },
     location: {
       origin: "http://localhost:5173",
+      pathname: "/meus-anuncios/",
+      search: "",
       replace() {},
     },
     fetch: async (url, opcoes = {}) => {
@@ -151,7 +164,7 @@ const anuncio = (id, title, status) => ({
 test("cada situação mostra as ações certas", () => {
   assert.deepEqual(
     acoesDoAnuncio("published").map((acao) => acao.tipo),
-    ["editar", "vender", "excluir"],
+    ["detalhes", "editar", "vender", "excluir"],
   );
   assert.deepEqual(
     acoesDoAnuncio("expired").map((acao) => acao.tipo),
@@ -162,6 +175,41 @@ test("cada situação mostra as ações certas", () => {
     ["reativar", "excluir"],
   );
   assert.deepEqual(acoesDoAnuncio("desconhecido"), []);
+});
+
+test("evento não tem Renovar nem \"vendido\": ganha \"concluído\" (spec 015)", () => {
+  assert.deepEqual(
+    acoesDoAnuncio("expired", "evento").map((acao) => acao.tipo),
+    ["editar", "concluir", "excluir"],
+  );
+  assert.deepEqual(
+    acoesDoAnuncio("published", "evento").map((acao) => acao.tipo),
+    ["detalhes", "editar", "concluir", "excluir"],
+  );
+  const concluir = acoesDoAnuncio("published", "evento")[2];
+  assert.equal(concluir.rotulo, "Marcar como concluído");
+  assert.equal(concluir.novoStatus, "sold");
+  assert.match(concluir.sucesso, /concluído/);
+  assert.ok(
+    !acoesDoAnuncio("published", "evento").some((acao) => /vendido/i.test(acao.rotulo)),
+  );
+  assert.deepEqual(
+    acoesDoAnuncio("sold", "evento").map((acao) => acao.tipo),
+    ["reativar", "excluir"],
+  );
+  assert.ok(acoesDoAnuncio("expired", "produto").some((acao) => acao.tipo === "renovar"));
+});
+
+test('"Ver detalhes" só aparece em anúncios publicados (RN5)', () => {
+  for (const status of ["expired", "sold", "desconhecido"]) {
+    assert.ok(
+      !acoesDoAnuncio(status).some((acao) => acao.tipo === "detalhes"),
+      status,
+    );
+  }
+  const detalhes = acoesDoAnuncio("published")[0];
+  assert.equal(detalhes.rotulo, "Ver detalhes");
+  assert.equal(detalhes.estilo, "contorno");
 });
 
 test("o painel tem as seções publicados, expirados e vendidos", () => {

@@ -7,14 +7,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rethink+Sans:wght@400;600;700&display=swap">
   <link rel="stylesheet" href="../css/tema.css">
+  <link rel="stylesheet" href="../css/destaques.css">
 </head>
 <body>
-  <header class="cabecalho">
+  <header class="cabecalho" data-cabecalho>
     <div class="container cabecalho__conteudo">
-      <a class="marca" href="./">
-        <span class="marca__sigla">PUC</span>
-        <span class="marca__nome">Classificados</span>
-      </a>
       <form class="cabecalho__busca" id="busca-feed" role="search">
         <label class="visualmente-oculto" for="termo-busca">Buscar anúncios</label>
         <input class="campo__entrada" id="termo-busca" name="search" type="search" placeholder="Buscar...">
@@ -24,16 +21,20 @@
         Filtros
         <span class="contador-filtros" id="contador-filtros" hidden></span>
       </button>
-      <nav class="navegacao" aria-label="Principal">
-        <a class="navegacao__item" href="./" aria-current="page">Início</a>
-        <a class="navegacao__item" href="../perfil/">Meu perfil</a>
-      </nav>
-      <a class="botao botao--primario" href="../anuncios/novo/">Novo anúncio</a>
-      <button class="botao botao--contorno" id="sair" type="button">Sair</button>
     </div>
   </header>
   <main class="container pagina-feed" id="conteudo" hidden>
     <div id="alerta" role="alert"></div>
+    <section class="destaques" id="destaques" aria-roledescription="carrossel"
+             aria-label="Eventos em destaque" hidden>
+      <div data-destaques-faixa></div>
+      <button class="destaques__seta destaques__seta--anterior" type="button"
+              aria-label="Evento anterior" data-destaques-anterior hidden>&#8249;</button>
+      <button class="destaques__seta destaques__seta--proxima" type="button"
+              aria-label="Próximo evento" data-destaques-proxima hidden>&#8250;</button>
+      <div class="destaques__pontos" data-destaques-pontos hidden></div>
+      <p class="visualmente-oculto" aria-live="polite" data-destaques-aviso></p>
+    </section>
     <form class="painel-filtros" id="painel-filtros" aria-label="Filtros do feed" novalidate hidden>
       <fieldset class="painel-filtros__grupo">
         <legend class="campo__rotulo">Tipo</legend>

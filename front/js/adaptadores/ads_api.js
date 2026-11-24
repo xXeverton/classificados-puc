@@ -3,6 +3,7 @@ import { montarUrlApi } from "../dominio/feed.js";
 export function criarAdsApi(cliente) {
   return {
     listar: (params) => cliente.requisitar("GET", montarUrlApi(params)),
+    listarDestaques: () => cliente.requisitar("GET", "/api/eventos-destaque"),
     detalhar: (id) => cliente.requisitar("GET", `/api/ads/${encodeURIComponent(id)}`),
     listarMeus: (status, page = 1) => cliente.requisitar(
       "GET",

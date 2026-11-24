@@ -115,3 +115,13 @@ class StatusInvalido(ErroDeCasoDeUso):
 
 class MudancaDeStatusInvalida(ErroDeCasoDeUso):
     mensagem_padrao = "Somente anúncios vendidos podem ser reativados."
+
+
+class DataDeEventoInvalida(ErroDeCasoDeUso):
+    mensagem_padrao = "A data do evento não pode ser anterior a hoje."
+
+
+class EventoNaoRenovavel(ErroDeCasoDeUso):
+    mensagem_padrao = (
+        "Evento não é renovado: edite a data para publicá-lo de novo."
+    )

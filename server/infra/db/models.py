@@ -1,14 +1,16 @@
 """SQLAlchemy persistence models."""
 
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime, time
 
 from sqlalchemy import (
     CheckConstraint,
+    Date,
     DateTime,
     Float,
     ForeignKey,
     Integer,
     Text,
+    Time,
     UniqueConstraint,
 )
 from sqlalchemy.engine import Dialect
@@ -297,6 +299,10 @@ class AdModel(Base):
             "preco_a_combinar IN (0, 1)",
             name="ck_ads_preco_a_combinar",
         ),
+        CheckConstraint(
+            "sem_preco IN (0, 1)",
+            name="ck_ads_sem_preco",
+        ),
         {"sqlite_autoincrement": True},
     )
 
@@ -335,3 +341,12 @@ class AdModel(Base):
         server_default="0",
     )
     image_key: Mapped[str | None] = mapped_column(Text, nullable=True)
+    sem_preco: Mapped[bool] = mapped_column(
+        nullable=False,
+        default=False,
+        server_default="0",
+    )
+    # Only events use these (spec 015, D-008).
+    data_evento: Mapped[date | None] = mapped_column(Date, nullable=True)
+    horario_evento: Mapped[time | None] = mapped_column(Time, nullable=True)
+    local_evento: Mapped[str | None] = mapped_column(Text, nullable=True)

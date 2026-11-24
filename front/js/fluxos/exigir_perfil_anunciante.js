@@ -1,6 +1,7 @@
+import { ROTAS } from "../dominio/rotas.js";
 import { obterPerfil } from "./obter_perfil.js";
 
-export const DESTINO_COMPLETAR_PERFIL = "/perfil/anunciante/?depois=anunciar";
+export const DESTINO_COMPLETAR_PERFIL = `${ROTAS.editarPerfilAnunciante}?depois=anunciar`;
 
 // Guarda da publicação de anúncios: só segue quem já é anunciante (CA29). Quem
 // não é vai completar o perfil e volta depois (CA27, CA28). Falhas de conexão

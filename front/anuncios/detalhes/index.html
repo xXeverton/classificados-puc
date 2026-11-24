@@ -4,24 +4,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Detalhes do anúncio · Classificados PUC</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rethink+Sans:wght@400;600;700&display=swap">
   <link rel="stylesheet" href="../../css/tema.css">
   <link rel="stylesheet" href="../../css/detalhes.css">
 </head>
 <body>
-  <header class="cabecalho">
-    <div class="container cabecalho__conteudo">
-      <a class="marca" href="../../inicio/">
-        <span class="marca__sigla">PUC</span>
-        <span class="marca__nome">Classificados</span>
-      </a>
-      <nav class="navegacao" aria-label="Principal">
-        <a class="navegacao__item" href="../../inicio/">Início</a>
-        <a class="navegacao__item" href="../../perfil/">Meu perfil</a>
-      </nav>
-      <a class="botao botao--primario" href="../../anuncios/novo/">Novo anúncio</a>
-      <button class="botao botao--contorno" id="sair" type="button">Sair</button>
-    </div>
-  </header>
+  <header class="cabecalho" data-cabecalho></header>
   <main class="container pagina-detalhes">
     <div id="alerta" role="alert"></div>
     <div id="carregando" class="estado-carregamento" role="status">
@@ -43,9 +32,24 @@
             <dt>Estado de conservação</dt>
             <dd id="conservacao"></dd>
           </div>
+          <div id="linha-data-evento" hidden>
+            <dt>Data do evento</dt>
+            <dd id="data-evento"></dd>
+          </div>
+          <div id="linha-horario-evento" hidden>
+            <dt>Horário</dt>
+            <dd id="horario-evento"></dd>
+          </div>
+          <div id="linha-local-evento" hidden>
+            <dt>Local</dt>
+            <dd id="local-evento"></dd>
+          </div>
         </dl>
         <h2>Descrição</h2>
         <p id="descricao" class="detalhes__descricao"></p>
+        <div class="detalhes__acoes">
+          <a class="botao botao--contorno" id="editar-anuncio" href="#" hidden>Editar anúncio</a>
+        </div>
         <section class="painel detalhes__anunciante" aria-labelledby="titulo-anunciante">
           <h2 id="titulo-anunciante">Anunciante</h2>
           <div class="detalhes__perfil">

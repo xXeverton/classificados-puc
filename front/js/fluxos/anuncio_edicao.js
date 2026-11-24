@@ -39,9 +39,13 @@ export function mapearAnuncioParaFormulario(anuncio) {
     descricao: anuncio.description ?? "",
     estadoConservacao: anuncio.estado_conservacao ?? "",
     precoACombinar: Boolean(anuncio.preco_a_combinar),
+    semPreco: Boolean(anuncio.sem_preco),
     preco: anuncio.price == null
       ? ""
       : String(anuncio.price).replace(".", ","),
     imageUrl: anuncio.image_url,
+    dataEvento: anuncio.data_evento ?? "",
+    horarioEvento: anuncio.horario_evento ?? "",
+    localEvento: anuncio.local_evento ?? "",
   };
 }

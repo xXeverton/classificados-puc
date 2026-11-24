@@ -10,13 +10,15 @@ import {
   paramsSemFiltros,
   parametrosDoFeed,
 } from "../dominio/feed.js";
+import { deveMostrarDestaques } from "../dominio/destaques.js";
 import { listarAnuncios } from "../fluxos/listar_anuncios.js";
-import { sair } from "../fluxos/sessao_atual.js";
+import { listarDestaques } from "../fluxos/listar_destaques.js";
+import { criarPainelDeDestaques } from "./destaques.js";
+import { montarCabecalho } from "./cabecalho.js";
 import { ROTAS, irPara, mostrarAlerta, montarDependencias, criar, limparAlerta } from "./comum.js";
 
 const deps = montarDependencias();
 const alerta = document.querySelector("#alerta");
-const botaoSair = document.querySelector("#sair");
 const conteudo = document.querySelector("#conteudo");
 const grade = document.querySelector("#grade-anuncios");
 const estadoVazio = document.querySelector("#estado-vazio");
@@ -31,12 +33,10 @@ const precoMinimo = document.querySelector("#preco-minimo");
 const precoMaximo = document.querySelector("#preco-maximo");
 const erroFiltros = document.querySelector("#erro-filtros");
 const limparFiltros = document.querySelector("#limpar-filtros");
+const painelDeDestaques = criarPainelDeDestaques(document.querySelector("#destaques"));
+let destaquesCarregados = false;
 
-botaoSair.addEventListener("click", async () => {
-  botaoSair.disabled = true;
-  await sair(deps);
-  irPara(ROTAS.entrar);
-});
+montarCabecalho(deps);
 
 function formatarPreco(valor, aCombinar) {
   if (aCombinar) return "A combinar";
@@ -73,11 +73,13 @@ function criarCard(anuncio) {
 
   const corpo = criar("div", "anuncio__corpo");
   corpo.append(criar("span", "etiqueta", dados.categoria));
-  corpo.append(criar(
-    "span",
-    "anuncio__preco",
-    formatarPreco(dados.preco, dados.precoACombinar),
-  ));
+  if (!dados.semPreco) {
+    corpo.append(criar(
+      "span",
+      "anuncio__preco",
+      formatarPreco(dados.preco, dados.precoACombinar),
+    ));
+  }
   corpo.append(criar("h2", "anuncio__titulo", dados.titulo));
   if (dados.descricaoResumida) {
     corpo.append(criar("p", "anuncio__descricao", dados.descricaoResumida));
@@ -111,8 +113,23 @@ function renderizarPaginacao(params, totalPaginas) {
   }
 }
 
+// O painel de eventos é um extra: carrega uma vez, em paralelo ao feed, e uma
+// falha só o deixa de fora (CA19). Com busca ou filtro ele fica oculto (CA17).
+async function atualizarDestaques(params) {
+  const quer = deveMostrarDestaques(params);
+  if (!quer || destaquesCarregados) {
+    painelDeDestaques.exibir(quer);
+    return;
+  }
+  destaquesCarregados = true;
+  const estado = await listarDestaques(deps);
+  painelDeDestaques.renderizar(estado.eventos);
+  painelDeDestaques.exibir(deveMostrarDestaques(parametrosAtuais()));
+}
+
 async function carregar(params) {
   limparAlerta(alerta);
+  atualizarDestaques(params);
   grade.replaceChildren();
   estadoVazio.hidden = true;
   paginacao.replaceChildren();
@@ -136,6 +153,10 @@ async function carregar(params) {
 }
 
 let params = parametrosDoFeed(new URLSearchParams(window.location.search));
+
+function parametrosAtuais() {
+  return params;
+}
 
 function formatarPrecoDoCampo(valor) {
   return valor === null ? "" : String(valor).replace(".", ",");

@@ -1,17 +1,21 @@
+import { montarCabecalho } from "./cabecalho.js";
 import {
   criar,
   irPara,
-  ligarBotaoSair,
+  
   mostrarAlerta,
   montarDependencias,
   ROTAS,
 } from "./comum.js";
+import { API_BASE_URL } from "../config.js";
+import { resolverUrlRecurso } from "../dominio/detalhes_anuncio.js";
+import { rotaDetalhes, rotaEditarAnuncio } from "../dominio/rotas.js";
 import { SECOES_DO_PAINEL, acoesDoAnuncio } from "../dominio/meus_anuncios.js";
 import { chamarApi } from "../fluxos/conexao.js";
 import { carregarUsuario } from "../fluxos/sessao_atual.js";
 
 const deps = montarDependencias();
-ligarBotaoSair(document.querySelector("#sair"), deps);
+montarCabecalho(deps);
 
 const alerta = document.querySelector("#alerta");
 const conteudo = document.querySelector("#conteudo");
@@ -64,7 +68,7 @@ function criarCard(anuncio, status) {
   const card = criar("article", "meus-anuncios__card");
   if (anuncio.image_url) {
     const imagem = criar("img", "meus-anuncios__imagem");
-    imagem.src = anuncio.image_url;
+    imagem.src = resolverUrlRecurso(anuncio.image_url, API_BASE_URL);
     imagem.alt = anuncio.title;
     card.append(imagem);
   } else {
@@ -73,13 +77,15 @@ function criarCard(anuncio, status) {
   const corpo = criar("div", "meus-anuncios__corpo");
   corpo.append(criar("span", "etiqueta", anuncio.category));
   corpo.append(criar("h2", "meus-anuncios__titulo", anuncio.title));
-  corpo.append(criar("p", "meus-anuncios__preco",
-    anuncio.preco_a_combinar
-      ? "A combinar"
-      : new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(anuncio.price),
-  ));
+  if (!anuncio.sem_preco) {
+    corpo.append(criar("p", "meus-anuncios__preco",
+      anuncio.preco_a_combinar
+        ? "A combinar"
+        : new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(anuncio.price),
+    ));
+  }
   const acoes = criar("div", "acoes");
-  for (const acao of acoesDoAnuncio(status)) {
+  for (const acao of acoesDoAnuncio(status, anuncio.category)) {
     acoes.append(criarBotaoDeAcao(acao, anuncio));
   }
   corpo.append(acoes);
@@ -89,10 +95,12 @@ function criarCard(anuncio, status) {
 
 function criarBotaoDeAcao(acao, anuncio) {
   const classe = `botao botao--${acao.estilo}`;
-  if (acao.tipo === "editar") {
-    const editar = criar("a", classe, acao.rotulo);
-    editar.href = `/anuncios/novo/?editar=${anuncio.id}`;
-    return editar;
+  if (acao.tipo === "editar" || acao.tipo === "detalhes") {
+    const link = criar("a", classe, acao.rotulo);
+    link.href = acao.tipo === "editar"
+      ? rotaEditarAnuncio(anuncio.id)
+      : rotaDetalhes(anuncio.id);
+    return link;
   }
   const botao = criar("button", classe, acao.rotulo);
   botao.type = "button";
@@ -100,6 +108,7 @@ function criarBotaoDeAcao(acao, anuncio) {
     excluir: () => excluirAnuncio(anuncio.id),
     renovar: () => renovarAnuncio(anuncio.id),
     vender: () => alterarStatus(anuncio.id, acao),
+    concluir: () => alterarStatus(anuncio.id, acao),
     reativar: () => alterarStatus(anuncio.id, acao),
   }[acao.tipo];
   botao.addEventListener("click", executar);

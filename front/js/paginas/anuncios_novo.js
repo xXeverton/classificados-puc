@@ -1,3 +1,6 @@
+import { API_BASE_URL } from "../config.js";
+import { resolverUrlRecurso } from "../dominio/detalhes_anuncio.js";
+import { rotaAoCancelarAnuncio } from "../dominio/rotas.js";
 import {
   contarCaracteres,
   montarPayloadAnuncio,
@@ -10,11 +13,12 @@ import {
   mapearAnuncioParaFormulario,
 } from "../fluxos/anuncio_edicao.js";
 import { chamarApi } from "../fluxos/conexao.js";
+import { montarCabecalho } from "./cabecalho.js";
 import {
   ROTAS,
   aoEnviar,
   irPara,
-  ligarBotaoSair,
+  
   limparAlerta,
   limparErroDeCampo,
   limparErros,
@@ -34,18 +38,26 @@ const categoria = formulario.elements.categoria;
 const campoEstado = document.querySelector("#campo-estado");
 const estadoConservacao = formulario.elements.estado_conservacao;
 const descricao = formulario.elements.descricao;
+const camposEvento = document.querySelector("#campos-evento");
+const dataEvento = formulario.elements.data_evento;
+const horarioEvento = formulario.elements.horario_evento;
+const localEvento = formulario.elements.local_evento;
 const tipoPreco = formulario.elements.tipo_preco;
 const campoPreco = document.querySelector("#campo-preco");
+const opcaoSemPreco = document.querySelector("#opcao-sem-preco");
+const radioSemPreco = opcaoSemPreco.querySelector("input");
 const preco = formulario.elements.preco;
 const imagem = formulario.elements.imagem;
 const previa = document.querySelector("#foto-previa");
 const previaImagem = document.querySelector("#foto-previa-imagem");
+const fotoVazia = document.querySelector("#foto-vazia");
 const removerFoto = document.querySelector("#remover-foto");
 let imagemSelecionada = null;
 let urlPrevia = null;
 const adEditandoId = new URLSearchParams(window.location.search).get("editar");
 
-ligarBotaoSair(document.querySelector("#sair"), deps);
+montarCabecalho(deps);
+document.querySelector("#cancelar").href = rotaAoCancelarAnuncio(adEditandoId);
 
 function coletarDados() {
   return {
@@ -53,6 +65,9 @@ function coletarDados() {
     categoria: categoria.value,
     estado_conservacao: estadoConservacao.value,
     descricao: descricao.value,
+    data_evento: dataEvento.value,
+    horario_evento: horarioEvento.value,
+    local_evento: localEvento.value,
     tipo_preco: tipoPreco.value,
     preco: preco.value,
     imagem: imagemSelecionada,
@@ -76,11 +91,31 @@ function atualizarCamposCondicionais() {
     limparErroDeCampo(formulario, "estado_conservacao");
   }
 
-  const combinar = tipoPreco.value === "combinar";
-  campoPreco.hidden = combinar;
-  preco.disabled = combinar;
-  preco.required = !combinar;
-  if (combinar) {
+  const ehEvento = categoria.value === "evento";
+  camposEvento.hidden = !ehEvento;
+  for (const campo of [dataEvento, horarioEvento, localEvento]) {
+    campo.disabled = !ehEvento;
+  }
+  dataEvento.required = ehEvento;
+  if (!ehEvento) {
+    dataEvento.value = "";
+    horarioEvento.value = "";
+    localEvento.value = "";
+    for (const nome of ["data_evento", "horario_evento", "local_evento"]) {
+      limparErroDeCampo(formulario, nome);
+    }
+  }
+
+  // "Sem preço" só existe para evento; ao sair de evento volta a "Informar".
+  opcaoSemPreco.hidden = !ehEvento;
+  radioSemPreco.disabled = !ehEvento;
+  if (!ehEvento && radioSemPreco.checked) tipoPreco[0].checked = true;
+
+  const semValor = ["combinar", "sem_preco"].includes(tipoPreco.value);
+  campoPreco.hidden = semValor;
+  preco.disabled = semValor;
+  preco.required = !semValor;
+  if (semValor) {
     preco.value = "";
     limparErroDeCampo(formulario, "preco");
   }
@@ -105,11 +140,17 @@ function ligarValidacaoDeCampo(campo, nome) {
   });
 }
 
+function mostrarPrevia(visivel) {
+  previa.hidden = !visivel;
+  fotoVazia.hidden = visivel;
+  removerFoto.hidden = !visivel;
+}
+
 function liberarPrevia() {
   if (urlPrevia) URL.revokeObjectURL(urlPrevia);
   urlPrevia = null;
   previaImagem.removeAttribute("src");
-  previa.hidden = true;
+  mostrarPrevia(false);
 }
 
 function selecionarImagem() {
@@ -126,7 +167,7 @@ function selecionarImagem() {
   if (!imagemSelecionada) return;
   urlPrevia = URL.createObjectURL(imagemSelecionada);
   previaImagem.src = urlPrevia;
-  previa.hidden = false;
+  mostrarPrevia(true);
 }
 
 function removerImagem() {
@@ -238,6 +279,9 @@ ligarValidacaoDeCampo(categoria, "categoria");
 ligarValidacaoDeCampo(estadoConservacao, "estado_conservacao");
 ligarValidacaoDeCampo(descricao, "descricao");
 ligarValidacaoDeCampo(preco, "preco");
+ligarValidacaoDeCampo(dataEvento, "data_evento");
+ligarValidacaoDeCampo(horarioEvento, "horario_evento");
+ligarValidacaoDeCampo(localEvento, "local_evento");
 
 categoria.addEventListener("change", () => {
   atualizarCamposCondicionais();
@@ -254,6 +298,10 @@ for (const opcao of tipoPreco) {
 }
 imagem.addEventListener("change", selecionarImagem);
 removerFoto.addEventListener("click", removerImagem);
+// Dica para o seletor de data; quem confere o dia é o servidor.
+dataEvento.min = new Date(
+  Date.now() - new Date().getTimezoneOffset() * 60000,
+).toISOString().slice(0, 10);
 atualizarCamposCondicionais();
 atualizarContadores();
 
@@ -269,7 +317,12 @@ async function carregarAnuncioParaEdicao() {
   categoria.value = valores.categoria;
   descricao.value = valores.descricao;
   estadoConservacao.value = valores.estadoConservacao;
-  if (valores.precoACombinar) {
+  dataEvento.value = valores.dataEvento;
+  horarioEvento.value = valores.horarioEvento;
+  localEvento.value = valores.localEvento;
+  if (valores.semPreco) {
+    radioSemPreco.checked = true;
+  } else if (valores.precoACombinar) {
     tipoPreco[1].checked = true;
   } else {
     tipoPreco[0].checked = true;
@@ -278,8 +331,8 @@ async function carregarAnuncioParaEdicao() {
   atualizarCamposCondicionais();
   atualizarContadores();
   if (valores.imageUrl) {
-    previaImagem.src = valores.imageUrl;
-    previa.hidden = false;
+    previaImagem.src = resolverUrlRecurso(valores.imageUrl, API_BASE_URL);
+    mostrarPrevia(true);
   }
   return true;
 }

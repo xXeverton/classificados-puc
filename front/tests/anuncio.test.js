@@ -76,12 +76,67 @@ test("monta payload só com os campos permitidos e preço decimal normalizado", 
       categoria: "evento",
       estado_conservacao: "",
       tipo_preco: "combinar",
+      data_evento: "2026-12-05",
     }),
     {
       titulo: "Livro usado",
       categoria: "evento",
       descricao: "Em bom estado.",
       preco_a_combinar: true,
+      data_evento: "2026-12-05",
+    },
+  );
+});
+
+const eventoBase = {
+  ...anuncioBase,
+  categoria: "evento",
+  estado_conservacao: "",
+  tipo_preco: "combinar",
+  preco: "",
+  data_evento: "2026-12-05",
+  horario_evento: "",
+  local_evento: "",
+};
+
+test("evento exige a data e só ela; horário e local são opcionais", () => {
+  assert.deepEqual(validarAnuncio(eventoBase).erros, {});
+  assert.deepEqual(
+    validarAnuncio({ ...eventoBase, horario_evento: "19:30", local_evento: "Auditório" }).erros,
+    {},
+  );
+  assert.match(validarAnuncio({ ...eventoBase, data_evento: "" }).erros.data_evento, /data do evento/);
+  assert.match(validarAnuncio({ ...eventoBase, data_evento: "05/12/2026" }).erros.data_evento, /válida/);
+  assert.match(validarAnuncio({ ...eventoBase, data_evento: "2026-02-30" }).erros.data_evento, /válida/);
+});
+
+test("horário e local do evento têm formato e limite", () => {
+  for (const horario of ["25:00", "9h", "19:60"]) {
+    assert.ok(validarAnuncio({ ...eventoBase, horario_evento: horario }).erros.horario_evento, horario);
+  }
+  assert.equal(validarAnuncio({ ...eventoBase, local_evento: "a".repeat(80) }).erros.local_evento, undefined);
+  assert.ok(validarAnuncio({ ...eventoBase, local_evento: "a".repeat(81) }).erros.local_evento);
+});
+
+test("fora de evento os campos de evento são ignorados", () => {
+  const produto = validarAnuncio({ ...anuncioBase, data_evento: "", local_evento: "x".repeat(200) });
+  assert.deepEqual(produto.erros, {});
+  const payload = montarPayloadAnuncio({ ...anuncioBase, data_evento: "2026-12-05", local_evento: "Pátio" });
+  assert.equal(payload.data_evento, undefined);
+  assert.equal(payload.local_evento, undefined);
+});
+
+test("payload do evento inclui horário e local só quando preenchidos", () => {
+  assert.deepEqual(
+    montarPayloadAnuncio({ ...eventoBase, horario_evento: "19:30", local_evento: "  Auditório  " }),
+    {
+      titulo: "Livro usado",
+      categoria: "evento",
+      descricao: "Em bom estado.",
+      preco_a_combinar: true,
+      data_evento: "2026-12-05",
+      horario_evento: "19:30",
+      local_evento: "Auditório",
     },
   );
 });
@@ -100,4 +155,22 @@ test("valida foto única por tipo, tamanho e conteúdo", () => {
     validarFoto({ name: "foto.jpg", type: "image/jpeg", size: 0 }),
     /vazia/,
   );
+});
+
+test("evento pode ficar sem preço e o payload leva só sem_preco", () => {
+  const dados = { ...eventoBase, tipo_preco: "sem_preco", preco: "" };
+  assert.deepEqual(validarAnuncio(dados).erros, {});
+  assert.deepEqual(montarPayloadAnuncio(dados), {
+    titulo: "Livro usado",
+    categoria: "evento",
+    descricao: "Em bom estado.",
+    preco_a_combinar: false,
+    sem_preco: true,
+    data_evento: "2026-12-05",
+  });
+});
+
+test("só evento aceita a opção sem preço", () => {
+  const produto = { ...anuncioBase, tipo_preco: "sem_preco", preco: "" };
+  assert.ok(validarAnuncio(produto).erros.tipo_preco);
 });

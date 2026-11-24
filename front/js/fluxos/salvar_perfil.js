@@ -1,10 +1,11 @@
+import { ROTAS } from "../dominio/rotas.js";
 import { MENSAGENS } from "../dominio/mensagens.js";
 import { normalizarContato, validarPerfil } from "../dominio/regras_perfil.js";
 import { chamarApi, erroDoServidor } from "./conexao.js";
 
-export const DESTINO_PADRAO = "/perfil/";
+export const DESTINO_PADRAO = ROTAS.perfil;
 // Só estes valores de `?depois=` são aceitos; o resto é ignorado (sem open redirect).
-export const DESTINOS_DEPOIS = { anunciar: "/anuncios/novo/" };
+export const DESTINOS_DEPOIS = { anunciar: ROTAS.novoAnuncio };
 
 export function destinoAposSalvar(depois) {
   return typeof depois === "string" && Object.hasOwn(DESTINOS_DEPOIS, depois)

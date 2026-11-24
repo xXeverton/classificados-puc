@@ -25,6 +25,9 @@ precisa ser perguntado de novo.
 | D-005 | O **vínculo** é aluno ou funcionário, informado no cadastro e **não editável** depois. Terceirizados e outros vínculos estão fora do escopo. | Spec 001 |
 | D-006 | Senha com **no mínimo 8 caracteres**, guardada só como hash. Após **5 falhas seguidas**, o login da conta fica bloqueado por **10 minutos**. Falhas de login mostram só "Credenciais inválidas". | Spec 001 |
 | D-007 | **Sem papéis, permissões diferenciadas nem moderação** no MVP: todos os membros confirmados têm o mesmo acesso. | Spec 001 |
+| D-008 | **Evento é um anúncio** da categoria "Evento", criado pelo formulário de novo anúncio, com **data obrigatória** (de hoje em diante) e **horário e local opcionais**. Não há outra origem de eventos (nada é importado do site da PUC). Os próximos eventos aparecem em destaque no início; horário e local só nos detalhes. | Spec 015 |
+| D-009 | O **prazo de um evento** termina no início do dia seguinte à data do evento (calendário de Brasília), no lugar dos 30 dias; evento não é renovado, e mudar a data recalcula o prazo. Eventos antigos sem data seguem a regra dos 30 dias. | Spec 015 |
+| D-014 | **Evento pode ficar sem preço**: além de informar o valor ou "a combinar", só a categoria evento tem a opção "Sem preço", e nesse caso nenhum preço é mostrado. Produto e serviço continuam com valor ou "a combinar". | Spec 015 |
 
 ## Perfil e contatos
 
@@ -55,6 +58,8 @@ precisa ser perguntado de novo.
 | D-032 | **Visual e comportamento comuns**: todas as telas usam `front/css/tema.css` e os componentes de `front/guia-de-estilo/`. **Sem wireframe**, a tela nova segue esse tema e esse guia. Toda tela segue o comportamento geral da spec 002 (CA23 a CA28): botão indisponível durante o envio, aviso de falha de conexão sem perder o que foi preenchido, uso pelo teclado com rótulos e erros junto aos campos, celular sem rolagem horizontal. | Specs 002 e 003 |
 | D-033 | **Mensagens**: erros vindos do servidor mostram o texto que a API devolve; validações locais e avisos próprios da tela ficam em `front/js/dominio/mensagens.js`. As telas conferem antes de enviar só as regras que não dependem de outras contas; o servidor é a fonte da verdade. | Spec 002 |
 | D-034 | **Sempre seguir o guia de estilo** (`front/guia-de-estilo/` e `front/css/tema.css`), em toda tela nova ou alterada, por quem implementa, inclusive agentes de IA. Usar as variáveis de `:root`, nunca cores ou medidas soltas, e os componentes existentes (`painel`, `formulario`, `campo`, `botao`, `alerta`, `opcoes`, `etiqueta`…) antes de criar classes novas. Estilo específico de uma tela vai em um CSS próprio dela (por exemplo `front/css/perfil.css`), **nunca dentro do `tema.css`**. Um componente que serve a várias telas entra no `tema.css` **e** no guia de estilo. Em dúvida, abrir `/guia-de-estilo/` e comparar com a tela. | Spec 003 (pedido do time) |
+| D-035 | **Cabeçalho único** em todas as telas com login: logo, "Início", "Meus anúncios", "Meu perfil", botão azul "Novo anúncio" (nunca item de menu) e "Sair", nessa ordem, com a página atual marcada. Só o início acrescenta busca e filtros. | Spec 013 (revisão do fluxo) |
+| D-036 | **Uma fonte para rotas e imagens no front**: endereços de tela vêm de `ROTAS` (`front/js/dominio/rotas.js`) e imagens de anúncio passam por `resolverUrlRecurso`; nada de endereços soltos nas páginas. | Spec 013 (revisão do fluxo) |
 
 ## Dados
 

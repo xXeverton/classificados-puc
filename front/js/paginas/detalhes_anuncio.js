@@ -4,23 +4,29 @@ import {
   rotuloConservacao,
   rotuloContato,
   resolverUrlRecurso,
+  rotaEdicaoDoDono,
   hrefContato,
   classificarContatosPrincipais,
 } from "../dominio/detalhes_anuncio.js";
+import {
+  formatarDataDoEvento,
+  formatarHorarioDoEvento,
+} from "../dominio/destaques.js";
 import { detalharAnuncio } from "../fluxos/detalhar_anuncio.js";
 import { criarCarregadorDeFoto } from "../fluxos/carregar_foto.js";
 import { API_BASE_URL } from "../config.js";
+import { montarCabecalho } from "./cabecalho.js";
 import {
   criar,
   irPara,
-  ligarBotaoSair,
+  
   mostrarAlerta,
   montarDependencias,
   limparAlerta,
 } from "./comum.js";
 
 const deps = montarDependencias();
-ligarBotaoSair(document.querySelector("#sair"), deps);
+montarCabecalho(deps);
 
 const alerta = document.querySelector("#alerta");
 const carregando = document.querySelector("#carregando");
@@ -35,6 +41,12 @@ function mostrarEstado(mensagem) {
   carregando.hidden = true;
   conteudo.hidden = true;
   mostrarAlerta(alerta, "erro", mensagem);
+}
+
+// Mostra a linha da lista de dados só quando há valor (sempre como texto).
+function mostrarLinha(id, valor) {
+  document.querySelector(`#linha-${id}`).hidden = !valor;
+  document.querySelector(`#${id}`).textContent = valor;
 }
 
 function renderizarContatos(lista, titulo) {
@@ -103,7 +115,7 @@ async function carregar() {
 
   const estado = await detalharAnuncio(deps, id);
   if (estado.tipo === "sem_sessao") {
-    irPara("/entrar/", "sessao_expirada");
+    irPara(ROTAS.entrar, "sessao_expirada");
     return;
   }
   if (estado.tipo === "conexao") {
@@ -119,8 +131,10 @@ async function carregar() {
   const ad = dados.ad;
   document.querySelector("#categoria").textContent = ad.category;
   document.querySelector("#titulo").textContent = ad.title;
-  document.querySelector("#preco").textContent =
-    formatarPrecoDetalhes(ad.price, ad.preco_a_combinar);
+  const textoPreco =
+    formatarPrecoDetalhes(ad.price, ad.preco_a_combinar, ad.sem_preco);
+  document.querySelector("#preco").textContent = textoPreco;
+  document.querySelector("#preco").hidden = !textoPreco;
   document.querySelector("#descricao").textContent = ad.description || "";
 
   const conservacao = rotuloConservacao(ad.estado_conservacao);
@@ -131,6 +145,10 @@ async function carregar() {
   } else {
     linhaConservacao.hidden = true;
   }
+
+  mostrarLinha("data-evento", formatarDataDoEvento(ad.data_evento));
+  mostrarLinha("horario-evento", formatarHorarioDoEvento(ad.horario_evento));
+  mostrarLinha("local-evento", ad.local_evento ?? "");
 
   if (ad.image_url) {
     fotoAnuncio.src = resolverUrlRecurso(ad.image_url, API_BASE_URL);
@@ -156,6 +174,15 @@ async function carregar() {
     fotoAnunciante.hidden = true;
   }
   renderizarContatos(advertiser.contacts, ad.title);
+
+  const rotaEdicao = rotaEdicaoDoDono(dados);
+  const editarAnuncio = document.querySelector("#editar-anuncio");
+  if (rotaEdicao) {
+    editarAnuncio.href = rotaEdicao;
+    editarAnuncio.hidden = false;
+  } else {
+    editarAnuncio.hidden = true;
+  }
 
   carregando.hidden = true;
   conteudo.hidden = false;

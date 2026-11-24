@@ -168,6 +168,10 @@ def test_initialize_database_creates_ads_table(database_engine):
         "estado_conservacao",
         "preco_a_combinar",
         "image_key",
+        "sem_preco",
+        "data_evento",
+        "horario_evento",
+        "local_evento",
     ]
     assert {
         column["name"]: str(column["type"]).upper() for column in columns
@@ -186,6 +190,10 @@ def test_initialize_database_creates_ads_table(database_engine):
         "estado_conservacao": "TEXT",
         "preco_a_combinar": "BOOLEAN",
         "image_key": "TEXT",
+        "sem_preco": "BOOLEAN",
+        "data_evento": "DATE",
+        "horario_evento": "TIME",
+        "local_evento": "TEXT",
     }
     assert columns[0]["primary_key"] == 1
     assert all(
@@ -793,7 +801,7 @@ def test_initialize_migrates_existing_ads_without_losing_rows():
         version = connection.exec_driver_sql("PRAGMA user_version").scalar()
 
     assert row == ("Livro antigo", 12.5, None, None, 0, None)
-    assert version == 3
+    assert version == 4
     with pytest.raises(IntegrityError):
         with engine.begin() as connection:
             connection.execute(
@@ -847,4 +855,55 @@ def test_ads_constraint_migration_preserves_invalid_legacy_row_on_failure():
 
     assert row == "Ruim"
     assert version == 2
+    engine.dispose()
+
+
+def test_initialize_adds_event_columns_to_existing_ads_keeping_rows():
+    engine = database.create_database_engine("sqlite:///:memory:")
+    database.initialize_database(engine)
+    with engine.begin() as connection:
+        # Simulate a database created before spec 015: version 3, without
+        # the event columns.
+        connection.exec_driver_sql("DROP TABLE ads")
+        connection.exec_driver_sql(
+            "CREATE TABLE ads ("
+            "id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, "
+            "description TEXT, type TEXT NOT NULL, category TEXT NOT NULL, "
+            "price FLOAT NOT NULL, image_url TEXT, "
+            "created_at DATETIME NOT NULL, status TEXT NOT NULL, "
+            "expires_at DATETIME, usuario_id INTEGER, "
+            "estado_conservacao TEXT, "
+            "preco_a_combinar BOOLEAN NOT NULL DEFAULT 0, image_key TEXT)"
+        )
+        connection.execute(
+            text(
+                "INSERT INTO ads "
+                "(title, type, category, price, created_at, status) "
+                "VALUES ('Feira antiga', 'event', 'evento', 0, "
+                "'2026-11-20 12:00:00', 'published')"
+            )
+        )
+        connection.exec_driver_sql("PRAGMA user_version = 3")
+
+    database.initialize_database(engine)
+    database.initialize_database(engine)
+
+    columns = [c["name"] for c in inspect(engine).get_columns("ads")]
+    with engine.connect() as connection:
+        row = connection.execute(
+            text(
+                "SELECT title, data_evento, horario_evento, local_evento "
+                "FROM ads"
+            )
+        ).one()
+        version = connection.exec_driver_sql("PRAGMA user_version").scalar()
+
+    assert columns[-4:] == [
+        "sem_preco",
+        "data_evento",
+        "horario_evento",
+        "local_evento",
+    ]
+    assert row == ("Feira antiga", None, None, None)
+    assert version == 4
     engine.dispose()

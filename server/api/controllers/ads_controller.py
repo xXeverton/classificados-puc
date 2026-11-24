@@ -3,6 +3,7 @@
 import json
 import re
 from dataclasses import replace
+from datetime import date, time
 from decimal import Decimal, InvalidOperation
 from http import HTTPStatus
 from math import isfinite
@@ -20,7 +21,9 @@ from server.api.presenters.ad_presenter import (
     AdDetailsViewSchema,
     AdViewSchema,
     AdsFeedViewSchema,
+    EventosEmDestaqueViewSchema,
     apresenta_ad,
+    apresenta_eventos_em_destaque,
     apresenta_detalhes,
     apresenta_feed,
 )
@@ -30,9 +33,11 @@ from server.api.presenters.error_presenter import (
 )
 from server.core.entities.anuncio import (
     Anuncio,
+    CATEGORIA_EVENTO,
     CATEGORIAS,
     DESCRICAO_MAX_CARACTERES,
     ESTADOS_CONSERVACAO,
+    LOCAL_EVENTO_MAX_CARACTERES,
     PRECO_MAXIMO,
     TITULO_MAX_CARACTERES,
     TITULO_MIN_CARACTERES,
@@ -44,7 +49,9 @@ from server.core.usecases.erros import (
     MudancaDeStatusInvalida,
     StatusInvalido,
     CategoriaNaoEditavel,
+    DataDeEventoInvalida,
     ErroDeCasoDeUso,
+    EventoNaoRenovavel,
     PerfilIncompleto,
 )
 from server.core.usecases.list_ads import ListAds
@@ -63,7 +70,13 @@ _CAMPOS_PERMITIDOS = {
     "descricao",
     "preco",
     "preco_a_combinar",
+    "sem_preco",
+    "data_evento",
+    "horario_evento",
+    "local_evento",
 }
+_PADRAO_DATA = re.compile(r"\d{4}-\d{2}-\d{2}")
+_PADRAO_HORARIO = re.compile(r"\d{2}:\d{2}")
 _TAMANHO_MAXIMO_JSON_BYTES = 64 * 1024
 
 
@@ -150,6 +163,77 @@ def _ler_entrada() -> tuple[dict[str, Any] | None, FileStorage | None]:
     return None, None
 
 
+def _ler_booleano(valor: Any, dados_de_formulario: bool) -> bool | None:
+    """Read a boolean flag; None means the value is not a valid one."""
+    if isinstance(valor, bool):
+        return valor
+    if dados_de_formulario and isinstance(valor, str):
+        if valor.lower() in {"true", "1", "on"}:
+            return True
+        if valor.lower() in {"false", "0", "off", ""}:
+            return False
+    return None
+
+
+def _validar_dados_do_evento(
+    dados: dict[str, Any], categoria: str, erros: dict[str, str]
+) -> tuple[date | None, time | None, str | None]:
+    """Read the event day, time and place; fill `erros` for bad values."""
+    valores = {
+        campo: dados.get(campo)
+        for campo in ("data_evento", "horario_evento", "local_evento")
+    }
+    informados = [
+        campo for campo, valor in valores.items() if valor not in (None, "")
+    ]
+    if categoria != CATEGORIA_EVENTO:
+        for campo in informados:
+            erros[campo] = "Só se aplica a evento."
+        return None, None, None
+    if "data_evento" not in informados:
+        erros["data_evento"] = "Informe a data do evento."
+
+    data = None
+    if "data_evento" in informados:
+        data_raw = valores["data_evento"]
+        try:
+            if not (
+                isinstance(data_raw, str)
+                and _PADRAO_DATA.fullmatch(data_raw)
+            ):
+                raise ValueError(data_raw)
+            data = date.fromisoformat(data_raw)
+        except ValueError:
+            erros["data_evento"] = "Informe uma data válida."
+
+    horario = None
+    if "horario_evento" in informados:
+        horario_raw = valores["horario_evento"]
+        try:
+            if not (
+                isinstance(horario_raw, str)
+                and _PADRAO_HORARIO.fullmatch(horario_raw)
+            ):
+                raise ValueError(horario_raw)
+            horario = time.fromisoformat(horario_raw)
+        except ValueError:
+            erros["horario_evento"] = "Informe um horário válido (HH:MM)."
+
+    local = None
+    if "local_evento" in informados:
+        local_raw = valores["local_evento"]
+        if not isinstance(local_raw, str) or not local_raw.strip():
+            erros["local_evento"] = "Informe um local válido."
+        elif len(local_raw.strip()) > LOCAL_EVENTO_MAX_CARACTERES:
+            erros["local_evento"] = (
+                f"O local deve ter até {LOCAL_EVENTO_MAX_CARACTERES} "
+                "caracteres."
+            )
+        else:
+            local = local_raw.strip()
+    return data, horario, local
+
+
 def _validar_anuncio(
     dados: dict[str, Any],
     usuario_id: int,
@@ -211,9 +295,25 @@ def _validar_anuncio(
         combinar = False
         erros["preco_a_combinar"] = "Informe uma opção válida."
 
+    sem_preco = _ler_booleano(
+        dados.get("sem_preco", False), dados_de_formulario
+    )
+    if sem_preco is None:
+        sem_preco = False
+        erros["sem_preco"] = "Informe uma opção válida."
+    elif sem_preco and categoria != CATEGORIA_EVENTO:
+        erros["sem_preco"] = "Só evento pode ficar sem preço."
+    elif sem_preco and combinar:
+        erros["sem_preco"] = "Escolha só uma opção de preço."
+
     preco = None
     preco_raw = dados.get("preco")
-    if combinar:
+    if sem_preco:
+        if preco_raw is not None and not (
+            dados_de_formulario and preco_raw == ""
+        ):
+            erros["preco"] = "Não informe preço quando o evento é sem preço."
+    elif combinar:
         if preco_raw is not None and not (
             dados_de_formulario and preco_raw == ""
         ):
@@ -228,6 +328,10 @@ def _validar_anuncio(
                 "com até duas casas decimais."
             )
 
+    data_evento, horario_evento, local_evento = _validar_dados_do_evento(
+        dados, categoria, erros
+    )
+
     if erros:
         return None, erros
 
@@ -240,6 +344,10 @@ def _validar_anuncio(
                 categoria=categoria,
                 estado_conservacao=estado,
                 preco=preco,
+                sem_preco=sem_preco,
+                data_evento=data_evento,
+                horario_evento=horario_evento,
+                local_evento=local_evento,
             ),
             {},
         )
@@ -306,6 +414,10 @@ def register_ads_controller(app: OpenAPI, obter_usuario_da_sessao) -> None:
         category = request.args.get("category")
         owner = request.args.get("owner")
         ad_status = request.args.get("status", "published")
+        excluir_eventos = request.args.get("excluir_eventos") in (
+            "true",
+            "1",
+        )
         if owner not in (None, "me"):
             return _erro(
                 "Owner deve ser me.",
@@ -353,6 +465,7 @@ def register_ads_controller(app: OpenAPI, obter_usuario_da_sessao) -> None:
                 max_price=max_price,
                 owner_id=g.usuario.id if owner == "me" else None,
                 ad_status=ad_status,
+                excluir_eventos=excluir_eventos,
             )
         except ErroDeCasoDeUso as error:
             return _erro(str(error), HTTPStatus.UNAUTHORIZED)
@@ -365,6 +478,23 @@ def register_ads_controller(app: OpenAPI, obter_usuario_da_sessao) -> None:
                 HTTPStatus.INTERNAL_SERVER_ERROR,
             )
         return apresenta_feed(result).model_dump(mode="json"), 200
+
+    @app.get(
+        "/api/eventos-destaque",
+        security=SEGURANCA_BEARER,
+        responses={
+            200: EventosEmDestaqueViewSchema,
+            401: ErrorSchema,
+        },
+    )
+    @protegida
+    def eventos_destaque() -> tuple[dict[str, object], int]:
+        eventos = app.extensions["listar_eventos_em_destaque"].executar(
+            g.usuario
+        )
+        return apresenta_eventos_em_destaque(eventos).model_dump(
+            mode="json"
+        ), 200
 
     @app.get(
         "/api/ads/<anuncio_id>",
@@ -493,6 +623,14 @@ def register_ads_controller(app: OpenAPI, obter_usuario_da_sessao) -> None:
             if image_key is not None:
                 anuncio = replace(anuncio, image_key=image_key)
             publicado = app.extensions["publicar_anuncio"].executar(anuncio)
+        except DataDeEventoInvalida as error:
+            _limpar_imagem(storage, image_key)
+            return _erro(
+                "Dados inválidos.",
+                HTTPStatus.UNPROCESSABLE_ENTITY,
+                codigo="dados_invalidos",
+                campos={"data_evento": str(error)},
+            )
         except PerfilIncompleto as error:
             _limpar_imagem(storage, image_key)
             return _erro(
@@ -564,6 +702,13 @@ def register_ads_controller(app: OpenAPI, obter_usuario_da_sessao) -> None:
             editado = app.extensions["editar_anuncio"].executar(
                 path.ad_id, anuncio
             )
+        except DataDeEventoInvalida as error:
+            return _erro(
+                "Dados inválidos.",
+                HTTPStatus.UNPROCESSABLE_ENTITY,
+                codigo="dados_invalidos",
+                campos={"data_evento": str(error)},
+            )
         except CategoriaNaoEditavel as error:
             return _erro(
                 "Dados inválidos.",
@@ -617,6 +762,12 @@ def register_ads_controller(app: OpenAPI, obter_usuario_da_sessao) -> None:
             )
         except (AnuncioNaoEncontrado, AnuncioDeOutroUsuario) as error:
             return _erro_de_dono(error)
+        except EventoNaoRenovavel as error:
+            return _erro(
+                str(error),
+                HTTPStatus.UNPROCESSABLE_ENTITY,
+                codigo="evento_nao_renovavel",
+            )
         except AnuncioNaoExpirado as error:
             return _erro(
                 str(error),

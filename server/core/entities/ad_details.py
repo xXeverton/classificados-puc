@@ -28,7 +28,8 @@ class AdvertiserSummary:
 
 @dataclass(frozen=True)
 class AdDetails:
-    """Advertisement and its public advertiser summary."""
+    """Advertisement, its public advertiser summary and viewer ownership."""
 
     ad: Ad
     advertiser: AdvertiserSummary
+    is_owner: bool = False

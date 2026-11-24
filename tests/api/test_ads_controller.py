@@ -510,6 +510,7 @@ def test_event_and_negotiable_price_are_supported_by_the_feed():
         json={
             "titulo": "Feira comunitária",
             "categoria": "evento",
+            "data_evento": "2099-12-31",
             "descricao": "Evento aberto à comunidade.",
             "preco_a_combinar": True,
         },
@@ -562,6 +563,7 @@ def test_publish_stores_an_image_and_exposes_it_from_local_storage(tmp_path):
         data={
             "titulo": "Cartaz do evento",
             "categoria": "evento",
+            "data_evento": "2099-12-31",
             "descricao": "Evento aberto à comunidade.",
             "preco": "0",
             "imagem": (
@@ -597,6 +599,7 @@ def test_publish_allows_ad_images_larger_than_profile_request_limit(
         data={
             "titulo": "Cartaz grande",
             "categoria": "evento",
+            "data_evento": "2099-12-31",
             "descricao": "Evento aberto à comunidade.",
             "preco": "0",
             "imagem": (BytesIO(image), "cartaz.png"),
@@ -669,6 +672,7 @@ def test_publish_requires_a_boolean_for_negotiable_price_in_json():
         json={
             "titulo": "Feira comunitária",
             "categoria": "evento",
+            "data_evento": "2099-12-31",
             "descricao": "Evento aberto à comunidade.",
             "preco_a_combinar": "true",
         },
@@ -714,6 +718,7 @@ def test_publish_keeps_multipart_form_boolean_compatibility():
         data={
             "titulo": "Feira comunitária",
             "categoria": "evento",
+            "data_evento": "2099-12-31",
             "descricao": "Evento aberto à comunidade.",
             "preco_a_combinar": "true",
         },
@@ -875,6 +880,7 @@ def test_get_ad_details_returns_public_ad_and_advertiser():
             "link_de_conversa": None,
         }
     ]
+    assert response.json["is_owner"] is True
     app.extensions["database_engine"].dispose()
 
 

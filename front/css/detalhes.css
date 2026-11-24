@@ -101,6 +101,12 @@
   gap: var(--espaco-2);
 }
 
+.detalhes__acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espaco-2);
+}
+
 .detalhes__contatos {
   display: flex;
   flex-wrap: wrap;

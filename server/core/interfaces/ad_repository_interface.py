@@ -26,11 +26,13 @@ class AdRepository(ABC):
         max_price: float | None = None,
         owner_id: int | None = None,
         ad_status: str = "published",
+        excluir_eventos: bool = False,
     ) -> tuple[list[Ad], int]:
         """Return one page of available advertisements and the total count.
 
         `category` matches the whole name ignoring case; the price limits
         are inclusive. `None` means the filter is not applied.
+        `excluir_eventos` leaves events out of the result (spec 015).
         """
 
     @abstractmethod

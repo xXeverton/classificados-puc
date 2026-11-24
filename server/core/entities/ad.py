@@ -1,7 +1,7 @@
 """Pure domain representation of an advertisement."""
 
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import date, datetime, time, timedelta
 from typing import ClassVar
 
 PUBLISHED = "published"
@@ -28,10 +28,17 @@ class Ad:
     nome_anunciante: str | None = None
     estado_conservacao: str | None = None
     preco_a_combinar: bool = False
+    # Event without any price: nothing is shown, not even "a combinar".
+    sem_preco: bool = False
     # Owner and stored photo key: used to manage the ad, never shown in the
     # public card. Old ads published before owners existed have no owner.
     usuario_id: int | None = None
     image_key: str | None = None
+    # Only events have these (spec 015): the day is required, the time and
+    # the place are optional.
+    data_evento: date | None = None
+    horario_evento: time | None = None
+    local_evento: str | None = None
 
     def publication_ends_at(self) -> datetime:
         """End of the publication period.

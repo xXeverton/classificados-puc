@@ -6,6 +6,7 @@ import { criarClienteHttp } from "../adaptadores/cliente_http.js";
 import { criarAuthApi } from "../adaptadores/auth_api.js";
 import { criarPerfilApi } from "../adaptadores/perfil_api.js";
 import { criarAdsApi } from "../adaptadores/ads_api.js";
+import { ROTAS } from "../dominio/rotas.js";
 import { sair } from "../fluxos/sessao_atual.js";
 import { criarArmazenamentoSessao } from "../adaptadores/armazenamento_sessao.js";
 
@@ -24,15 +25,7 @@ export function montarDependencias() {
   };
 }
 
-export const ROTAS = {
-  entrar: "/entrar/",
-  cadastro: "/cadastro/",
-  inicio: "/inicio/",
-  perfil: "/perfil/",
-  editarPerfilAnunciante: "/perfil/anunciante/",
-  novoAnuncio: "/anuncios/novo/",
-  meusAnuncios: "/meus-anuncios/",
-};
+export { ROTAS };
 
 export function ligarBotaoSair(botao, deps) {
   botao.addEventListener("click", async () => {
